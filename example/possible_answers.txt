@@ -7,4 +7,18 @@ Politician
 Chef
 Artist
 Scientist
-Entrepreneur 
+Entrepreneur
+Thief
+Drug dealer
+Hitman
+Legit Hacker
+Non-legit Hacker
+Con artist
+Money launderer
+Loan shark
+Counterfeiter
+Arms dealer
+Mercenary
+Street hustler
+Cyber scammer
+Tax evader
