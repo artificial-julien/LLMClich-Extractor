@@ -4,7 +4,8 @@ import csv
 from openai import OpenAI
 from pathlib import Path
 import pandas as pd
-from typing import List, Dict, Any
+import numpy as np
+from typing import List, Dict, Any, Tuple
 from dotenv import load_dotenv
 from enum import Enum
 from pydantic import BaseModel, create_model
@@ -13,10 +14,17 @@ from pydantic import BaseModel, create_model
 load_dotenv()
 
 class LLMConstrainedGenerator:
-    def __init__(self, api_key: str, model: str = "gpt-3.5-turbo-0125"):
-        """Initialize the generator with OpenAI API key and model."""
+    def __init__(self, api_key: str, model: str = "gpt-4o-mini", decimal_places: int = 4):
+        """Initialize the generator with OpenAI API key and model.
+        
+        Args:
+            api_key: OpenAI API key
+            model: Model to use for generation
+            decimal_places: Number of decimal places to round probabilities to
+        """
         self.client = OpenAI(api_key=api_key)
         self.model = model
+        self.decimal_places = decimal_places
         
     def load_csv_variables(self, csv_path: str) -> List[Dict[str, str]]:
         """Load variables from CSV file."""
@@ -42,8 +50,8 @@ class LLMConstrainedGenerator:
         
         return ResponseModel
     
-    def generate_response(self, prompt: str, possible_answers: List[str], response_model: type[BaseModel]) -> str:
-        """Generate constrained response using OpenAI API."""
+    def generate_response(self, prompt: str, possible_answers: List[str], response_model: type[BaseModel]) -> Tuple[str, Dict[str, float]]:
+        """Generate constrained response using OpenAI API and return probabilities."""
         try:
             # Add numbered answers to the prompt
             numbered_answers = "\n".join(f"{i+1}. {answer}" for i, answer in enumerate(possible_answers))
@@ -65,22 +73,42 @@ class LLMConstrainedGenerator:
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=[
-                    {"role": "system", "content": "You are a helpful assistant that responds with a JSON object containing an 'answer' field with the number of the selected option."},
                     {"role": "user", "content": full_prompt}
                 ],
                 temperature=0.0,
                 seed=42,
-                response_format={"type": "json_object", "schema": json_schema}
+                logprobs=True,
+                top_logprobs=5,  # Request top 5 logprobs
+                extra_body={
+                    "response_format": {
+                        "type": "json_schema",
+                        "json_schema": {
+                            "name": "numerical_answer",
+                            "schema": json_schema
+                        }
+                    }
+                },
             )
             
             # Parse the JSON response
             response_content = json.loads(response.choices[0].message.content)
             answer_index = response_content["answer"] - 1  # Convert to 0-based index
-            return possible_answers[answer_index]
+            
+            # Extract logprobs from the response
+            logprobs_data = {}
+            if hasattr(response.choices[0], 'logprobs') and response.choices[0].logprobs:
+                for token_logprob in response.choices[0].logprobs.content:
+                    if token_logprob.top_logprobs:
+                        for top_logprob in token_logprob.top_logprobs:
+                            # Convert logprob to probability and round to specified decimal places
+                            prob = round(np.exp(top_logprob.logprob), self.decimal_places)
+                            logprobs_data[top_logprob.token] = prob
+            
+            return possible_answers[answer_index], logprobs_data
             
         except Exception as e:
             print(f"Error generating response: {e}")
-            return ""
+            return "", {}
 
     def process_directory(self, input_dir: str) -> None:
         """Process all files in the specified directory."""
@@ -102,30 +130,40 @@ class LLMConstrainedGenerator:
             for key, value in row.items():
                 formatted_prompt = formatted_prompt.replace(f"[{key}]", str(value))
             
-            # Generate response
-            response = self.generate_response(formatted_prompt, possible_answers, response_model)
+            # Generate response and get probabilities
+            response, probs = self.generate_response(formatted_prompt, possible_answers, response_model)
             
-            # Add response to row
+            # Add response and probabilities to row
             row['generated_answer'] = response
+            
+            # Add top 5 probabilities for each possible answer
+            for i, answer in enumerate(possible_answers):
+                prob_key = str(i+1)
+                if prob_key in probs:
+                    row[f'prob_{i+1}_{answer[:20]}'] = probs[prob_key]
+                else:
+                    row[f'prob_{i+1}_{answer[:20]}'] = None  # Use None for unknown probabilities
+            
             results.append(row)
         
-        # Save results
+        # Save results with NA values for empty cells
         output_df = pd.DataFrame(results)
-        output_df.to_csv(str(input_dir / "output_results.csv"), index=False)
+        output_df.to_csv(str(input_dir / "output_results.csv"), index=False, na_rep='')
 
 def main():
     # Get API key and optional model from environment variables
     api_key = os.getenv("OPENAI_API_KEY")
     model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+    decimal_places = int(os.getenv("DECIMAL_PLACES", "4"))  # Get decimal places from env var
     
     if not api_key:
         raise ValueError("Please set OPENAI_API_KEY environment variable")
     
     # Initialize generator
-    generator = LLMConstrainedGenerator(api_key, model)
+    generator = LLMConstrainedGenerator(api_key, model, decimal_places)
     
     # Process directory (assuming example directory)
     generator.process_directory("example")
 
 if __name__ == "__main__":
-    main() 
+    main()
