@@ -97,12 +97,23 @@ class LLMConstrainedGenerator:
             # Extract logprobs from the response
             logprobs_data = {}
             if hasattr(response.choices[0], 'logprobs') and response.choices[0].logprobs:
+                # Find the token that represents the numerical choice
+                # We look for the token that contains the actual number in the JSON response
+                target_number = str(response_content["answer"])
+                
                 for token_logprob in response.choices[0].logprobs.content:
-                    if token_logprob.top_logprobs:
-                        for top_logprob in token_logprob.top_logprobs:
-                            # Convert logprob to probability and round to specified decimal places
-                            prob = round(np.exp(top_logprob.logprob), self.decimal_places)
-                            logprobs_data[top_logprob.token] = prob
+                    # Check if this token contains our target number
+                    if target_number in token_logprob.token:
+                        if token_logprob.top_logprobs:
+                            # Process probabilities for this specific token
+                            for top_logprob in token_logprob.top_logprobs:
+                                # Extract the number from the token if it's a number
+                                number_str = ''.join(c for c in top_logprob.token if c.isdigit())
+                                if number_str and int(number_str) <= len(possible_answers):
+                                    # Convert logprob to probability and round to specified decimal places
+                                    prob = round(np.exp(top_logprob.logprob), self.decimal_places)
+                                    logprobs_data[number_str] = prob
+                        break  # We found our target token, no need to continue
             
             return possible_answers[answer_index], logprobs_data
             
