@@ -33,35 +33,50 @@ class LLMConstrainedGenerator:
             return [line.strip() for line in f if line.strip()]
     
     def create_response_model(self, possible_answers: List[str]) -> type[BaseModel]:
-        """Create a Pydantic model with an enum field for possible answers."""
-        # Create an Enum class dynamically
-        AnswerEnum = Enum('AnswerEnum', {
-            f'ANSWER_{i}': answer 
-            for i, answer in enumerate(possible_answers)
-        })
-        
-        # Create a Pydantic model dynamically
+        """Create a Pydantic model with an integer field for answer index."""
+        # Create a Pydantic model with integer field
         ResponseModel = create_model(
             'ResponseModel',
-            answer=(AnswerEnum, ...),  # ... means the field is required
+            answer=(int, ...),  # ... means the field is required
         )
         
         return ResponseModel
     
-    def generate_response(self, prompt: str, response_model: type[BaseModel]) -> str:
+    def generate_response(self, prompt: str, possible_answers: List[str], response_model: type[BaseModel]) -> str:
         """Generate constrained response using OpenAI API."""
         try:
-            response = self.client.beta.chat.completions.parse(
+            # Add numbered answers to the prompt
+            numbered_answers = "\n".join(f"{i+1}. {answer}" for i, answer in enumerate(possible_answers))
+            full_prompt = f"{prompt}\n\nPlease respond with the number of your answer from the following options:\n{numbered_answers}"
+            
+            # Define the JSON schema for the response
+            json_schema = {
+                "type": "object",
+                "properties": {
+                    "answer": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": len(possible_answers)
+                    }
+                },
+                "required": ["answer"]
+            }
+            
+            response = self.client.chat.completions.create(
                 model=self.model,
                 messages=[
-                    {"role": "user", "content": prompt}
+                    {"role": "system", "content": "You are a helpful assistant that responds with a JSON object containing an 'answer' field with the number of the selected option."},
+                    {"role": "user", "content": full_prompt}
                 ],
                 temperature=0.0,
                 seed=42,
-                response_format=response_model
+                response_format={"type": "json_object", "schema": json_schema}
             )
             
-            return response.choices[0].message.parsed.answer.value
+            # Parse the JSON response
+            response_content = json.loads(response.choices[0].message.content)
+            answer_index = response_content["answer"] - 1  # Convert to 0-based index
+            return possible_answers[answer_index]
             
         except Exception as e:
             print(f"Error generating response: {e}")
@@ -88,7 +103,7 @@ class LLMConstrainedGenerator:
                 formatted_prompt = formatted_prompt.replace(f"[{key}]", str(value))
             
             # Generate response
-            response = self.generate_response(formatted_prompt, response_model)
+            response = self.generate_response(formatted_prompt, possible_answers, response_model)
             
             # Add response to row
             row['generated_answer'] = response
