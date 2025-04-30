@@ -114,32 +114,41 @@ class LLMConstrainedGenerator:
                                 number_str = ''.join(c for c in top_logprob.token if c.isdigit())
                                 if number_str and int(number_str) <= len(possible_answers):
                                     # Convert logprob to probability and round to specified decimal places
-                                    prob = round(np.exp(top_logprob.logprob), self.decimal_places)
+                                    prob = round((top_logprob.logprob), self.decimal_places)
                                     logprobs_data[number_str] = prob
                         break  # We found our target token, no need to continue
             
             return possible_answers[answer_index], logprobs_data
-            
         except Exception as e:
-            print(f"Error generating response: {e}")
-            return "", {}
+            raise Exception(f"Failed to generate response: {str(e)}")
 
     def process_directory(self, input_dir: str) -> None:
         """Process all files in the specified directory."""
         input_dir = Path(input_dir)
         
-        # Load required files
-        variables = self.load_csv_variables(str(input_dir / "variables.csv"))
+        # Load template and possible answers (these are required)
         template = self.load_prompt_template(str(input_dir / "prompt_template.txt"))
         possible_answers = self.load_possible_answers(str(input_dir / "possible_answers.txt"))
         
         # Create response model
         response_model = self.create_response_model(possible_answers)
         
+        # Try to load variables file, but handle case where it's missing or empty
+        variables_path = input_dir / "variables.csv"
+        if variables_path.exists():
+            try:
+                variables = self.load_csv_variables(str(variables_path))
+                if not variables:  # Empty CSV file
+                    variables = [{}]  # Use empty dict for no variables
+            except pd.errors.EmptyDataError:
+                variables = [{}]  # Handle completely empty CSV
+        else:
+            variables = [{}]  # No CSV file exists
+        
         # Process each row and generate responses
         results = []
         for row in variables:
-            # Format prompt with variables
+            # Format prompt with variables if any exist
             formatted_prompt = template
             for key, value in row.items():
                 formatted_prompt = formatted_prompt.replace(f"[{key}]", str(value))
@@ -147,21 +156,24 @@ class LLMConstrainedGenerator:
             # Generate response and get probabilities
             response, probs = self.generate_response(formatted_prompt, possible_answers, response_model)
             
+            # Start with either the existing row data or an empty dict
+            result_row = row.copy()
+            
             # Add response and probabilities to row
-            row['generated_answer'] = response
+            result_row['generated_answer'] = response
             # Add probability for the selected answer
             answer_index = possible_answers.index(response) + 1
-            row['answer_prob'] = probs.get(str(answer_index), None)
+            result_row['answer_prob'] = probs.get(str(answer_index), None)
             
             # Add top 5 probabilities for each possible answer
             for i, answer in enumerate(possible_answers):
                 prob_key = str(i+1)
                 if prob_key in probs:
-                    row[f'prob_{i+1}_{answer[:20]}'] = probs[prob_key]
+                    result_row[f'prob_{i+1}_{answer[:20]}'] = probs[prob_key]
                 else:
-                    row[f'prob_{i+1}_{answer[:20]}'] = None  # Use None for unknown probabilities
+                    result_row[f'prob_{i+1}_{answer[:20]}'] = None  # Use None for unknown probabilities
             
-            results.append(row)
+            results.append(result_row)
         
         # Save results with NA values for empty cells
         output_df = pd.DataFrame(results)
