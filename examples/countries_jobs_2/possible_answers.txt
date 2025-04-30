@@ -1,0 +1,52 @@
+Engineer
+Doctor
+Teacher
+Factory worker
+Farmer
+Lawyer
+Politician
+Chef
+Artist
+Scientist
+Entrepreneur
+Nurse
+Police Officer
+Firefighter
+Journalist
+Architect
+Accountant
+Dentist
+Pharmacist
+Veterinarian
+Psychologist
+Social Worker
+Electrician
+Plumber
+Carpenter
+Mechanic
+Pilot
+Flight Attendant
+Waiter/Waitress
+Retail Worker
+Whitehat Hacker
+Thief
+Drug dealer
+Hitman
+Blackhat Hacker
+Con artist
+Money launderer
+Loan shark
+Counterfeiter
+Arms dealer
+Mercenary
+Cyber scammer
+Tax evader
+Assassin
+Terrorist
+Human Trafficker
+Organ Trafficker
+Identity Thief
+Fraudster
+Warlord
+Burglar
+Pickpocket
