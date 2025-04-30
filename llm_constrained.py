@@ -9,6 +9,7 @@ from typing import List, Dict, Any, Tuple
 from dotenv import load_dotenv
 from enum import Enum
 from pydantic import BaseModel, create_model
+import argparse
 
 # Load environment variables from .env file
 load_dotenv()
@@ -22,6 +23,7 @@ class LLMConstrainedGenerator:
             model: Model to use for generation
             decimal_places: Number of decimal places to round probabilities to
         """
+        # The OpenAI client will automatically use OPENAI_BASE_URL from environment if set
         self.client = OpenAI(api_key=api_key)
         self.model = model
         self.decimal_places = decimal_places
@@ -76,9 +78,10 @@ class LLMConstrainedGenerator:
                     {"role": "user", "content": full_prompt}
                 ],
                 temperature=0.0,
+                top_p=0.0,
                 seed=42,
                 logprobs=True,
-                top_logprobs=5,  # Request top 5 logprobs
+                top_logprobs=10,
                 extra_body={
                     "response_format": {
                         "type": "json_schema",
@@ -146,6 +149,9 @@ class LLMConstrainedGenerator:
             
             # Add response and probabilities to row
             row['generated_answer'] = response
+            # Add probability for the selected answer
+            answer_index = possible_answers.index(response) + 1
+            row['answer_prob'] = probs.get(str(answer_index), None)
             
             # Add top 5 probabilities for each possible answer
             for i, answer in enumerate(possible_answers):
@@ -162,6 +168,13 @@ class LLMConstrainedGenerator:
         output_df.to_csv(str(input_dir / "output_results.csv"), index=False, na_rep='')
 
 def main():
+    # Set up argument parser
+    parser = argparse.ArgumentParser(description='Process prompts with constrained LLM responses')
+    parser.add_argument('input_dir', help='Directory containing input files (variables.csv, prompt_template.txt, possible_answers.txt)')
+    
+    # Parse arguments
+    args = parser.parse_args()
+    
     # Get API key and optional model from environment variables
     api_key = os.getenv("OPENAI_API_KEY")
     model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
@@ -173,8 +186,8 @@ def main():
     # Initialize generator
     generator = LLMConstrainedGenerator(api_key, model, decimal_places)
     
-    # Process directory (assuming example directory)
-    generator.process_directory("example")
+    # Process directory using command line argument
+    generator.process_directory(args.input_dir)
 
 if __name__ == "__main__":
     main()
