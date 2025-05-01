@@ -15,7 +15,7 @@ import argparse
 load_dotenv()
 
 class LLMConstrainedGenerator:
-    def __init__(self, api_key: str, model: str = "gpt-4o-mini", decimal_places: int = 4):
+    def __init__(self, api_key: str, model: str = "gpt-4.1-mini", decimal_places: int = 4):
         """Initialize the generator with OpenAI API key and model.
         
         Args:
@@ -114,7 +114,7 @@ class LLMConstrainedGenerator:
                                 number_str = ''.join(c for c in top_logprob.token if c.isdigit())
                                 if number_str and int(number_str) <= len(possible_answers):
                                     # Convert logprob to probability and round to specified decimal places
-                                    prob = round((top_logprob.logprob), self.decimal_places)
+                                    prob = round(np.exp(top_logprob.logprob), self.decimal_places)
                                     logprobs_data[number_str] = prob
                         break  # We found our target token, no need to continue
             
@@ -159,7 +159,8 @@ class LLMConstrainedGenerator:
             # Start with either the existing row data or an empty dict
             result_row = row.copy()
             
-            # Add response and probabilities to row
+            # Add prompt, response and probabilities to row
+            result_row['prompt'] = formatted_prompt
             result_row['generated_answer'] = response
             # Add probability for the selected answer
             answer_index = possible_answers.index(response) + 1
