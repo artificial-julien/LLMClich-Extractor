@@ -30,3 +30,5 @@ build/
 .env
 
 examples/**/output_results.csv
+
+.~lock.*
