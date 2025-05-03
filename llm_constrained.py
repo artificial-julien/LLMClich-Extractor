@@ -5,7 +5,7 @@ from openai import OpenAI
 from pathlib import Path
 import pandas as pd
 import numpy as np
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple, TypeVar, Optional
 from dotenv import load_dotenv
 from enum import Enum
 from pydantic import BaseModel, create_model
@@ -14,8 +14,17 @@ import argparse
 # Load environment variables from .env file
 load_dotenv()
 
+T = TypeVar('T')
+
+def get_with_default(dictionary: Dict[str, Any], key: str, default_value: T) -> T:
+    """Get a value from a dictionary with a default if the value is None, empty string, or NaN."""
+    value = dictionary.get(key)
+    if value is None or value == "" or (isinstance(value, float) and np.isnan(value)):
+        return default_value
+    return value
+
 class LLMConstrainedGenerator:
-    def __init__(self, api_key: str, model: str = "gpt-4.1-mini", decimal_places: int = 4):
+    def __init__(self, api_key: str, model: str, decimal_places: int = 4):
         """Initialize the generator with OpenAI API key and model.
         
         Args:
@@ -145,36 +154,156 @@ class LLMConstrainedGenerator:
         else:
             variables = [{}]  # No CSV file exists
         
-        # Process each row and generate responses
+        # Try to load models configuration file
+        models_path = input_dir / "models.csv"
+        if models_path.exists():
+            try:
+                models_config = pd.read_csv(str(models_path)).to_dict('records')
+                if not models_config:  # Empty CSV file
+                    # Use default configuration from instance
+                    models_config = [{
+                        'endpoint': os.getenv("OPENAI_BASE_URL", None),
+                        'api_key_env': "OPENAI_API_KEY",
+                        'model': self.model,
+                        'temperature': 0.0,
+                        'top_p': 0.0,
+                        'iterations': 1
+                    }]
+            except pd.errors.EmptyDataError:
+                # Use default configuration
+                models_config = [{
+                    'endpoint': os.getenv("OPENAI_BASE_URL", None),
+                    'api_key_env': "OPENAI_API_KEY",
+                    'model': self.model,
+                    'temperature': 0.0,
+                    'top_p': 0.0,
+                    'iterations': 1
+                }]
+        else:
+            # Use default configuration
+            models_config = [{
+                'endpoint': os.getenv("OPENAI_BASE_URL", None),
+                'api_key_env': "OPENAI_API_KEY",
+                'model': self.model,
+                'temperature': 0.0,
+                'top_p': 0.0,
+                'iterations': 1
+            }]
+        
+        # Process each model configuration, variable combination, and iteration
         results = []
-        for row in variables:
-            # Format prompt with variables if any exist
-            formatted_prompt = template
-            for key, value in row.items():
-                formatted_prompt = formatted_prompt.replace(f"[{key}]", str(value))
+        for model_config in models_config:
+            # Get API key from environment variable
+            api_key_env = get_with_default(model_config, 'api_key_env', "OPENAI_API_KEY")
+            api_key = os.getenv(api_key_env)
+            if not api_key:
+                raise ValueError(f"API key not found for environment variable: {api_key_env}")
             
-            # Generate response and get probabilities
-            response, probs = self.generate_response(formatted_prompt, possible_answers, response_model)
+            # Set up client for this model configuration
+            endpoint = get_with_default(model_config, 'endpoint', None)
+            endpoint = endpoint if endpoint else "https://api.openai.com/v1"
+            model_client = OpenAI(api_key=api_key, base_url=endpoint) if endpoint else OpenAI(api_key=api_key)
             
-            # Start with either the existing row data or an empty dict
-            result_row = row.copy()
+            # Get model parameters
+            model_name = get_with_default(model_config, 'model', self.model)
+            temperature = float(get_with_default(model_config, 'temperature', 0.0))
+            top_p = float(get_with_default(model_config, 'top_p', 0.0))
+            iterations = int(get_with_default(model_config, 'iterations', 1))
             
-            # Add prompt, response and probabilities to row
-            result_row['prompt'] = formatted_prompt
-            result_row['generated_answer'] = response
-            # Add probability for the selected answer
-            answer_index = possible_answers.index(response) + 1
-            result_row['answer_prob'] = probs.get(str(answer_index), None)
-            
-            # Add top 5 probabilities for each possible answer
-            for i, answer in enumerate(possible_answers):
-                prob_key = str(i+1)
-                if prob_key in probs:
-                    result_row[f'prob_{i+1}_{answer[:20]}'] = probs[prob_key]
-                else:
-                    result_row[f'prob_{i+1}_{answer[:20]}'] = None  # Use None for unknown probabilities
-            
-            results.append(result_row)
+            # Run specified number of iterations
+            for iteration in range(iterations):
+                # Process each variable combination
+                for row in variables:
+                    # Format prompt with variables if any exist
+                    formatted_prompt = template
+                    for key, value in row.items():
+                        formatted_prompt = formatted_prompt.replace(f"[{key}]", str(value))
+                    
+                    # Use a deterministic seed based on the iteration
+                    seed = 42 + iteration
+                    
+                    # Generate response using the configured model
+                    response = model_client.chat.completions.create(
+                        model=model_name,
+                        messages=[
+                            {"role": "user", "content": formatted_prompt}
+                        ],
+                        temperature=temperature,
+                        top_p=top_p,
+                        seed=seed,
+                        logprobs=True,
+                        top_logprobs=10,
+                        extra_body={
+                            "response_format": {
+                                "type": "json_schema",
+                                "json_schema": {
+                                    "name": "numerical_answer",
+                                    "schema": {
+                                        "type": "object",
+                                        "properties": {
+                                            "answer": {
+                                                "type": "integer",
+                                                "minimum": 1,
+                                                "maximum": len(possible_answers)
+                                            }
+                                        },
+                                        "required": ["answer"]
+                                    }
+                                }
+                            }
+                        },
+                    )
+                    
+                    # Parse the JSON response
+                    response_content = json.loads(response.choices[0].message.content)
+                    answer_index = response_content["answer"] - 1  # Convert to 0-based index
+                    
+                    # Extract logprobs from the response
+                    logprobs_data = {}
+                    if hasattr(response.choices[0], 'logprobs') and response.choices[0].logprobs:
+                        # Find the token that represents the numerical choice
+                        target_number = str(response_content["answer"])
+                        
+                        for token_logprob in response.choices[0].logprobs.content:
+                            # Check if this token contains our target number
+                            if target_number in token_logprob.token:
+                                if token_logprob.top_logprobs:
+                                    # Process probabilities for this specific token
+                                    for top_logprob in token_logprob.top_logprobs:
+                                        # Extract the number from the token if it's a number
+                                        number_str = ''.join(c for c in top_logprob.token if c.isdigit())
+                                        if number_str and int(number_str) <= len(possible_answers):
+                                            # Convert logprob to probability and round to specified decimal places
+                                            prob = round(np.exp(top_logprob.logprob), self.decimal_places)
+                                            logprobs_data[number_str] = prob
+                                break  # We found our target token, no need to continue
+                    
+                    # Start with either the existing row data or an empty dict
+                    result_row = row.copy()
+                    
+                    # Add model configuration details to result row
+                    result_row['model-name'] = model_name
+                    result_row['temperature'] = temperature
+                    result_row['top_p'] = top_p
+                    result_row['seed'] = seed
+                    
+                    # Add prompt, response and probabilities to row
+                    result_row['prompt'] = formatted_prompt
+                    result_row['generated_answer'] = possible_answers[answer_index]
+                    
+                    # Add probability for the selected answer
+                    answer_num = answer_index + 1
+                    result_row['answer_prob'] = logprobs_data.get(str(answer_num), None)
+                    
+                    # Add top 5 probabilities for each possible answer
+                    for i, answer in enumerate(possible_answers):
+                        prob_key = str(i+1)
+                        if prob_key in logprobs_data:
+                            result_row[f'prob_{i+1}_{answer[:20]}'] = logprobs_data[prob_key]
+                        else:
+                            result_row[f'prob_{i+1}_{answer[:20]}'] = None  # Use None for unknown probabilities
+                    
+                    results.append(result_row)
         
         # Save results with NA values for empty cells
         output_df = pd.DataFrame(results)
