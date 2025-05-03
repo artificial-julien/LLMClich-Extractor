@@ -150,7 +150,7 @@ class LLMConstrainedGenerator:
         output_df = pd.DataFrame(results)
         output_df.to_csv(str(input_dir / OUTPUT_FILE), index=False, na_rep='')
 
-    def process_directory(self, input_dir: str) -> None:
+    def process_directory(self, input_dir: str, verbose: bool = False) -> None:
         input_dir = Path(input_dir)
         template = self.load_prompt_template(str(input_dir / PROMPT_TEMPLATE_FILE))
         possible_answers = self.load_possible_answers(str(input_dir / POSSIBLE_ANSWERS_FILE))
@@ -183,6 +183,9 @@ class LLMConstrainedGenerator:
         # Prepare for appending
         write_header = not output_path.exists()
 
+        skipped_rows = 0
+        added_rows = 0
+
         for model_config in models_config:
             model_client = self.get_model_client(model_config)
             model_name = get_with_default(model_config, 'model', DEFAULT_MODEL_NAME)
@@ -207,7 +210,11 @@ class LLMConstrainedGenerator:
                         if mask.any():
                             already_done = True
                     if already_done:
+                        skipped_rows += 1
                         continue
+
+                    if verbose:
+                        print(f"[VERBOSE] Request: model={model_name}, temperature={temperature}, top_p={top_p}, iteration={iteration}, variables={row}")
 
                     # Remove 'var_' prefix for prompt formatting
                     prompt_row = {k[4:]: v for k, v in row.items() if k.startswith('var_')}
@@ -242,7 +249,7 @@ class LLMConstrainedGenerator:
                         },
                     )
                     response_content, answer_index, error_message = self.parse_response(response, possible_answers)
-                    print(f"Response content: {response_content}")
+                    
                     # Build result row with prefixed variable columns
                     result_row = row.copy()
                     result_row.update(self.build_result_row({}, model_name, temperature, top_p, seed, error_message, possible_answers, answer_index, response, response_content))
@@ -250,27 +257,28 @@ class LLMConstrainedGenerator:
                     result_df = pd.DataFrame([result_row])
                     result_df.to_csv(str(output_path), mode='a', header=write_header, index=False, na_rep='')
                     write_header = False  # Only write header for the first row
+                    added_rows += 1
+
+
+        print(f"Skipped rows (already present): {skipped_rows}")
+        print(f"Added rows: {added_rows}")
 
 def main():
     # Set up argument parser
     parser = argparse.ArgumentParser(description='Process prompts with constrained LLM responses')
     parser.add_argument('input_dir', help='Directory containing input files (variables.csv, prompt_template.txt, possible_answers.txt)')
-    
+    parser.add_argument('--verbose', action='store_true', help='Enable verbose logging of each request')
     # Parse arguments
     args = parser.parse_args()
-    
     # Get API key and optional model from environment variables
     api_key = os.getenv("OPENAI_API_KEY")
     decimal_places = int(os.getenv("DECIMAL_PLACES", "4"))  # Get decimal places from env var
-    
     if not api_key:
         raise ValueError("Please set OPENAI_API_KEY environment variable")
-    
     # Initialize generator
     generator = LLMConstrainedGenerator(api_key, decimal_places)
-    
     # Process directory using command line argument
-    generator.process_directory(args.input_dir)
+    generator.process_directory(args.input_dir, verbose=args.verbose)
 
 if __name__ == "__main__":
     main()
