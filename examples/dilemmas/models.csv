@@ -1,0 +1,6 @@
+endpoint,api_key_env,model,temperature,top_p,iterations
+,OPENAI_API_KEY,gpt-4o-mini,0.0,0.0,1
+,OPENAI_API_KEY,gpt-4o,0.0,0.0,1
+,OPENAI_API_KEY,gpt-4.1-nano,0.0,0.0,1
+,OPENAI_API_KEY,gpt-4.1-mini,0.0,0.0,1
+,OPENAI_API_KEY,gpt-4.1,0.0,0.0,1
