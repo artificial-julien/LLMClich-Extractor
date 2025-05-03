@@ -148,9 +148,12 @@ class LLMConstrainedGenerator:
                     formatted_prompt = template
                     for key, value in row.items():
                         formatted_prompt = formatted_prompt.replace(f"[{key}]", str(value))
+                    # Add numbered possible answers to the prompt
+                    answers_str = "\n".join([f"{i+1}. {ans}" for i, ans in enumerate(possible_answers)])
+                    formatted_prompt += f"\n\nPossible answers:\n{answers_str}"
                     
                     # Use a deterministic seed based on the iteration
-                    seed = 42 + iteration
+                    seed = iteration
                     
                     # Generate response using the configured model
                     response = model_client.chat.completions.create(
@@ -186,7 +189,27 @@ class LLMConstrainedGenerator:
                     
                     # Parse the JSON response
                     response_content = json.loads(response.choices[0].message.content)
+                    print(f"Response content: {response_content}")
                     answer_index = response_content["answer"] - 1  # Convert to 0-based index
+                    
+                    # Check if answer_index is in valid range
+                    error_message = None
+                    if answer_index < 0 or answer_index >= len(possible_answers):
+                        error_message = "out of range"
+                    
+                    # Start with either the existing row data or an empty dict
+                    result_row = row.copy()
+                    
+                    # Add model configuration details to result row
+                    result_row['model-name'] = model_name
+                    result_row['temperature'] = temperature
+                    result_row['top_p'] = top_p
+                    result_row['seed'] = seed
+                    
+                    # Add prompt, response and probabilities to row
+                    result_row['prompt'] = formatted_prompt
+                    result_row['generated_answer'] = possible_answers[answer_index] if error_message is None else None
+                    result_row['error'] = error_message
                     
                     # Extract logprobs from the response
                     logprobs_data = {}
@@ -207,19 +230,6 @@ class LLMConstrainedGenerator:
                                             prob = round(np.exp(top_logprob.logprob), self.decimal_places)
                                             logprobs_data[number_str] = prob
                                 break  # We found our target token, no need to continue
-                    
-                    # Start with either the existing row data or an empty dict
-                    result_row = row.copy()
-                    
-                    # Add model configuration details to result row
-                    result_row['model-name'] = model_name
-                    result_row['temperature'] = temperature
-                    result_row['top_p'] = top_p
-                    result_row['seed'] = seed
-                    
-                    # Add prompt, response and probabilities to row
-                    result_row['prompt'] = formatted_prompt
-                    result_row['generated_answer'] = possible_answers[answer_index]
                     
                     # Add probability for the selected answer
                     answer_num = answer_index + 1
