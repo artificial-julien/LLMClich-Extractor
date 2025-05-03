@@ -156,8 +156,33 @@ class LLMConstrainedGenerator:
         possible_answers = self.load_possible_answers(str(input_dir / POSSIBLE_ANSWERS_FILE))
         response_model = self.create_response_model(possible_answers)
         variables = self.load_csv_with_default(str(input_dir / VARIABLES_FILE), [{}])
+        # Prefix variable columns
+        variables = [
+            {f"var_{k}": v for k, v in row.items()} for row in variables
+        ]
         models_config = self.load_models_config(input_dir)
-        results = []
+        output_path = input_dir / OUTPUT_FILE
+
+        # Check for existing output and load if present
+        existing_df = None
+        if output_path.exists():
+            try:
+                existing_df = pd.read_csv(output_path)
+            except pd.errors.EmptyDataError:
+                existing_df = None
+
+        # Check if variables match
+        variables_df = pd.DataFrame(variables)
+        if existing_df is not None and not existing_df.empty:
+            # Only compare columns with 'var_' prefix
+            variable_cols = set([col for col in variables_df.columns if col.startswith('var_')])
+            existing_variable_cols = set([col for col in existing_df.columns if col.startswith('var_')])
+            if variable_cols != existing_variable_cols:
+                raise ValueError("Variable columns in output file do not match current variables.csv. Please clear or backup the output file. Existing variable columns: " + str(existing_variable_cols) + " Current variable columns: " + str(variable_cols))
+
+        # Prepare for appending
+        write_header = not output_path.exists()
+
         for model_config in models_config:
             model_client = self.get_model_client(model_config)
             model_name = get_with_default(model_config, 'model', DEFAULT_MODEL_NAME)
@@ -166,7 +191,27 @@ class LLMConstrainedGenerator:
             iterations = int(get_with_default(model_config, 'iterations', 1))
             for iteration in range(iterations):
                 for row in variables:
-                    formatted_prompt = self.format_prompt(template, row, possible_answers)
+                    # Check if this row/model/params/seed already exists in output
+                    already_done = False
+                    if existing_df is not None and not existing_df.empty:
+                        # Build a query mask
+                        mask = (
+                            (existing_df.get('model-name', None) == model_name) &
+                            (existing_df.get('temperature', None) == temperature) &
+                            (existing_df.get('top_p', None) == top_p) &
+                            (existing_df.get('seed', None) == iteration)
+                        )
+                        for k, v in row.items():
+                            if k in existing_df.columns:
+                                mask &= (existing_df[k] == v)
+                        if mask.any():
+                            already_done = True
+                    if already_done:
+                        continue
+
+                    # Remove 'var_' prefix for prompt formatting
+                    prompt_row = {k[4:]: v for k, v in row.items() if k.startswith('var_')}
+                    formatted_prompt = self.format_prompt(template, prompt_row, possible_answers)
                     seed = iteration
                     response = model_client.chat.completions.create(
                         model=model_name,
@@ -198,9 +243,13 @@ class LLMConstrainedGenerator:
                     )
                     response_content, answer_index, error_message = self.parse_response(response, possible_answers)
                     print(f"Response content: {response_content}")
-                    result_row = self.build_result_row(row, model_name, temperature, top_p, seed, error_message, possible_answers, answer_index, response, response_content)
-                    results.append(result_row)
-        self.save_results(results, input_dir)
+                    # Build result row with prefixed variable columns
+                    result_row = row.copy()
+                    result_row.update(self.build_result_row({}, model_name, temperature, top_p, seed, error_message, possible_answers, answer_index, response, response_content))
+                    # Write result row immediately
+                    result_df = pd.DataFrame([result_row])
+                    result_df.to_csv(str(output_path), mode='a', header=write_header, index=False, na_rep='')
+                    write_header = False  # Only write header for the first row
 
 def main():
     # Set up argument parser
