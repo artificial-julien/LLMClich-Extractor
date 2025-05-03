@@ -205,11 +205,10 @@ class LLMConstrainedGenerator:
                     result_row['temperature'] = temperature
                     result_row['top_p'] = top_p
                     result_row['seed'] = seed
-                    
-                    # Add prompt, response and probabilities to row
-                    result_row['prompt'] = formatted_prompt
-                    result_row['generated_answer'] = possible_answers[answer_index] if error_message is None else None
                     result_row['error'] = error_message
+                    
+                    # Add response and probabilities to row
+                    result_row['chosen_answer'] = possible_answers[answer_index] if error_message is None else None
                     
                     # Extract logprobs from the response
                     logprobs_data = {}
@@ -243,6 +242,8 @@ class LLMConstrainedGenerator:
                         else:
                             result_row[f'prob_{i+1}_{answer[:20]}'] = None  # Use None for unknown probabilities
                     
+                    #result_row['prompt'] = formatted_prompt
+
                     results.append(result_row)
         
         # Save results with NA values for empty cells
