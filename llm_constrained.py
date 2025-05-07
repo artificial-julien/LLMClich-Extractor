@@ -150,20 +150,23 @@ class LLMConstrainedGenerator:
         output_df = pd.DataFrame(results)
         output_df.to_csv(str(input_dir / OUTPUT_FILE), index=False, na_rep='')
 
-    def process_directory(self, input_dir: str, verbose: bool = False) -> None:
-        input_dir = Path(input_dir)
-        template = self.load_prompt_template(str(input_dir / PROMPT_TEMPLATE_FILE))
-        possible_answers = self.load_possible_answers(str(input_dir / POSSIBLE_ANSWERS_FILE))
-        response_model = self.create_response_model(possible_answers)
-        variables = self.load_csv_with_default(str(input_dir / VARIABLES_FILE), [{}])
-        # Prefix variable columns
-        variables = [
-            {f"var_{k}": v for k, v in row.items()} for row in variables
-        ]
-        models_config = self.load_models_config(input_dir)
-        output_path = input_dir / OUTPUT_FILE
+    def process_json(self, json_path: str, output_path: Optional[str] = None, verbose: bool = False) -> None:
+        json_path = Path(json_path)
+        with open(json_path, 'r', encoding='utf-8') as f:
+            config = json.load(f)
+        template = config['template']
+        possible_answers = config['possible_answers']
+        foreach = config['foreach']
 
-        # Check for existing output and load if present
+        # Determine output path
+        if output_path is None:
+            output_path = json_path.parent / OUTPUT_FILE
+        else:
+            output_path = Path(output_path)
+            if output_path.is_dir():
+                output_path = output_path / OUTPUT_FILE
+
+        # Prepare for skipping already-done rows
         existing_df = None
         if output_path.exists():
             try:
@@ -171,114 +174,120 @@ class LLMConstrainedGenerator:
             except pd.errors.EmptyDataError:
                 existing_df = None
 
-        # Check if variables match
-        variables_df = pd.DataFrame(variables)
-        if existing_df is not None and not existing_df.empty:
-            # Only compare columns with 'var_' prefix
-            variable_cols = set([col for col in variables_df.columns if col.startswith('var_')])
-            existing_variable_cols = set([col for col in existing_df.columns if col.startswith('var_')])
-            if variable_cols != existing_variable_cols:
-                raise ValueError("Variable columns in output file do not match current variables.csv. Please clear or backup the output file. Existing variable columns: " + str(existing_variable_cols) + " Current variable columns: " + str(variable_cols))
+        # Build all combinations from foreach
+        def expand_foreach(nodes, idx=0, current=None):
+            if current is None:
+                current = {}
+            if idx >= len(nodes):
+                return [current]
+            node = nodes[idx]
+            node_type = node['node_type']
+            results = []
+            for item in node['list']:
+                new_current = current.copy()
+                if node_type == 'models':
+                    # Model config is handled separately
+                    new_current['__model__'] = item
+                elif node_type == 'variables':
+                    new_current.update(item)
+                else:
+                    new_current[node_type] = item
+                results.extend(expand_foreach(nodes, idx+1, new_current))
+            return results
 
-        # Prepare for appending
-        write_header = not output_path.exists()
+        all_combinations = expand_foreach(foreach)
 
         skipped_rows = 0
         added_rows = 0
+        write_header = not output_path.exists()
 
-        for model_config in models_config:
-            model_client = self.get_model_client(model_config)
-            model_name = get_with_default(model_config, 'model', DEFAULT_MODEL_NAME)
-            temperature = float(get_with_default(model_config, 'temperature', 0.0))
-            top_p = float(get_with_default(model_config, 'top_p', 0.0))
-            iterations = int(get_with_default(model_config, 'iterations', 1))
+        for combo in all_combinations:
+            model_cfg = combo['__model__']
+            model_name = model_cfg['name']
+            temperature = float(model_cfg.get('temperature', 0.0))
+            top_p = float(model_cfg.get('top_p', 0.0))
+            iterations = int(model_cfg.get('iterations', 1))
+            # Remove model from row for prompt
+            row = {k: v for k, v in combo.items() if k != '__model__'}
             for iteration in range(iterations):
-                for row in variables:
-                    # Check if this row/model/params/seed already exists in output
-                    already_done = False
-                    if existing_df is not None and not existing_df.empty:
-                        # Build a query mask
-                        mask = (
-                            (existing_df.get('model-name', None) == model_name) &
-                            (existing_df.get('temperature', None) == temperature) &
-                            (existing_df.get('top_p', None) == top_p) &
-                            (existing_df.get('seed', None) == iteration)
-                        )
-                        for k, v in row.items():
-                            if k in existing_df.columns:
-                                mask &= (existing_df[k] == v)
-                        if mask.any():
-                            already_done = True
-                    if already_done:
-                        skipped_rows += 1
-                        continue
+                # Check if this row/model/params/seed already exists in output
+                already_done = False
+                if existing_df is not None and not existing_df.empty:
+                    mask = (
+                        (existing_df.get('model-name', None) == model_name) &
+                        (existing_df.get('temperature', None) == temperature) &
+                        (existing_df.get('top_p', None) == top_p) &
+                        (existing_df.get('seed', None) == iteration)
+                    )
+                    for k, v in row.items():
+                        if k in existing_df.columns:
+                            mask &= (existing_df[k] == v)
+                    if mask.any():
+                        already_done = True
+                if already_done:
+                    skipped_rows += 1
+                    continue
 
-                    if verbose:
-                        print(f"[VERBOSE] Request: model={model_name}, temperature={temperature}, top_p={top_p}, iteration={iteration}, variables={row}")
+                if verbose:
+                    print(f"[VERBOSE] Request: model={model_name}, temperature={temperature}, top_p={top_p}, iteration={iteration}, variables={row}")
 
-                    # Remove 'var_' prefix for prompt formatting
-                    prompt_row = {k[4:]: v for k, v in row.items() if k.startswith('var_')}
-                    formatted_prompt = self.format_prompt(template, prompt_row, possible_answers)
-                    seed = iteration
-                    response = model_client.chat.completions.create(
-                        model=model_name,
-                        messages=[{"role": "user", "content": formatted_prompt}],
-                        temperature=temperature,
-                        top_p=top_p,
-                        seed=seed,
-                        logprobs=True,
-                        top_logprobs=10,
-                        extra_body={
-                            "response_format": {
-                                "type": "json_schema",
-                                "json_schema": {
-                                    "name": "numerical_answer",
-                                    "schema": {
-                                        "type": "object",
-                                        "properties": {
-                                            "answer": {
-                                                "type": "integer",
-                                                "minimum": 1,
-                                                "maximum": len(possible_answers)
-                                            }
-                                        },
-                                        "required": ["answer"]
-                                    }
+                formatted_prompt = self.format_prompt(template, row, possible_answers)
+                seed = iteration
+                api_key_env = model_cfg.get('api_key_env', DEFAULT_API_KEY_ENV)
+                api_key = os.getenv(api_key_env)
+                endpoint = model_cfg.get('endpoint', None)
+                model_client = OpenAI(api_key=api_key, base_url=endpoint) if endpoint else OpenAI(api_key=api_key)
+                response = model_client.chat.completions.create(
+                    model=model_name,
+                    messages=[{"role": "user", "content": formatted_prompt}],
+                    temperature=temperature,
+                    top_p=top_p,
+                    seed=seed,
+                    logprobs=True,
+                    top_logprobs=10,
+                    extra_body={
+                        "response_format": {
+                            "type": "json_schema",
+                            "json_schema": {
+                                "name": "numerical_answer",
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "answer": {
+                                            "type": "integer",
+                                            "minimum": 1,
+                                            "maximum": len(possible_answers)
+                                        }
+                                    },
+                                    "required": ["answer"]
                                 }
                             }
-                        },
-                    )
-                    response_content, answer_index, error_message = self.parse_response(response, possible_answers)
-                    
-                    # Build result row with prefixed variable columns
-                    result_row = row.copy()
-                    result_row.update(self.build_result_row({}, model_name, temperature, top_p, seed, error_message, possible_answers, answer_index, response, response_content))
-                    # Write result row immediately
-                    result_df = pd.DataFrame([result_row])
-                    result_df.to_csv(str(output_path), mode='a', header=write_header, index=False, na_rep='')
-                    write_header = False  # Only write header for the first row
-                    added_rows += 1
-
+                        }
+                    },
+                )
+                response_content, answer_index, error_message = self.parse_response(response, possible_answers)
+                result_row = row.copy()
+                result_row.update(self.build_result_row({}, model_name, temperature, top_p, seed, error_message, possible_answers, answer_index, response, response_content))
+                result_df = pd.DataFrame([result_row])
+                result_df.to_csv(str(output_path), mode='a', header=write_header, index=False, na_rep='')
+                write_header = False
+                added_rows += 1
 
         print(f"Skipped rows (already present): {skipped_rows}")
         print(f"Added rows: {added_rows}")
 
 def main():
-    # Set up argument parser
-    parser = argparse.ArgumentParser(description='Process prompts with constrained LLM responses')
-    parser.add_argument('input_dir', help='Directory containing input files (variables.csv, prompt_template.txt, possible_answers.txt)')
+    parser = argparse.ArgumentParser(description='Process prompts with constrained LLM responses (JSON input)')
+    parser.add_argument('input_json', help='JSON input file (with template, possible_answers, foreach)')
+    parser.add_argument('--output', help='Output CSV file or directory (optional)')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose logging of each request')
-    # Parse arguments
     args = parser.parse_args()
-    # Get API key and optional model from environment variables
     api_key = os.getenv("OPENAI_API_KEY")
-    decimal_places = int(os.getenv("DECIMAL_PLACES", "4"))  # Get decimal places from env var
+    decimal_places = int(os.getenv("DECIMAL_PLACES", "4"))
     if not api_key:
         raise ValueError("Please set OPENAI_API_KEY environment variable")
-    # Initialize generator
     generator = LLMConstrainedGenerator(api_key, decimal_places)
-    # Process directory using command line argument
-    generator.process_directory(args.input_dir, verbose=args.verbose)
+    generator.process_json(args.input_json, output_path=args.output, verbose=args.verbose)
 
 if __name__ == "__main__":
     main()
