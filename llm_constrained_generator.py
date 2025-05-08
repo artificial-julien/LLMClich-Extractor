@@ -13,23 +13,26 @@ from utils import (
 )
 from tqdm import tqdm
 import hashlib
+import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 class LLMConstrainedGenerator:
     """
     Generator for processing prompts with constrained LLM responses.
     Handles prompt formatting, LLM calls, and result saving.
     """
-    def __init__(self, api_key: str, decimal_places: int = 4):
-        """Initialize the generator with OpenAI API key and decimal places for rounding probabilities."""
+    def __init__(self, api_key: str, decimal_places: int = 4, parallel: int = 2):
+        """Initialize the generator with OpenAI API key, decimal places, and parallelism."""
         self.client = OpenAI(api_key=api_key)
         self.decimal_places = decimal_places
+        self.parallel = parallel
 
     def save_results(self, results: list, input_dir: Path) -> None:
         """Save the results to a CSV file in the input directory."""
         output_df = pd.DataFrame(results)
         output_df.to_csv(str(input_dir / OUTPUT_FILE), index=False, na_rep='')
 
-    def process_json(self, json_path: Union[str, Path], output_path: Optional[Union[str, Path]] = None, verbose: bool = False) -> None:
+    def process_json(self, json_path: Union[str, Path], output_path: Optional[Union[str, Path]] = None, verbose: bool = False, parallel: int = None) -> None:
         """Process a JSON config file, run LLM prompts, and save results to CSV."""
         import os
         import json
@@ -62,12 +65,12 @@ class LLMConstrainedGenerator:
         original_count = len(all_combinations)
         all_combinations = deduplicate_combinations(all_combinations)
         removed_count = original_count - len(all_combinations)
-        print(f"Removed {removed_count} duplicate combinations.")
-        print(f"Unique combinations: {len(all_combinations)}")
+        tqdm.write(f"Removed {removed_count} duplicate combinations.")
+        tqdm.write(f"Unique combinations: {len(all_combinations)}")
 
         # Calculate total iterations
         total_iterations = sum(int(combo['__model__'].get('iterations', 1)) for combo in all_combinations)
-        print(f"Total iterations (all combinations): {total_iterations}")
+        tqdm.write(f"Total iterations (all combinations): {total_iterations}")
 
         skipped_rows = 0
         added_rows = 0
@@ -76,20 +79,79 @@ class LLMConstrainedGenerator:
         progress = tqdm(total=total_iterations, desc="Processing", unit="iteration")
         completed_iterations = 0
 
+        if parallel is None:
+            parallel = getattr(self, 'parallel', 2)
+
+        write_lock = threading.Lock()
+        def process_one_request(combo, iteration):
+            model_cfg = combo['__model__']
+            model_name = model_cfg['name']
+            temperature = float(model_cfg.get('temperature', 0.0))
+            top_p = float(model_cfg.get('top_p', 0.0))
+            row = {k: v for k, v in combo.items() if k not in ('__model__', '__template__')}
+            template = combo.get('__template__')
+            template_hash = hashlib.sha256(template.encode('utf-8')).hexdigest()[:8]
+            if verbose:
+                template_preview = template[:100] + "..." if len(template) > 100 else template
+                tqdm.write(f"[VERBOSE] Request: model={model_name}, temperature={temperature}, top_p={top_p}, iteration={iteration}, variables={row}, template_hash={template_hash}, template={template_preview}")
+            formatted_prompt = format_prompt(template, row, possible_answers)
+            seed = iteration
+            api_key_env = model_cfg.get('api_key_env', DEFAULT_API_KEY_ENV)
+            api_key = os.getenv(api_key_env)
+            endpoint = model_cfg.get('endpoint', None)
+            model_client = OpenAI(api_key=api_key, base_url=endpoint) if endpoint else OpenAI(api_key=api_key)
+            response = model_client.chat.completions.create(
+                model=model_name,
+                messages=[{"role": "user", "content": formatted_prompt}],
+                temperature=temperature,
+                top_p=top_p,
+                seed=seed,
+                logprobs=True,
+                top_logprobs=10,
+                extra_body={
+                    "response_format": {
+                        "type": "json_schema",
+                        "json_schema": {
+                            "name": "numerical_answer",
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "answer": {
+                                        "type": "integer",
+                                        "minimum": 1,
+                                        "maximum": len(possible_answers)
+                                    }
+                                },
+                                "required": ["answer"]
+                            }
+                        }
+                    }
+                },
+            )
+            response_content, answer_index, error_message = parse_response(response, possible_answers)
+            result_row = row.copy()
+            result_row['template_hash'] = template_hash
+            result_row.update(build_result_row({}, model_name, temperature, top_p, seed, error_message, possible_answers, answer_index, response, response_content))
+            with write_lock:
+                result_df = pd.DataFrame([result_row])
+                result_df.to_csv(str(output_path), mode='a', header=False, index=False, na_rep='')
+                progress.update(1)
+            return True
+
+        # Prepare all jobs (skip already-done rows)
+        jobs = []
         for combo in all_combinations:
             model_cfg = combo['__model__']
             model_name = model_cfg['name']
             temperature = float(model_cfg.get('temperature', 0.0))
             top_p = float(model_cfg.get('top_p', 0.0))
             iterations = int(model_cfg.get('iterations', 1))
-            # Remove model and template from row for prompt
             row = {k: v for k, v in combo.items() if k not in ('__model__', '__template__')}
             template = combo.get('__template__')
             if template is None:
                 raise ValueError("No template found in combination. Please include a 'template' node_type in your foreach list.")
             template_hash = hashlib.sha256(template.encode('utf-8')).hexdigest()[:8]
             for iteration in range(iterations):
-                # Check if this row/model/params/seed/template_hash already exists in output
                 already_done = False
                 if existing_df is not None and not existing_df.empty:
                     mask = (
@@ -101,11 +163,9 @@ class LLMConstrainedGenerator:
                     for k, v in row.items():
                         if k in existing_df.columns:
                             mask &= (existing_df[k] == v)
-                    # Add template_hash to mask
                     if 'template_hash' in existing_df.columns:
                         mask &= (existing_df['template_hash'] == template_hash)
                     else:
-                        # If template_hash column doesn't exist, treat as not done
                         mask &= False
                     if mask.any():
                         already_done = True
@@ -113,55 +173,25 @@ class LLMConstrainedGenerator:
                     skipped_rows += 1
                     progress.update(1)
                     continue
+                jobs.append((combo, iteration))
 
-                if verbose:
-                    template_preview = template[:100] + "..." if len(template) > 100 else template
-                    print(f"[VERBOSE] Request: model={model_name}, temperature={temperature}, top_p={top_p}, iteration={iteration}, variables={row}, template_hash={template_hash}, template={template_preview}")
+        # Write header if needed
+        if write_header and jobs:
+            # Write only the header row
+            dummy_row = pd.DataFrame([{}])
+            dummy_row.to_csv(str(output_path), mode='a', header=True, index=False, na_rep='')
+            write_header = False
 
-                formatted_prompt = format_prompt(template, row, possible_answers)
-                seed = iteration
-                api_key_env = model_cfg.get('api_key_env', DEFAULT_API_KEY_ENV)
-                api_key = os.getenv(api_key_env)
-                endpoint = model_cfg.get('endpoint', None)
-                model_client = OpenAI(api_key=api_key, base_url=endpoint) if endpoint else OpenAI(api_key=api_key)
-                response = model_client.chat.completions.create(
-                    model=model_name,
-                    messages=[{"role": "user", "content": formatted_prompt}],
-                    temperature=temperature,
-                    top_p=top_p,
-                    seed=seed,
-                    logprobs=True,
-                    top_logprobs=10,
-                    extra_body={
-                        "response_format": {
-                            "type": "json_schema",
-                            "json_schema": {
-                                "name": "numerical_answer",
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "answer": {
-                                            "type": "integer",
-                                            "minimum": 1,
-                                            "maximum": len(possible_answers)
-                                        }
-                                    },
-                                    "required": ["answer"]
-                                }
-                            }
-                        }
-                    },
-                )
-                response_content, answer_index, error_message = parse_response(response, possible_answers)
-                result_row = row.copy()
-                result_row['template_hash'] = template_hash
-                result_row.update(build_result_row({}, model_name, temperature, top_p, seed, error_message, possible_answers, answer_index, response, response_content))
-                result_df = pd.DataFrame([result_row])
-                result_df.to_csv(str(output_path), mode='a', header=write_header, index=False, na_rep='')
-                write_header = False
-                added_rows += 1
-                progress.update(1)
+        # Run jobs in parallel
+        with ThreadPoolExecutor(max_workers=parallel) as executor:
+            futures = [executor.submit(process_one_request, combo, iteration) for combo, iteration in jobs]
+            for future in as_completed(futures):
+                try:
+                    future.result()
+                    added_rows += 1
+                except Exception as e:
+                    tqdm.write(f"[ERROR] Exception in parallel execution: {e}")
 
         progress.close()
-        print(f"Skipped rows (already present): {skipped_rows}")
-        print(f"Added rows: {added_rows}") 
+        tqdm.write(f"Skipped rows (already present): {skipped_rows}")
+        tqdm.write(f"Added rows: {added_rows}") 
