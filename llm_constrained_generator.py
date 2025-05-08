@@ -11,6 +11,7 @@ from utils import (
     deduplicate_combinations,
     expand_foreach
 )
+import hashlib
 
 class LLMConstrainedGenerator:
     """
@@ -34,9 +35,10 @@ class LLMConstrainedGenerator:
         json_path = Path(json_path)
         with open(json_path, 'r', encoding='utf-8') as f:
             config = json.load(f)
-        template = config['template']
         possible_answers = config['possible_answers']
         foreach = config['foreach']
+
+        # No special handling for template node_type; treat all nodes the same
 
         # Determine output path
         if output_path is None:
@@ -72,10 +74,14 @@ class LLMConstrainedGenerator:
             temperature = float(model_cfg.get('temperature', 0.0))
             top_p = float(model_cfg.get('top_p', 0.0))
             iterations = int(model_cfg.get('iterations', 1))
-            # Remove model from row for prompt
-            row = {k: v for k, v in combo.items() if k != '__model__'}
+            # Remove model and template from row for prompt
+            row = {k: v for k, v in combo.items() if k not in ('__model__', '__template__')}
+            template = combo.get('__template__')
+            if template is None:
+                raise ValueError("No template found in combination. Please include a 'template' node_type in your foreach list.")
+            template_hash = hashlib.sha256(template.encode('utf-8')).hexdigest()[:8]
             for iteration in range(iterations):
-                # Check if this row/model/params/seed already exists in output
+                # Check if this row/model/params/seed/template_hash already exists in output
                 already_done = False
                 if existing_df is not None and not existing_df.empty:
                     mask = (
@@ -87,14 +93,22 @@ class LLMConstrainedGenerator:
                     for k, v in row.items():
                         if k in existing_df.columns:
                             mask &= (existing_df[k] == v)
+                    # Add template_hash to mask
+                    if 'template_hash' in existing_df.columns:
+                        mask &= (existing_df['template_hash'] == template_hash)
+                    else:
+                        # If template_hash column doesn't exist, treat as not done
+                        mask &= False
                     if mask.any():
                         already_done = True
                 if already_done:
                     skipped_rows += 1
+                    progress.update(1)
                     continue
 
                 if verbose:
-                    print(f"[VERBOSE] Request: model={model_name}, temperature={temperature}, top_p={top_p}, iteration={iteration}, variables={row}")
+                    template_preview = template[:100] + "..." if len(template) > 100 else template
+                    print(f"[VERBOSE] Request: model={model_name}, temperature={temperature}, top_p={top_p}, iteration={iteration}, variables={row}, template_hash={template_hash}, template={template_preview}")
 
                 formatted_prompt = format_prompt(template, row, possible_answers)
                 seed = iteration
@@ -132,6 +146,7 @@ class LLMConstrainedGenerator:
                 )
                 response_content, answer_index, error_message = parse_response(response, possible_answers)
                 result_row = row.copy()
+                result_row['template_hash'] = template_hash
                 result_row.update(build_result_row({}, model_name, temperature, top_p, seed, error_message, possible_answers, answer_index, response, response_content))
                 result_df = pd.DataFrame([result_row])
                 result_df.to_csv(str(output_path), mode='a', header=write_header, index=False, na_rep='')
