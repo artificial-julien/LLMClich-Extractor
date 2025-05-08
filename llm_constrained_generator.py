@@ -102,6 +102,7 @@ class LLMConstrainedGenerator:
                 api_key = os.getenv(api_key_env)
                 endpoint = model_cfg.get('endpoint', None)
                 model_client = OpenAI(api_key=api_key, base_url=endpoint) if endpoint else OpenAI(api_key=api_key)
+                enum_answers = [f"{i+1} {ans}" for i, ans in enumerate(possible_answers)]
                 response = model_client.chat.completions.create(
                     model=model_name,
                     messages=[{"role": "user", "content": formatted_prompt}],
@@ -114,14 +115,13 @@ class LLMConstrainedGenerator:
                         "response_format": {
                             "type": "json_schema",
                             "json_schema": {
-                                "name": "numerical_answer",
+                                "name": "enum_answer",
                                 "schema": {
                                     "type": "object",
                                     "properties": {
                                         "answer": {
-                                            "type": "integer",
-                                            "minimum": 1,
-                                            "maximum": len(possible_answers)
+                                            "type": "string",
+                                            "enum": enum_answers
                                         }
                                     },
                                     "required": ["answer"]

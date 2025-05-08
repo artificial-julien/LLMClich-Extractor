@@ -71,16 +71,21 @@ def format_prompt(template: str, row: dict, possible_answers: list) -> str:
     formatted_prompt = template
     for key, value in row.items():
         formatted_prompt = formatted_prompt.replace(f"[{key}]", str(value))
-    answers_str = "\n".join([f"{i+1}. {ans}" for i, ans in enumerate(possible_answers)])
-    formatted_prompt += f"\n\nPossible answers:\n{answers_str}"
     return formatted_prompt
 
 def parse_response(response, possible_answers: list) -> Tuple[dict, int, Optional[str]]:
     response_content = json.loads(response.choices[0].message.content)
-    answer_index = response_content["answer"] - 1
+    answer_str = response_content["answer"]
     error_message = None
-    if answer_index < 0 or answer_index >= len(possible_answers):
-        error_message = "out of range"
+    answer_index = None
+    # Expect answer_str to be in the format '[index] [answer_text]'
+    try:
+        index_str = answer_str.split(" ", 1)[0]
+        answer_index = int(index_str) - 1
+        if answer_index < 0 or answer_index >= len(possible_answers):
+            error_message = "out of range"
+    except Exception as e:
+        error_message = f"invalid answer format: {e}"
     return response_content, answer_index, error_message
 
 def build_result_row(
