@@ -138,6 +138,8 @@ def expand_foreach(nodes: list, idx: int = 0, current: Optional[dict] = None) ->
             new_current['__model__'] = item
         elif node_type == 'variables':
             new_current.update(item)
+        elif node_type == 'template':
+            new_current['__template__'] = item
         else:
             new_current[node_type] = item
         results.extend(expand_foreach(nodes, idx+1, new_current))
