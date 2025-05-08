@@ -11,6 +11,7 @@ from utils import (
     deduplicate_combinations,
     expand_foreach
 )
+from tqdm import tqdm
 import hashlib
 
 class LLMConstrainedGenerator:
@@ -64,9 +65,16 @@ class LLMConstrainedGenerator:
         print(f"Removed {removed_count} duplicate combinations.")
         print(f"Unique combinations: {len(all_combinations)}")
 
+        # Calculate total iterations
+        total_iterations = sum(int(combo['__model__'].get('iterations', 1)) for combo in all_combinations)
+        print(f"Total iterations (all combinations): {total_iterations}")
+
         skipped_rows = 0
         added_rows = 0
         write_header = not output_path.exists()
+
+        progress = tqdm(total=total_iterations, desc="Processing", unit="iteration")
+        completed_iterations = 0
 
         for combo in all_combinations:
             model_cfg = combo['__model__']
@@ -152,6 +160,8 @@ class LLMConstrainedGenerator:
                 result_df.to_csv(str(output_path), mode='a', header=write_header, index=False, na_rep='')
                 write_header = False
                 added_rows += 1
+                progress.update(1)
 
+        progress.close()
         print(f"Skipped rows (already present): {skipped_rows}")
         print(f"Added rows: {added_rows}") 
