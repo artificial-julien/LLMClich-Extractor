@@ -22,9 +22,7 @@ class LLMConstrainedGenerator:
     Handles prompt formatting, LLM calls, and result saving.
     """
     def __init__(self, api_key: str, decimal_places: int = 4, parallel: int = 2):
-        """Initialize the generator with OpenAI API key, decimal places, and parallelism."""
-        self.client = OpenAI(api_key=api_key)
-        self.decimal_places = decimal_places
+        """Initialize the generator with OpenAI API key and parallelism."""
         self.parallel = parallel
 
     def save_results(self, results: list, input_dir: Path) -> None:
@@ -32,7 +30,7 @@ class LLMConstrainedGenerator:
         output_df = pd.DataFrame(results)
         output_df.to_csv(str(input_dir / OUTPUT_FILE), index=False, na_rep='')
 
-    def process_json(self, json_path: Union[str, Path], output_path: Optional[Union[str, Path]] = None, verbose: bool = False, parallel: int = None) -> None:
+    def process_json(self, json_path: Union[str, Path], output_path: Optional[Union[str, Path]] = None, verbose: bool = False) -> None:
         """Process a JSON config file, run LLM prompts, and save results to CSV."""
         import os
         import json
@@ -74,13 +72,8 @@ class LLMConstrainedGenerator:
 
         skipped_rows = 0
         added_rows = 0
-        write_header = not output_path.exists()
 
         progress = tqdm(total=total_iterations, desc="Processing", unit="iteration")
-        completed_iterations = 0
-
-        if parallel is None:
-            parallel = getattr(self, 'parallel', 2)
 
         write_lock = threading.Lock()
         header_written = [False]  # Use a mutable object to allow modification in nested function
@@ -183,7 +176,7 @@ class LLMConstrainedGenerator:
                 jobs.append((combo, iteration))
 
         # Run jobs in parallel
-        with ThreadPoolExecutor(max_workers=parallel) as executor:
+        with ThreadPoolExecutor(max_workers=self.parallel) as executor:
             futures = [executor.submit(process_one_request, combo, iteration) for combo, iteration in jobs]
             for future in as_completed(futures):
                 try:
