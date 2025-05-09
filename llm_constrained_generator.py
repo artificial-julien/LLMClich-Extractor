@@ -83,6 +83,8 @@ class LLMConstrainedGenerator:
             parallel = getattr(self, 'parallel', 2)
 
         write_lock = threading.Lock()
+        header_written = [False]  # Use a mutable object to allow modification in nested function
+        header_lock = threading.Lock()
         def process_one_request(combo, iteration):
             model_cfg = combo['__model__']
             model_name = model_cfg['name']
@@ -134,7 +136,12 @@ class LLMConstrainedGenerator:
             result_row.update(build_result_row({}, model_name, temperature, top_p, seed, error_message, possible_answers, answer_index, response, response_content))
             with write_lock:
                 result_df = pd.DataFrame([result_row])
-                result_df.to_csv(str(output_path), mode='a', header=False, index=False, na_rep='')
+                with header_lock:
+                    if not header_written[0]:
+                        result_df.to_csv(str(output_path), mode='a', header=True, index=False, na_rep='')
+                        header_written[0] = True
+                    else:
+                        result_df.to_csv(str(output_path), mode='a', header=False, index=False, na_rep='')
                 progress.update(1)
             return True
 
@@ -174,13 +181,6 @@ class LLMConstrainedGenerator:
                     progress.update(1)
                     continue
                 jobs.append((combo, iteration))
-
-        # Write header if needed
-        if write_header and jobs:
-            # Write only the header row
-            dummy_row = pd.DataFrame([{}])
-            dummy_row.to_csv(str(output_path), mode='a', header=True, index=False, na_rep='')
-            write_header = False
 
         # Run jobs in parallel
         with ThreadPoolExecutor(max_workers=parallel) as executor:
