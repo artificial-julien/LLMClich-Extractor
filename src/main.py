@@ -12,12 +12,14 @@ def main():
     parser.add_argument('--verbose', action='store_true', help='Enable verbose logging of each request')
     parser.add_argument('--parallel', type=int, default=2, help='Number of parallel chat completions (default: 2)')
     args = parser.parse_args()
+
+    # Environment variables
     api_key = os.getenv("OPENAI_API_KEY")
     decimal_places = int(os.getenv("DECIMAL_PLACES", "4"))
     if not api_key:
         raise ValueError("Please set OPENAI_API_KEY environment variable")
     generator = LLMConstrainedGenerator(api_key, decimal_places, parallel=args.parallel)
-    generator.process_json(args.input_json, output_path=args.output, verbose=args.verbose, parallel=args.parallel)
+    generator.process_json(args.input_json, output_path=args.output, verbose=args.verbose)
 
 if __name__ == "__main__":
     main() 
