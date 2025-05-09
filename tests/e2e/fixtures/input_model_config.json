@@ -1,0 +1,22 @@
+{
+  "possible_answers": ["alpha", "beta"],
+  "foreach": [
+    {
+      "node_type": "template",
+      "list": ["[a] is [b]"]
+    },
+    {
+      "node_type": "models",
+      "list": [
+        {"name": "gpt-4.1-nano", "temperature": 0.5, "top_p": 0.7, "iterations": 1},
+        {"name": "gpt-4o-mini", "temperature": 1.0, "top_p": 1.0, "iterations": 1, "endpoint": "https://dummy-endpoint.com"}
+      ]
+    },
+    {
+      "node_type": "variables",
+      "list": [
+        {"a": "beta", "b": "alpha"}
+      ]
+    }
+  ]
+} 

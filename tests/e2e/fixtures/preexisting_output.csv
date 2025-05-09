@@ -1,0 +1,2 @@
+a,b,template,model-name,temperature,top_p,seed,error,chosen_answer,answer_prob,prob_1_alpha,prob_2_beta
+beta,alpha,[a] is [b],gpt-4.1-nano,1.0,1.0,0,,beta,0.95,0.05,0.95 
