@@ -1,0 +1,52 @@
+{
+  "foreach": [
+    {
+      "node_type": "variables",
+      "list": [
+        {
+          "a": "beta"
+        },
+        {
+          "a": "alpha"
+        }
+      ]
+    },
+    {
+      "node_type": "variables",
+      "list": [
+        {
+          "b": "omega"
+        },
+        {
+          "b": "delta"
+        }
+      ]
+    },
+    {
+      "node_type": "models",
+      "list": [
+        {
+          "name": "gpt-4.1-nano",
+          "temperature": 1.0,
+          "top_p": 1.0,
+          "iterations": 8
+        },
+        {
+          "name": "gpt-4o-mini",
+          "temperature": 1.0,
+          "top_p": 1.0,
+          "iterations": 8
+        }
+      ]
+    },
+    {
+      "node_type": "export_to_csv",
+      "output_file": "output_results.csv",
+      "columns": [
+        "a",
+        "b",
+        "result"
+      ]
+    }
+  ]
+}

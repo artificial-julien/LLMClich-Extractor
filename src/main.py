@@ -1,7 +1,8 @@
 import os
 import argparse
-from llm_constrained_generator import LLMConstrainedGenerator
 from dotenv import load_dotenv
+from pipeline import Pipeline
+from llm_prompt_executor import LLMPromptExecutor
 
 def main():
     """CLI entrypoint for processing prompts with constrained LLM responses (JSON input)."""
@@ -18,8 +19,10 @@ def main():
     decimal_places = int(os.getenv("DECIMAL_PLACES", "4"))
     if not api_key:
         raise ValueError("Please set OPENAI_API_KEY environment variable")
-    generator = LLMConstrainedGenerator(api_key, decimal_places, parallel=args.parallel)
-    generator.process_json(args.input_json, output_path=args.output, verbose=args.verbose)
+
+    llm_handler = LLMPromptExecutor(api_key, decimal_places, parallel=args.parallel)
+    pipeline = Pipeline(args.input_json)
+    pipeline.run(llm_handler=llm_handler, verbose=args.verbose)
 
 if __name__ == "__main__":
     main() 
