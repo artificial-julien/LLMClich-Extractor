@@ -160,7 +160,7 @@ class PromptEloRatingStage(Stage):
         # Format the prompt with competitor names
         formatted_prompt = self.format_prompt(prompt_template, _elo_match_competitor_a, _elo_match_competitor_b)
         
-        # Call the LLM with only two possible answers (the two competitors)
+        # Call the LLM with two possible answers (the two competitors)
         result = self.llm_client.generate_constrained_completion(
             model=model_name,
             prompt=formatted_prompt,
@@ -326,25 +326,79 @@ class PromptEloRatingStage(Stage):
                 ratings = {competitor: self.initial_rating for competitor in self.competitors}
                 wins = {competitor: 0 for competitor in self.competitors}
                 losses = {competitor: 0 for competitor in self.competitors}
+                draws = {competitor: 0 for competitor in self.competitors}
 
-                for match in match_results:
-                    if match['error'] or not match['winner']:
-                        continue
-                    _elo_match_competitor_a = match['_elo_match_competitor_a']
-                    _elo_match_competitor_b = match['_elo_match_competitor_b']
-                    winner = match['winner']
-                    if winner == _elo_match_competitor_a:
-                        wins[_elo_match_competitor_a] += 1
-                        losses[_elo_match_competitor_b] += 1
-                    else:
-                        wins[_elo_match_competitor_b] += 1
-                        losses[_elo_match_competitor_a] += 1
-                    a_score = 1 if winner == _elo_match_competitor_a else 0
-                    b_score = 1 - a_score
-                    a_expected = self.calculate_expected_score(ratings[_elo_match_competitor_a], ratings[_elo_match_competitor_b])
-                    b_expected = 1 - a_expected
-                    ratings[_elo_match_competitor_a] = self.update_elo_rating(ratings[_elo_match_competitor_a], a_expected, a_score)
-                    ratings[_elo_match_competitor_b] = self.update_elo_rating(ratings[_elo_match_competitor_b], b_expected, b_score)
+                # Process matches in pairs for symmetric matches to detect draws
+                if self.symmetric_matches:
+                    # Group matches by competitor pairs
+                    match_pairs = {}
+                    for match in match_results:
+                        if match['error'] or not match['winner']:
+                            continue
+                        a, b = match['_elo_match_competitor_a'], match['_elo_match_competitor_b']
+                        pair_key = tuple(sorted([a, b]))  # Sort to ensure consistent key regardless of order
+                        if pair_key not in match_pairs:
+                            match_pairs[pair_key] = []
+                        match_pairs[pair_key].append(match)
+                    
+                    # Process each pair of matches
+                    for pair_key, pair_matches in match_pairs.items():
+                        if len(pair_matches) != 2:  # Skip if we don't have both matches
+                            continue
+                        
+                        a, b = pair_key
+                        match1, match2 = pair_matches
+                        
+                        # Count wins for each competitor
+                        a_wins = sum(1 for m in pair_matches if m['winner'] == a)
+                        b_wins = sum(1 for m in pair_matches if m['winner'] == b)
+                        
+                        if a_wins == b_wins == 1:  # Draw (1-1)
+                            draws[a] += 1
+                            draws[b] += 1
+                            a_score = 0.5
+                            b_score = 0.5
+                        else:
+                            if a_wins > b_wins:
+                                wins[a] += 1
+                                losses[b] += 1
+                                a_score = 1
+                                b_score = 0
+                            else:
+                                wins[b] += 1
+                                losses[a] += 1
+                                a_score = 0
+                                b_score = 1
+                        
+                        # Update Elo ratings
+                        a_expected = self.calculate_expected_score(ratings[a], ratings[b])
+                        b_expected = 1 - a_expected
+                        ratings[a] = self.update_elo_rating(ratings[a], a_expected, a_score)
+                        ratings[b] = self.update_elo_rating(ratings[b], b_expected, b_score)
+                else:
+                    # Process matches individually for non-symmetric matches
+                    for match in match_results:
+                        if match['error'] or not match['winner']:
+                            continue
+                        a = match['_elo_match_competitor_a']
+                        b = match['_elo_match_competitor_b']
+                        winner = match['winner']
+                        
+                        if winner == a:
+                            wins[a] += 1
+                            losses[b] += 1
+                            a_score = 1
+                            b_score = 0
+                        else:
+                            wins[b] += 1
+                            losses[a] += 1
+                            a_score = 0
+                            b_score = 1
+                        
+                        a_expected = self.calculate_expected_score(ratings[a], ratings[b])
+                        b_expected = 1 - a_expected
+                        ratings[a] = self.update_elo_rating(ratings[a], a_expected, a_score)
+                        ratings[b] = self.update_elo_rating(ratings[b], b_expected, b_score)
 
                 # Add match results for this (model, seed)
                 for match in match_results:
@@ -354,7 +408,7 @@ class PromptEloRatingStage(Stage):
                     match_execution.add_variable('_elo_match_competitor_a', match['_elo_match_competitor_a'])
                     match_execution.add_variable('_elo_match_competitor_b', match['_elo_match_competitor_b'])
                     match_execution.add_variable('_elo_match_winner', match['winner'])
-                    match_execution.add_variable('_elo_match_draw', False)  # No draws in current implementation
+                    match_execution.add_variable('_elo_match_draw', False)  # Draws are only considered in final ratings
                     match_execution.add_variable('_seed', seed)
                     match_execution.add_variable('_model_name', model_name)
                     match_execution.add_variable('_model_temperature', temperature)
@@ -368,7 +422,7 @@ class PromptEloRatingStage(Stage):
                     rating_execution.add_variable('_elo_rating', int(rating))
                     rating_execution.add_variable('_elo_wins', wins[competitor])
                     rating_execution.add_variable('_elo_loss', losses[competitor])
-                    rating_execution.add_variable('_elo_draws', 0)  # No draws in current implementation
+                    rating_execution.add_variable('_elo_draws', draws[competitor])
                     rating_execution.add_variable('_seed', seed)
                     rating_execution.add_variable('_model_name', model_name)
                     rating_execution.add_variable('_model_temperature', temperature)
