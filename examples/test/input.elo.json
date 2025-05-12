@@ -32,7 +32,7 @@
         "a Nobel Prize-winning scientist who made breakthrough discoveries"
       ],
       "prompts": [
-        "Who of [player_a] and [player_b] is the smartest?"
+        "Who of [_elo_match_competitor_a] and [_elo_match_competitor_b] is the smartest?"
       ],
       "matches_per_entity": 10,
       "initial_rating": 1000,

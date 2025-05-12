@@ -45,7 +45,7 @@
         "Joe Biden"
       ],
       "prompts": [
-        "Who of [player_a] and [player_b] is the smartest?"
+        "Who of [_elo_match_competitor_a] and [_elo_match_competitor_b] is the smartest?"
       ],
       "matches_per_entity": 8,
       "initial_rating": 1000,
