@@ -22,9 +22,6 @@ class PromptEloRatingStage(Stage):
         prompts: List[str],
         matches_per_entity: int,
         initial_rating: int,
-        match_winner_var_name: str,
-        competitor_var_name: str,
-        elo_var_name: str,
         symmetric_matches: bool = False,
         parallel: int = 2
     ):
@@ -37,9 +34,6 @@ class PromptEloRatingStage(Stage):
             prompts: List of prompt templates
             matches_per_entity: Number of matches per competitor
             initial_rating: Initial Elo rating for all competitors
-            match_winner_var_name: Variable name to store match outcomes
-            competitor_var_name: Variable name to store competitor names
-            elo_var_name: Variable name to store Elo ratings
             symmetric_matches: Whether to run matches in both directions
             parallel: Number of parallel requests
         """
@@ -48,9 +42,6 @@ class PromptEloRatingStage(Stage):
         self.prompts = prompts
         self.matches_per_entity = matches_per_entity
         self.initial_rating = initial_rating
-        self.match_winner_var_name = match_winner_var_name
-        self.competitor_var_name = competitor_var_name
-        self.elo_var_name = elo_var_name
         self.symmetric_matches = symmetric_matches
         self.parallel = parallel
         self.llm_client = LLMClient()
@@ -74,9 +65,6 @@ class PromptEloRatingStage(Stage):
         prompts = config.get('prompts')
         matches_per_entity = config.get('matches_per_entity', 4)
         initial_rating = config.get('initial_rating', 1000)
-        match_winner_var_name = config.get('match_winner_var_name', 'result')
-        competitor_var_name = config.get('competitor_var_name', 'competitor')
-        elo_var_name = config.get('elo_var_name', 'elo')
         symmetric_matches = config.get('symmetric_matches', False)
         
         if not models or not isinstance(models, list):
@@ -94,9 +82,6 @@ class PromptEloRatingStage(Stage):
             prompts=prompts,
             matches_per_entity=matches_per_entity,
             initial_rating=initial_rating,
-            match_winner_var_name=match_winner_var_name,
-            competitor_var_name=competitor_var_name,
-            elo_var_name=elo_var_name,
             symmetric_matches=symmetric_matches
         )
     
@@ -364,26 +349,28 @@ class PromptEloRatingStage(Stage):
                     if match['error'] or not match['winner']:
                         continue
                     match_execution = base_execution.copy()
-                    match_execution.add_variable(self.match_winner_var_name, match['winner'])
-                    match_execution.add_variable('player_a', match['player_a'])
-                    match_execution.add_variable('player_b', match['player_b'])
-                    match_execution.add_variable('model-name', model_name)
-                    match_execution.add_variable('temperature', temperature)
-                    match_execution.add_variable('top_p', top_p)
-                    match_execution.add_variable('seed', seed)
+                    match_execution.add_variable('_elo_match_competitor_a', match['player_a'])
+                    match_execution.add_variable('_elo_match_competitor_b', match['player_b'])
+                    match_execution.add_variable('_elo_match_winner', match['winner'])
+                    match_execution.add_variable('_elo_match_draw', False)  # No draws in current implementation
+                    match_execution.add_variable('_seed', seed)
+                    match_execution.add_variable('_model_name', model_name)
+                    match_execution.add_variable('_model_temperature', temperature)
+                    match_execution.add_variable('_model_top_p', top_p)
                     result_executions.append(match_execution)
 
                 # Add final Elo ratings for this (model, seed)
                 for competitor, rating in ratings.items():
                     rating_execution = base_execution.copy()
-                    rating_execution.add_variable(self.competitor_var_name, competitor)
-                    rating_execution.add_variable(self.elo_var_name, int(rating))
-                    rating_execution.add_variable('wins', wins[competitor])
-                    rating_execution.add_variable('losses', losses[competitor])
-                    rating_execution.add_variable('model-name', model_name)
-                    rating_execution.add_variable('temperature', temperature)
-                    rating_execution.add_variable('top_p', top_p)
-                    rating_execution.add_variable('seed', seed)
+                    rating_execution.add_variable('_elo_competitor', competitor)
+                    rating_execution.add_variable('_elo_rating', int(rating))
+                    rating_execution.add_variable('_elo_wins', wins[competitor])
+                    rating_execution.add_variable('_elo_loss', losses[competitor])
+                    rating_execution.add_variable('_elo_draws', 0)  # No draws in current implementation
+                    rating_execution.add_variable('_seed', seed)
+                    rating_execution.add_variable('_model_name', model_name)
+                    rating_execution.add_variable('_model_temperature', temperature)
+                    rating_execution.add_variable('_model_top_p', top_p)
                     result_executions.append(rating_execution)
 
         return result_executions 
