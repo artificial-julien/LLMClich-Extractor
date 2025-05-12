@@ -7,7 +7,13 @@
           "name": "gpt-4o",
           "temperature": 1.0,
           "top_p": 1.0,
-          "iterations": 1
+          "iterations": 2
+        },
+        {
+          "name": "gpt-4.1",
+          "temperature": 1.0,
+          "top_p": 1.0,
+          "iterations": 2
         }
       ],
       "competitors": [
@@ -29,7 +35,14 @@
         "Britney Spears",
         "Logan Paul",
         "Kylie Jenner",
-        "Snoop Dogg"
+        "Snoop Dogg",
+        "Adolf Hitler",
+        "Vladimir Putin",
+        "Elon Musk",
+        "George W. Bush",
+        "Emmanuel Macron",
+        "Xi Jinping",
+        "Joe Biden"
       ],
       "prompts": [
         "Who of [player_a] and [player_b] is the smartest?"
@@ -45,11 +58,15 @@
       "node_type": "export_to_csv",
       "output_file": "output_results.elo.csv",
       "columns": [
+        "model-name",
+        "seed",
         "player_a",
         "player_b",
         "winner",
         "competitor",
-        "elo"
+        "elo",
+        "wins",
+        "losses"
       ]
     }
   ]
