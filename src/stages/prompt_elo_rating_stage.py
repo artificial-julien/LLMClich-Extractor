@@ -85,22 +85,22 @@ class PromptEloRatingStage(Stage):
             symmetric_matches=symmetric_matches
         )
     
-    def format_prompt(self, template: str, player_a: str, player_b: str) -> str:
+    def format_prompt(self, template: str, _elo_match_competitor_a: str, _elo_match_competitor_b: str) -> str:
         """
-        Format a prompt template with player variables.
+        Format a prompt template with competitor variables.
         
         Args:
-            template: Prompt template with [player_a] and [player_b] placeholders
-            player_a: First player/competitor
-            player_b: Second player/competitor
+            template: Prompt template with [_elo_match_competitor_a] and [_elo_match_competitor_b] placeholders
+            _elo_match_competitor_a: First competitor
+            _elo_match_competitor_b: Second competitor
             
         Returns:
             Formatted prompt
         """
-        formatted_prompt = template.replace("[player_a]", player_a).replace("[player_b]", player_b)
+        formatted_prompt = template.replace("[_elo_match_competitor_a]", _elo_match_competitor_a).replace("[_elo_match_competitor_b]", _elo_match_competitor_b)
         
         # Add possible answers to the prompt
-        formatted_prompt += f"\n\nPossible answers:\n1. {player_a}\n2. {player_b}"
+        formatted_prompt += f"\n\nPossible answers:\n1. {_elo_match_competitor_a}\n2. {_elo_match_competitor_b}"
         
         return formatted_prompt
     
@@ -134,18 +134,18 @@ class PromptEloRatingStage(Stage):
     
     def process_match(
         self, 
-        player_a: str, 
-        player_b: str, 
+        _elo_match_competitor_a: str, 
+        _elo_match_competitor_b: str, 
         model_config: Dict[str, Any],
         prompt_template: str,
         iteration: int
     ) -> Dict[str, Any]:
         """
-        Process a single match between two players.
+        Process a single match between two competitors.
         
         Args:
-            player_a: First player
-            player_b: Second player
+            _elo_match_competitor_a: First competitor
+            _elo_match_competitor_b: Second competitor
             model_config: Model configuration
             prompt_template: Prompt template
             iteration: Iteration number (for seed)
@@ -157,14 +157,14 @@ class PromptEloRatingStage(Stage):
         temperature = float(model_config.get('temperature', 0.0))
         top_p = float(model_config.get('top_p', 1.0))
         
-        # Format the prompt with player names
-        formatted_prompt = self.format_prompt(prompt_template, player_a, player_b)
+        # Format the prompt with competitor names
+        formatted_prompt = self.format_prompt(prompt_template, _elo_match_competitor_a, _elo_match_competitor_b)
         
-        # Call the LLM with only two possible answers (the two players)
+        # Call the LLM with only two possible answers (the two competitors)
         result = self.llm_client.generate_constrained_completion(
             model=model_name,
             prompt=formatted_prompt,
-            possible_answers=[player_a, player_b],
+            possible_answers=[_elo_match_competitor_a, _elo_match_competitor_b],
             temperature=temperature,
             top_p=top_p,
             seed=iteration
@@ -173,8 +173,8 @@ class PromptEloRatingStage(Stage):
         # Determine match outcome
         if result['error']:
             return {
-                'player_a': player_a,
-                'player_b': player_b,
+                '_elo_match_competitor_a': _elo_match_competitor_a,
+                '_elo_match_competitor_b': _elo_match_competitor_b,
                 'winner': None,
                 'error': result['error'],
                 'model_name': model_name,
@@ -186,8 +186,8 @@ class PromptEloRatingStage(Stage):
         winner = result['chosen_answer']
         
         return {
-            'player_a': player_a,
-            'player_b': player_b,
+            '_elo_match_competitor_a': _elo_match_competitor_a,
+            '_elo_match_competitor_b': _elo_match_competitor_b,
             'winner': winner,
             'error': None,
             'model_name': model_name,
@@ -201,7 +201,7 @@ class PromptEloRatingStage(Stage):
         Generate matches between competitors using a Swiss system approach.
 
         Returns:
-            List of tuples (player_a, player_b) representing matches
+            List of tuples (_elo_match_competitor_a, _elo_match_competitor_b) representing matches
         """
         matches = []
         matches_played = {competitor: 0 for competitor in self.competitors}
@@ -286,19 +286,19 @@ class PromptEloRatingStage(Stage):
 
                 # Create match jobs for this (model, seed)
                 jobs = []
-                for player_a, player_b in matches:
+                for _elo_match_competitor_a, _elo_match_competitor_b in matches:
                     for prompt_template in self.prompts:
-                        jobs.append((player_a, player_b, model_config, prompt_template, seed))
+                        jobs.append((_elo_match_competitor_a, _elo_match_competitor_b, model_config, prompt_template, seed))
 
                 # Process matches in parallel for this (model, seed)
                 match_results = []
                 with ThreadPoolExecutor(max_workers=self.parallel) as executor:
                     futures = []
-                    for player_a, player_b, model_config, prompt_template, seed_val in jobs:
+                    for _elo_match_competitor_a, _elo_match_competitor_b, model_config, prompt_template, seed_val in jobs:
                         future = executor.submit(
                             self.process_match,
-                            player_a,
-                            player_b,
+                            _elo_match_competitor_a,
+                            _elo_match_competitor_b,
                             model_config,
                             prompt_template,
                             seed_val
@@ -310,10 +310,10 @@ class PromptEloRatingStage(Stage):
                             match_results.append(result)
                         except Exception as e:
                             job = jobs[len(match_results)]
-                            player_a, player_b = job[0], job[1]
+                            _elo_match_competitor_a, _elo_match_competitor_b = job[0], job[1]
                             match_results.append({
-                                'player_a': player_a,
-                                'player_b': player_b,
+                                '_elo_match_competitor_a': _elo_match_competitor_a,
+                                '_elo_match_competitor_b': _elo_match_competitor_b,
                                 'winner': None,
                                 'error': str(e),
                                 'model_name': model_name,
@@ -330,29 +330,29 @@ class PromptEloRatingStage(Stage):
                 for match in match_results:
                     if match['error'] or not match['winner']:
                         continue
-                    player_a = match['player_a']
-                    player_b = match['player_b']
+                    _elo_match_competitor_a = match['_elo_match_competitor_a']
+                    _elo_match_competitor_b = match['_elo_match_competitor_b']
                     winner = match['winner']
-                    if winner == player_a:
-                        wins[player_a] += 1
-                        losses[player_b] += 1
+                    if winner == _elo_match_competitor_a:
+                        wins[_elo_match_competitor_a] += 1
+                        losses[_elo_match_competitor_b] += 1
                     else:
-                        wins[player_b] += 1
-                        losses[player_a] += 1
-                    a_score = 1 if winner == player_a else 0
+                        wins[_elo_match_competitor_b] += 1
+                        losses[_elo_match_competitor_a] += 1
+                    a_score = 1 if winner == _elo_match_competitor_a else 0
                     b_score = 1 - a_score
-                    a_expected = self.calculate_expected_score(ratings[player_a], ratings[player_b])
+                    a_expected = self.calculate_expected_score(ratings[_elo_match_competitor_a], ratings[_elo_match_competitor_b])
                     b_expected = 1 - a_expected
-                    ratings[player_a] = self.update_elo_rating(ratings[player_a], a_expected, a_score)
-                    ratings[player_b] = self.update_elo_rating(ratings[player_b], b_expected, b_score)
+                    ratings[_elo_match_competitor_a] = self.update_elo_rating(ratings[_elo_match_competitor_a], a_expected, a_score)
+                    ratings[_elo_match_competitor_b] = self.update_elo_rating(ratings[_elo_match_competitor_b], b_expected, b_score)
 
                 # Add match results for this (model, seed)
                 for match in match_results:
                     if match['error'] or not match['winner']:
                         continue
                     match_execution = base_execution.copy()
-                    match_execution.add_variable('_elo_match_competitor_a', match['player_a'])
-                    match_execution.add_variable('_elo_match_competitor_b', match['player_b'])
+                    match_execution.add_variable('_elo_match_competitor_a', match['_elo_match_competitor_a'])
+                    match_execution.add_variable('_elo_match_competitor_b', match['_elo_match_competitor_b'])
                     match_execution.add_variable('_elo_match_winner', match['winner'])
                     match_execution.add_variable('_elo_match_draw', False)  # No draws in current implementation
                     match_execution.add_variable('_seed', seed)
