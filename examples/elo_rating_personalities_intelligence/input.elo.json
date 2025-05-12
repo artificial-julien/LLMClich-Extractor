@@ -47,7 +47,7 @@
       "prompts": [
         "Who of [player_a] and [player_b] is the smartest?"
       ],
-      "matches_per_entity": 4,
+      "matches_per_entity": 8,
       "initial_rating": 1000,
       "match_winner_var_name": "winner",
       "competitor_var_name": "competitor",
