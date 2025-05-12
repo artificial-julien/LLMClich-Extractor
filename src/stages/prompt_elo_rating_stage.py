@@ -21,7 +21,7 @@ class PromptEloRatingStage(Stage):
         prompts: List[str],
         matches_per_entity: int,
         initial_rating: int,
-        match_outcome_var_name: str,
+        match_winner_var_name: str,
         competitor_var_name: str,
         elo_var_name: str,
         symmetric_matches: bool = False,
@@ -361,7 +361,7 @@ class PromptEloRatingStage(Stage):
         for competitor, rating in ratings.items():
             rating_execution = base_execution.copy()
             rating_execution.add_variable(self.competitor_var_name, competitor)
-            rating_execution.add_variable(self.elo_var_name, rating)
+            rating_execution.add_variable(self.elo_var_name, int(rating))
             rating_execution.add_variable('wins', wins[competitor])
             rating_execution.add_variable('losses', losses[competitor])
             result_executions.append(rating_execution)
