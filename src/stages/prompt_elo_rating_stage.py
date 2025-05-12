@@ -36,7 +36,7 @@ class PromptEloRatingStage(Stage):
             prompts: List of prompt templates
             matches_per_entity: Number of matches per competitor
             initial_rating: Initial Elo rating for all competitors
-            match_outcome_var_name: Variable name to store match outcomes
+            match_winner_var_name: Variable name to store match outcomes
             competitor_var_name: Variable name to store competitor names
             elo_var_name: Variable name to store Elo ratings
             symmetric_matches: Whether to run matches in both directions
@@ -47,7 +47,7 @@ class PromptEloRatingStage(Stage):
         self.prompts = prompts
         self.matches_per_entity = matches_per_entity
         self.initial_rating = initial_rating
-        self.match_outcome_var_name = match_outcome_var_name
+        self.match_winner_var_name = match_winner_var_name
         self.competitor_var_name = competitor_var_name
         self.elo_var_name = elo_var_name
         self.symmetric_matches = symmetric_matches
@@ -73,7 +73,7 @@ class PromptEloRatingStage(Stage):
         prompts = config.get('prompts')
         matches_per_entity = config.get('matches_per_entity', 4)
         initial_rating = config.get('initial_rating', 1000)
-        match_outcome_var_name = config.get('match_outcome_var_name', 'result')
+        match_winner_var_name = config.get('match_winner_var_name', 'result')
         competitor_var_name = config.get('competitor_var_name', 'competitor')
         elo_var_name = config.get('elo_var_name', 'elo')
         symmetric_matches = config.get('symmetric_matches', False)
@@ -93,7 +93,7 @@ class PromptEloRatingStage(Stage):
             prompts=prompts,
             matches_per_entity=matches_per_entity,
             initial_rating=initial_rating,
-            match_outcome_var_name=match_outcome_var_name,
+            match_winner_var_name=match_winner_var_name,
             competitor_var_name=competitor_var_name,
             elo_var_name=elo_var_name,
             symmetric_matches=symmetric_matches
