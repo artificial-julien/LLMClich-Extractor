@@ -306,6 +306,10 @@ class PromptEloRatingStage(Stage):
         # Calculate Elo ratings
         ratings = {competitor: self.initial_rating for competitor in self.competitors}
         
+        # Track wins and losses for each competitor
+        wins = {competitor: 0 for competitor in self.competitors}
+        losses = {competitor: 0 for competitor in self.competitors}
+        
         # Update ratings based on match results
         for match in match_results:
             if match['error'] or not match['winner']:
@@ -314,6 +318,14 @@ class PromptEloRatingStage(Stage):
             player_a = match['player_a']
             player_b = match['player_b']
             winner = match['winner']
+            
+            # Track wins and losses
+            if winner == player_a:
+                wins[player_a] += 1
+                losses[player_b] += 1
+            else:
+                wins[player_b] += 1
+                losses[player_a] += 1
             
             # Set actual score (1 for win, 0 for loss)
             a_score = 1 if winner == player_a else 0
@@ -350,6 +362,8 @@ class PromptEloRatingStage(Stage):
             rating_execution = base_execution.copy()
             rating_execution.add_variable(self.competitor_var_name, competitor)
             rating_execution.add_variable(self.elo_var_name, rating)
+            rating_execution.add_variable('wins', wins[competitor])
+            rating_execution.add_variable('losses', losses[competitor])
             result_executions.append(rating_execution)
         
         return result_executions 
