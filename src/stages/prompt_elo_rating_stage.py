@@ -284,115 +284,106 @@ class PromptEloRatingStage(Stage):
         """
         # We only need one base execution to work with
         base_execution = executions[0] if executions else Execution()
-        
-        # Generate matches
-        matches = self.generate_matches()
-        
-        # Create match jobs
-        jobs = []
-        for player_a, player_b in matches:
-            for model_config in self.models:
-                for prompt_template in self.prompts:
-                    iterations = int(model_config.get('iterations', 1))
-                    for iteration in range(iterations):
-                        jobs.append((player_a, player_b, model_config, prompt_template, iteration))
-        
-        # Process matches in parallel
-        match_results = []
-        with ThreadPoolExecutor(max_workers=self.parallel) as executor:
-            # Create and submit futures
-            futures = []
-            for player_a, player_b, model_config, prompt_template, iteration in jobs:
-                future = executor.submit(
-                    self.process_match,
-                    player_a,
-                    player_b,
-                    model_config,
-                    prompt_template,
-                    iteration
-                )
-                futures.append(future)
-            
-            # Process results as they complete
-            for future in tqdm(as_completed(futures), total=len(futures), desc="Processing Elo matches"):
-                try:
-                    result = future.result()
-                    match_results.append(result)
-                except Exception as e:
-                    job = jobs[len(match_results)]
-                    player_a, player_b = job[0], job[1]
-                    match_results.append({
-                        'player_a': player_a,
-                        'player_b': player_b,
-                        'winner': None,
-                        'error': str(e),
-                        'model_name': job[2].get('name'),
-                        'temperature': float(job[2].get('temperature', 0.0)),
-                        'top_p': float(job[2].get('top_p', 1.0)),
-                        'seed': job[4]
-                    })
-        
-        # Calculate Elo ratings
-        ratings = {competitor: self.initial_rating for competitor in self.competitors}
-        
-        # Track wins and losses for each competitor
-        wins = {competitor: 0 for competitor in self.competitors}
-        losses = {competitor: 0 for competitor in self.competitors}
-        
-        # Update ratings based on match results
-        for match in match_results:
-            if match['error'] or not match['winner']:
-                continue
-                
-            player_a = match['player_a']
-            player_b = match['player_b']
-            winner = match['winner']
-            
-            # Track wins and losses
-            if winner == player_a:
-                wins[player_a] += 1
-                losses[player_b] += 1
-            else:
-                wins[player_b] += 1
-                losses[player_a] += 1
-            
-            # Set actual score (1 for win, 0 for loss)
-            a_score = 1 if winner == player_a else 0
-            b_score = 1 - a_score
-            
-            # Calculate expected scores
-            a_expected = self.calculate_expected_score(ratings[player_a], ratings[player_b])
-            b_expected = 1 - a_expected
-            
-            # Update ratings
-            ratings[player_a] = self.update_elo_rating(ratings[player_a], a_expected, a_score)
-            ratings[player_b] = self.update_elo_rating(ratings[player_b], b_expected, b_score)
-        
-        # Create result executions
+
         result_executions = []
-        
-        # First, add match results
-        for match in match_results:
-            if match['error'] or not match['winner']:
-                continue
-                
-            match_execution = base_execution.copy()
-            match_execution.add_variable(self.match_winner_var_name, match['winner'])
-            match_execution.add_variable('player_a', match['player_a'])
-            match_execution.add_variable('player_b', match['player_b'])
-            match_execution.add_variable('model-name', match['model_name'])
-            match_execution.add_variable('temperature', match['temperature'])
-            match_execution.add_variable('top_p', match['top_p'])
-            match_execution.add_variable('seed', match['seed'])
-            result_executions.append(match_execution)
-        
-        # Then, add final Elo ratings
-        for competitor, rating in ratings.items():
-            rating_execution = base_execution.copy()
-            rating_execution.add_variable(self.competitor_var_name, competitor)
-            rating_execution.add_variable(self.elo_var_name, int(rating))
-            rating_execution.add_variable('wins', wins[competitor])
-            rating_execution.add_variable('losses', losses[competitor])
-            result_executions.append(rating_execution)
-        
+
+        for model_config in self.models:
+            model_name = model_config.get('name')
+            temperature = float(model_config.get('temperature', 0.0))
+            top_p = float(model_config.get('top_p', 1.0))
+            iterations = int(model_config.get('iterations', 1))
+
+            for seed in range(iterations):
+                # Generate matches for this (model, seed)
+                matches = self.generate_matches()
+
+                # Create match jobs for this (model, seed)
+                jobs = []
+                for player_a, player_b in matches:
+                    for prompt_template in self.prompts:
+                        jobs.append((player_a, player_b, model_config, prompt_template, seed))
+
+                # Process matches in parallel for this (model, seed)
+                match_results = []
+                with ThreadPoolExecutor(max_workers=self.parallel) as executor:
+                    futures = []
+                    for player_a, player_b, model_config, prompt_template, seed_val in jobs:
+                        future = executor.submit(
+                            self.process_match,
+                            player_a,
+                            player_b,
+                            model_config,
+                            prompt_template,
+                            seed_val
+                        )
+                        futures.append(future)
+                    for future in tqdm(as_completed(futures), total=len(futures), desc=f"Processing Elo matches for {model_name} (seed {seed})"):
+                        try:
+                            result = future.result()
+                            match_results.append(result)
+                        except Exception as e:
+                            job = jobs[len(match_results)]
+                            player_a, player_b = job[0], job[1]
+                            match_results.append({
+                                'player_a': player_a,
+                                'player_b': player_b,
+                                'winner': None,
+                                'error': str(e),
+                                'model_name': model_name,
+                                'temperature': temperature,
+                                'top_p': top_p,
+                                'seed': seed
+                            })
+
+                # Calculate Elo ratings for this (model, seed)
+                ratings = {competitor: self.initial_rating for competitor in self.competitors}
+                wins = {competitor: 0 for competitor in self.competitors}
+                losses = {competitor: 0 for competitor in self.competitors}
+
+                for match in match_results:
+                    if match['error'] or not match['winner']:
+                        continue
+                    player_a = match['player_a']
+                    player_b = match['player_b']
+                    winner = match['winner']
+                    if winner == player_a:
+                        wins[player_a] += 1
+                        losses[player_b] += 1
+                    else:
+                        wins[player_b] += 1
+                        losses[player_a] += 1
+                    a_score = 1 if winner == player_a else 0
+                    b_score = 1 - a_score
+                    a_expected = self.calculate_expected_score(ratings[player_a], ratings[player_b])
+                    b_expected = 1 - a_expected
+                    ratings[player_a] = self.update_elo_rating(ratings[player_a], a_expected, a_score)
+                    ratings[player_b] = self.update_elo_rating(ratings[player_b], b_expected, b_score)
+
+                # Add match results for this (model, seed)
+                for match in match_results:
+                    if match['error'] or not match['winner']:
+                        continue
+                    match_execution = base_execution.copy()
+                    match_execution.add_variable(self.match_winner_var_name, match['winner'])
+                    match_execution.add_variable('player_a', match['player_a'])
+                    match_execution.add_variable('player_b', match['player_b'])
+                    match_execution.add_variable('model-name', model_name)
+                    match_execution.add_variable('temperature', temperature)
+                    match_execution.add_variable('top_p', top_p)
+                    match_execution.add_variable('seed', seed)
+                    result_executions.append(match_execution)
+
+                # Add final Elo ratings for this (model, seed)
+                for competitor, rating in ratings.items():
+                    rating_execution = base_execution.copy()
+                    rating_execution.add_variable(self.competitor_var_name, competitor)
+                    rating_execution.add_variable(self.elo_var_name, int(rating))
+                    rating_execution.add_variable('wins', wins[competitor])
+                    rating_execution.add_variable('losses', losses[competitor])
+                    rating_execution.add_variable('model-name', model_name)
+                    rating_execution.add_variable('temperature', temperature)
+                    rating_execution.add_variable('top_p', top_p)
+                    rating_execution.add_variable('seed', seed)
+                    result_executions.append(rating_execution)
+
         return result_executions 
