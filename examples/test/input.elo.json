@@ -1,0 +1,61 @@
+{
+  "foreach": [
+    {
+      "node_type": "prompt_elo_rating",
+      "models": [
+        {
+          "name": "gpt-4.1-nano",
+          "temperature": 0.0,
+          "top_p": 1.0,
+          "iterations": 1
+        }
+      ],
+      "competitors": [
+        "Albert Einstein",
+        "Abraham Lincoln",
+        "Bill Gates",
+        "Charles Darwin",
+        "Donald Trump",
+        "Kim Kardashian",
+        "Snoop Dogg",
+        "George W. Bush",
+        "Emmanuel Macron",
+        "an engineer who graduated from MIT with honors",
+        "a doctor who has saved over 1000 lives",
+        "a teacher who has worked in underprivileged schools for 20 years",
+        "a farmer who developed innovative sustainable farming techniques",
+        "a stay-at-home parent who homeschools five children",
+        "a fast food worker who never attended college",
+        "a self-taught programmer who created a popular mobile app",
+        "a professional athlete who focuses more on endorsements than training",
+        "a social media influencer with millions of followers but no formal education",
+        "a Nobel Prize-winning scientist who made breakthrough discoveries"
+      ],
+      "prompts": [
+        "Who of [player_a] and [player_b] is the smartest?"
+      ],
+      "matches_per_entity": 10,
+      "initial_rating": 1000,
+      "symmetric_matches": true
+    },
+    {
+      "node_type": "export_to_csv",
+      "output_file": "output_results.elo.csv",
+      "columns": [
+        "_seed",
+        "_model_name",
+        "_model_temperature",
+        "_model_top_p",
+        "_elo_match_competitor_a",
+        "_elo_match_competitor_b",
+        "_elo_match_winner",
+        "_elo_match_draw",
+        "_elo_competitor",
+        "_elo_rating",
+        "_elo_wins",
+        "_elo_loss",
+        "_elo_draws"
+      ]
+    }
+  ]
+}
