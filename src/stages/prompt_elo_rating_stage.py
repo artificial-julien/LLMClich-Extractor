@@ -1,6 +1,7 @@
 from typing import List, Dict, Any, Optional, Tuple
 import random
 import itertools
+import math
 from src.stage import Stage
 from src.execution import Execution
 from src.registry import StageRegistry
@@ -212,36 +213,64 @@ class PromptEloRatingStage(Stage):
     
     def generate_matches(self) -> List[Tuple[str, str]]:
         """
-        Generate matches between competitors.
-        
+        Generate matches between competitors using a Swiss system approach.
+
         Returns:
             List of tuples (player_a, player_b) representing matches
         """
-        all_matches = []
-        all_pairs = list(itertools.combinations(self.competitors, 2))
-        
-        # Ensure we get the required number of matches per entity
-        matches_needed = len(self.competitors) * self.matches_per_entity
-        pairs_needed = matches_needed // 2
-        
-        while len(all_matches) < pairs_needed:
-            # If we don't have enough unique pairs, we need to repeat some
-            if len(all_pairs) <= pairs_needed - len(all_matches):
-                all_matches.extend(all_pairs)
-            else:
-                # Randomly sample the remaining pairs needed
-                remaining_pairs = random.sample(all_pairs, pairs_needed - len(all_matches))
-                all_matches.extend(remaining_pairs)
-        
-        # Trim to exact number needed
-        all_matches = all_matches[:pairs_needed]
-        
+        matches = []
+        matches_played = {competitor: 0 for competitor in self.competitors}
+        # For Swiss, we use initial Elo for all rounds (since ratings are updated after all matches)
+        ratings = {competitor: self.initial_rating for competitor in self.competitors}
+        # Track already scheduled pairs to avoid duplicates
+        scheduled_pairs = set()
+        competitors = list(self.competitors)
+        total_matches = math.ceil(len(competitors) * self.matches_per_entity / 2)
+
+        def available_pairs():
+            # Return all possible pairs that haven't reached match limits and aren't already scheduled
+            pairs = []
+            for i in range(len(competitors)):
+                for j in range(i+1, len(competitors)):
+                    a, b = competitors[i], competitors[j]
+                    if (
+                        matches_played[a] < self.matches_per_entity and
+                        matches_played[b] < self.matches_per_entity and
+                        (a, b) not in scheduled_pairs and (b, a) not in scheduled_pairs
+                    ):
+                        pairs.append((a, b))
+            return pairs
+
+        while True:
+            pairs = available_pairs()
+            if not pairs:
+                break
+            # Find the minimum number of matches played among all competitors
+            min_matches = min(matches_played[a] for pair in pairs for a in pair)
+            # Filter pairs where both have the minimum matches
+            min_pairs = [pair for pair in pairs if matches_played[pair[0]] == min_matches and matches_played[pair[1]] == min_matches]
+            if not min_pairs:
+                min_pairs = pairs
+            # Among those, find pairs with the smallest Elo difference
+            min_elo_diff = min(abs(ratings[a] - ratings[b]) for a, b in min_pairs)
+            best_pairs = [pair for pair in min_pairs if abs(ratings[pair[0]] - ratings[pair[1]]) == min_elo_diff]
+            # Pick randomly among best pairs
+            chosen_pair = random.choice(best_pairs)
+            a, b = chosen_pair
+            matches.append((a, b))
+            scheduled_pairs.add((a, b))
+            matches_played[a] += 1
+            matches_played[b] += 1
+            # Stop if all competitors have reached matches_per_entity
+            if all(m == self.matches_per_entity for m in matches_played.values()):
+                break
+            # Stop if enough matches
+            if len(matches) >= total_matches:
+                break
         # If symmetric matches are enabled, add the reverse of each match
         if self.symmetric_matches:
-            symmetric_matches = [(b, a) for a, b in all_matches]
-            all_matches.extend(symmetric_matches)
-        
-        return all_matches
+            matches = matches + [(b, a) for (a, b) in matches]
+        return matches
     
     def process(self, executions: List[Execution]) -> List[Execution]:
         """
