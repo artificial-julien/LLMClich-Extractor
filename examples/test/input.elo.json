@@ -1,0 +1,56 @@
+{
+  "foreach": [
+    {
+      "node_type": "prompt_elo_rating",
+      "models": [
+        {
+          "name": "gpt-4o",
+          "temperature": 1.0,
+          "top_p": 1.0,
+          "iterations": 1
+        }
+      ],
+      "competitors": [
+        "Albert Einstein",
+        "Abraham Lincoln",
+        "Barack Obama",
+        "Bill Gates",
+        "Charles Darwin",
+        "Isaac Newton",
+        "Stephen Hawking",
+        "Marie Curie",
+        "Nikola Tesla",
+        "Richard Feynman",
+        "Donald Trump",
+        "Kim Kardashian",
+        "Paris Hilton",
+        "Justin Bieber",
+        "Kanye West",
+        "Britney Spears",
+        "Logan Paul",
+        "Kylie Jenner",
+        "Snoop Dogg"
+      ],
+      "prompts": [
+        "Who of [player_a] and [player_b] is the smartest?"
+      ],
+      "matches_per_entity": 4,
+      "initial_rating": 1000,
+      "match_winner_var_name": "winner",
+      "competitor_var_name": "competitor",
+      "elo_var_name": "elo",
+      "symmetric_matches": true
+    },
+    {
+      "node_type": "export_to_csv",
+      "output_file": "output_results.elo.csv",
+      "columns": [
+        "player_a",
+        "player_b",
+        "winner",
+        "competitor",
+        "elo"
+      ]
+    }
+  ]
+}
