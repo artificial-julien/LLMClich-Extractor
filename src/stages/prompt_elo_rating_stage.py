@@ -211,6 +211,8 @@ class PromptEloRatingStage(Stage):
         scheduled_pairs = set()
         competitors = list(self.competitors)
         total_matches = math.ceil(len(competitors) * self.matches_per_entity / 2)
+        if self.symmetric_matches:
+            total_matches = math.ceil(total_matches / 2)  # Halve the total since each match will be played twice
 
         def available_pairs():
             # Return all possible pairs that haven't reached match limits and aren't already scheduled
