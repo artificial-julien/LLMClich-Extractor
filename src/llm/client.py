@@ -1,12 +1,12 @@
 import os
 from typing import Dict, Any, List, Optional, Union, Literal
-from openai import OpenAI
+import aisuite as ai
 import json
 from .prompt_engineering import extract_json_from_text, generate_constrained_prompt
 
 class LLMClient:
     """
-    Client for interacting with OpenAI language models.
+    Client for interacting with language models using AISuite.
     """
     
     def __init__(
@@ -18,14 +18,15 @@ class LLMClient:
         Initialize the LLM client.
         
         Args:
-            api_key: OpenAI API key (defaults to OPENAI_API_KEY environment variable)
+            api_key: API key (defaults to OPENAI_API_KEY environment variable)
             base_url: Optional base URL for the API
         """
         self.api_key = api_key or os.getenv("OPENAI_API_KEY")
         if not self.api_key:
             raise ValueError("No API key provided and OPENAI_API_KEY environment variable not set")
         
-        self.client = OpenAI(api_key=self.api_key, base_url=base_url)
+        # Initialize AISuite client
+        self.client = ai.Client()
     
     def generate_constrained_completion(
         self, 
@@ -55,6 +56,10 @@ class LLMClient:
             Dictionary with results including chosen answer, probabilities, etc.
         """
         try:
+            # Ensure model name has provider prefix
+            if ":" not in model:
+                model = f"openai:{model}"
+
             if constraint_method == "json_schema":
                 response = self.client.chat.completions.create(
                     model=model,
@@ -64,25 +69,23 @@ class LLMClient:
                     seed=seed,
                     logprobs=True,
                     top_logprobs=10,
-                    extra_body={
-                        "response_format": {
-                            "type": "json_schema",
-                            "json_schema": {
-                                "name": "numerical_answer",
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "answer": {
-                                            "type": "integer",
-                                            "minimum": 1,
-                                            "maximum": len(possible_answers)
-                                        }
-                                    },
-                                    "required": ["answer"]
-                                }
+                    response_format={
+                        "type": "json_schema",
+                        "json_schema": {
+                            "name": "numerical_answer",
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "answer": {
+                                        "type": "integer",
+                                        "minimum": 1,
+                                        "maximum": len(possible_answers)
+                                    }
+                                },
+                                "required": ["answer"]
                             }
                         }
-                    },
+                    }
                 )
                 response_content = json.loads(response.choices[0].message.content)
             else:  # prompt_engineering
