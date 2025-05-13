@@ -176,6 +176,7 @@ class PromptEloRatingStage(Stage):
                 '_elo_match_competitor_a': _elo_match_competitor_a,
                 '_elo_match_competitor_b': _elo_match_competitor_b,
                 'winner': None,
+                'is_draw': False,
                 'error': result['error'],
                 'model_name': model_name,
                 'temperature': temperature,
@@ -185,10 +186,26 @@ class PromptEloRatingStage(Stage):
         
         winner = result['chosen_answer']
         
+        # For symmetric matches, we need to check if this is a draw
+        is_draw = False
+        if self.symmetric_matches:
+            # Get the other match result for this pair
+            other_match = next(
+                (m for m in self._current_match_results if 
+                 m['_elo_match_competitor_a'] == _elo_match_competitor_b and 
+                 m['_elo_match_competitor_b'] == _elo_match_competitor_a and
+                 m['model_name'] == model_name and
+                 m['seed'] == iteration),
+                None
+            )
+            if other_match and other_match['winner'] == winner:
+                is_draw = True
+        
         return {
             '_elo_match_competitor_a': _elo_match_competitor_a,
             '_elo_match_competitor_b': _elo_match_competitor_b,
             'winner': winner,
+            'is_draw': is_draw,
             'error': None,
             'model_name': model_name,
             'temperature': temperature,
@@ -292,6 +309,8 @@ class PromptEloRatingStage(Stage):
 
                 # Process matches in parallel for this (model, seed)
                 match_results = []
+                self._current_match_results = []  # Track current match results for draw detection
+                
                 with ThreadPoolExecutor(max_workers=self.parallel) as executor:
                     futures = []
                     for _elo_match_competitor_a, _elo_match_competitor_b, model_config, prompt_template, seed_val in jobs:
@@ -308,6 +327,7 @@ class PromptEloRatingStage(Stage):
                         try:
                             result = future.result()
                             match_results.append(result)
+                            self._current_match_results.append(result)  # Track for draw detection
                         except Exception as e:
                             job = jobs[len(match_results)]
                             _elo_match_competitor_a, _elo_match_competitor_b = job[0], job[1]
@@ -315,6 +335,7 @@ class PromptEloRatingStage(Stage):
                                 '_elo_match_competitor_a': _elo_match_competitor_a,
                                 '_elo_match_competitor_b': _elo_match_competitor_b,
                                 'winner': None,
+                                'is_draw': False,
                                 'error': str(e),
                                 'model_name': model_name,
                                 'temperature': temperature,
@@ -407,8 +428,8 @@ class PromptEloRatingStage(Stage):
                     match_execution = base_execution.copy()
                     match_execution.add_variable('_elo_match_competitor_a', match['_elo_match_competitor_a'])
                     match_execution.add_variable('_elo_match_competitor_b', match['_elo_match_competitor_b'])
-                    match_execution.add_variable('_elo_match_winner', match['winner'])
-                    match_execution.add_variable('_elo_match_draw', False)  # Draws are only considered in final ratings
+                    match_execution.add_variable('_elo_match_winner', None if match['is_draw'] else match['winner'])
+                    match_execution.add_variable('_elo_match_draw', match['is_draw'])
                     match_execution.add_variable('_seed', seed)
                     match_execution.add_variable('_model_name', model_name)
                     match_execution.add_variable('_model_temperature', temperature)
