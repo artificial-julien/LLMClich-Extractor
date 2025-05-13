@@ -56,6 +56,7 @@ class ExportToCsvStage(Stage):
     def process(self, executions: List[Execution]) -> List[Execution]:
         """
         Process input executions by extracting variables and saving them to a CSV file.
+        Error information is automatically included in an "_error" column.
         
         Args:
             executions: List of input executions
@@ -66,10 +67,14 @@ class ExportToCsvStage(Stage):
         # Extract variables from each execution
         rows = []
         for execution in executions:
-            if execution.has_error():
-                continue
-                
             row = {}
+            # Add error information if present
+            if execution.has_error():
+                row["_error"] = execution.error
+            else:
+                row["_error"] = None
+                
+            # Add other variables
             for column in self.columns:
                 row[column] = execution.get_variable(column)
             rows.append(row)
@@ -104,15 +109,16 @@ class ExportToCsvStage(Stage):
                 
                 if not has_headers:
                     # Add headers to the existing file
-                    existing_df.columns = self.columns[:len(existing_df.columns)]
+                    all_columns = ["_error"] + self.columns
+                    existing_df.columns = all_columns[:len(existing_df.columns)]
                     # Add any missing columns
-                    for col in self.columns:
+                    for col in all_columns:
                         if col not in existing_df.columns:
                             existing_df[col] = None
                 
                 else:
                     # Add any missing columns to existing dataframe
-                    for col in self.columns:
+                    for col in ["_error"] + self.columns:
                         if col not in existing_df.columns:
                             existing_df[col] = None
                 

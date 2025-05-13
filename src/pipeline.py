@@ -66,10 +66,8 @@ class Pipeline:
         
         # Process through each stage
         for stage in self.stages:            
-            processed_executions = stage.process([exec for exec in executions if not exec.has_error()])
             
-            errored_executions = [exec for exec in executions if exec.has_error()]
-            executions = processed_executions + errored_executions
+            executions = stage.process(executions)
             
             if not executions:
                 break

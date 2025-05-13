@@ -127,6 +127,7 @@ class PromptListOfAnswersStage(Stage):
         model_name = model_config.get('name')
         temperature = float(model_config.get('temperature', 0.0))
         top_p = float(model_config.get('top_p', 1.0))
+        constraint_method = model_config.get('constraint_method', 'json_schema')
         
         # Format the prompt with variables
         formatted_prompt = self._format_prompt(prompt_template, execution.variables)
@@ -138,27 +139,28 @@ class PromptListOfAnswersStage(Stage):
             possible_answers=self.possible_answers,
             temperature=temperature,
             top_p=top_p,
-            seed=iteration
+            seed=iteration,
+            constraint_method=constraint_method
         )
         
         # Create a new execution with the result
         new_execution = execution.copy()
         
-        # Store the main result
-        new_execution.add_variable(self.result_var_name, result['chosen_answer'])
-        
-        # Store additional result information
         new_execution.add_variable('model-name', model_name)
         new_execution.add_variable('temperature', temperature)
         new_execution.add_variable('top_p', top_p)
         new_execution.add_variable('seed', iteration)
-        new_execution.add_variable('error', result['error'])
-        
-        # Store probabilities
-        for idx, answer in enumerate(self.possible_answers):
-            prob_key = str(idx + 1)
-            prob_value = result['probabilities'].get(prob_key)
-            new_execution.add_variable(f'prob_{idx+1}_{answer[:20]}', prob_value)
+
+        # Set error if present
+        if result['error']:
+            new_execution.set_error(result['error'])
+        else:
+            new_execution.add_variable(self.result_var_name, result['chosen_answer'])
+            
+            for idx, answer in enumerate(self.possible_answers):
+                prob_key = str(idx + 1)
+                prob_value = result['probabilities'].get(prob_key)
+                new_execution.add_variable(f'prob_{idx+1}_{answer[:20]}', prob_value)
         
         return new_execution
     
@@ -173,6 +175,7 @@ class PromptListOfAnswersStage(Stage):
             List of new executions with results
         """
         result_executions = []
+        executions = [exec for exec in executions if not exec.has_error()]
         
         # Create all combinations of executions, models, prompts, and iterations
         jobs = []
@@ -195,18 +198,19 @@ class PromptListOfAnswersStage(Stage):
                     prompt_template,
                     iteration
                 )
+                # Attach the original execution to the future for error handling
+                future.original_execution = execution
                 futures.append(future)
             
             # Process results as they complete
             for future in tqdm(as_completed(futures), total=len(futures), desc="Processing prompts"):
                 try:
                     result_execution = future.result()
-                    result_executions.append(result_execution)
                 except Exception as e:
-                    # Create an execution with error
-                    base_execution = jobs[len(result_executions)][0]
-                    error_execution = base_execution.copy()
-                    error_execution.set_error(f"Error processing prompt: {str(e)}")
-                    result_executions.append(error_execution)
-        
-        return result_executions 
+                    # Create an execution with error using the attached original execution
+                    result_execution = future.original_execution.copy()
+                    result_execution.set_error(str(e))
+                
+                result_executions.append(result_execution)
+
+        return result_executions

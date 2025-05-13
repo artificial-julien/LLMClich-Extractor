@@ -271,6 +271,7 @@ class PromptEloRatingStage(Stage):
         """
         # We only need one base execution to work with
         base_execution = executions[0] if executions else Execution()
+        executions = [exec for exec in executions if not exec.has_error()]
 
         result_executions = []
 

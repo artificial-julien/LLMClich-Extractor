@@ -55,96 +55,83 @@ class LLMClient:
         Returns:
             Dictionary with results including chosen answer, probabilities, etc.
         """
-        try:
-            # Ensure model name has provider prefix
-            if ":" not in model:
-                model = f"openai:{model}"
+        # Ensure model name has provider prefix
+        if ":" not in model:
+            model = f"openai:{model}"
 
-            if constraint_method == "json_schema":
-                response = self.client.chat.completions.create(
-                    model=model,
-                    messages=[{"role": "user", "content": prompt}],
-                    temperature=temperature,
-                    top_p=top_p,
-                    seed=seed,
-                    logprobs=True,
-                    top_logprobs=10,
-                    response_format={
-                        "type": "json_schema",
-                        "json_schema": {
-                            "name": "numerical_answer",
-                            "schema": {
-                                "type": "object",
-                                "properties": {
-                                    "answer": {
-                                        "type": "integer",
-                                        "minimum": 1,
-                                        "maximum": len(possible_answers)
-                                    }
-                                },
-                                "required": ["answer"]
-                            }
+        if constraint_method == "json_schema":
+            response = self.client.chat.completions.create(
+                model=model,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=temperature,
+                top_p=top_p,
+                seed=seed,
+                logprobs=True,
+                top_logprobs=10,
+                response_format={
+                    "type": "json_schema",
+                    "json_schema": {
+                        "name": "numerical_answer",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "answer": {
+                                    "type": "integer",
+                                    "minimum": 1,
+                                    "maximum": len(possible_answers)
+                                }
+                            },
+                            "required": ["answer"]
                         }
                     }
-                )
-                response_content = json.loads(response.choices[0].message.content)
-            else:  # prompt_engineering
-                enhanced_prompt = generate_constrained_prompt(prompt, possible_answers)
-                response = self.client.chat.completions.create(
-                    model=model,
-                    messages=[{"role": "user", "content": enhanced_prompt}],
-                    temperature=temperature,
-                    top_p=top_p,
-                    seed=seed,
-                    logprobs=True,
-                    top_logprobs=10
-                )
-                
-                # Extract JSON from the response
-                response_content = extract_json_from_text(response.choices[0].message.content)
-                if not response_content or "answer" not in response_content:
-                    raise ValueError("Failed to extract valid answer from response")
+                }
+            )
+            response_content = json.loads(response.choices[0].message.content)
+        else:  # prompt_engineering
+            enhanced_prompt = generate_constrained_prompt(prompt, possible_answers)
+            response = self.client.chat.completions.create(
+                model=model,
+                messages=[{"role": "user", "content": enhanced_prompt}],
+                temperature=temperature,
+                top_p=top_p,
+                seed=seed,
+                logprobs=True,
+                top_logprobs=10
+            )
             
-            answer_index = response_content["answer"] - 1
-            
-            # Validate the answer index
-            error_message = None
-            if answer_index < 0 or answer_index >= len(possible_answers):
-                error_message = "Answer index out of range"
-            
-            # Extract probabilities
-            chosen_answer = possible_answers[answer_index] if not error_message else None
-            probabilities = {}
-            
-            if hasattr(response.choices[0], 'logprobs') and response.choices[0].logprobs:
-                target_number = str(response_content["answer"])
-                for token_logprob in response.choices[0].logprobs.content:
-                    if target_number in token_logprob.token:
-                        if token_logprob.top_logprobs:
-                            for top_logprob in token_logprob.top_logprobs:
-                                number_str = ''.join(c for c in top_logprob.token if c.isdigit())
-                                if number_str and int(number_str) <= len(possible_answers):
-                                    import math
-                                    prob = round(math.exp(top_logprob.logprob), 4)
-                                    probabilities[number_str] = prob
-                        break
-            
-            return {
-                "chosen_answer": chosen_answer,
-                "answer_index": answer_index,
-                "answer_number": answer_index + 1,
-                "error": error_message,
-                "probabilities": probabilities,
-                "answer_probability": probabilities.get(str(answer_index + 1)),
-                "raw_response": response
-            }
-            
-        except Exception as e:
-            return {
-                "chosen_answer": None,
-                "answer_index": None,
-                "answer_number": None,
-                "error": str(e),
-                "probabilities": {},
-                "raw_response": None
-            } 
+            # Extract JSON from the response
+            response_content = extract_json_from_text(response.choices[0].message.content)
+            if not response_content or "answer" not in response_content:
+                raise ValueError("Failed to extract valid answer from response")
+        
+        answer_index = response_content["answer"] - 1
+        
+        # Validate the answer index
+        if answer_index < 0 or answer_index >= len(possible_answers):
+            raise ValueError("Answer index out of range")
+        
+        # Extract probabilities
+        chosen_answer = possible_answers[answer_index] if not error_message else None
+        probabilities = {}
+        
+        if hasattr(response.choices[0], 'logprobs') and response.choices[0].logprobs:
+            target_number = str(response_content["answer"])
+            for token_logprob in response.choices[0].logprobs.content:
+                if target_number in token_logprob.token:
+                    if token_logprob.top_logprobs:
+                        for top_logprob in token_logprob.top_logprobs:
+                            number_str = ''.join(c for c in top_logprob.token if c.isdigit())
+                            if number_str and int(number_str) <= len(possible_answers):
+                                import math
+                                prob = round(math.exp(top_logprob.logprob), 4)
+                                probabilities[number_str] = prob
+                    break
+        
+        return {
+            "chosen_answer": chosen_answer,
+            "answer_index": answer_index,
+            "answer_number": answer_index + 1,
+            "probabilities": probabilities,
+            "answer_probability": probabilities.get(str(answer_index + 1)),
+            "raw_response": response
+        }

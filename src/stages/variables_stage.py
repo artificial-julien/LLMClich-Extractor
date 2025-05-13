@@ -58,6 +58,7 @@ class VariablesStage(Stage):
             List of new executions with enriched variables
         """
         result_executions = []
+        executions = [exec for exec in executions if not exec.has_error()]
         
         for execution in executions:
             for variable_set in self.variable_sets:
