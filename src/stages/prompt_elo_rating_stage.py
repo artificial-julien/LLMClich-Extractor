@@ -276,6 +276,263 @@ class PromptEloRatingStage(Stage):
             matches = matches + [(b, a) for (a, b) in matches]
         return matches
     
+    def _process_model_iteration(
+        self,
+        model_config: Dict[str, Any],
+        seed: int,
+        base_execution: Execution
+    ) -> List[Execution]:
+        """
+        Process matches for a single model configuration and seed.
+        
+        Args:
+            model_config: Model configuration dictionary
+            seed: Current seed value
+            base_execution: Base execution to copy from
+            
+        Returns:
+            List of executions containing match results and ratings
+        """
+        model_name = model_config.get('name')
+        temperature = float(model_config.get('temperature', 0.0))
+        top_p = float(model_config.get('top_p', 1.0))
+        
+        # Generate matches for this (model, seed)
+        matches = self.generate_matches()
+        
+        # Create match jobs
+        jobs = []
+        for _elo_match_competitor_a, _elo_match_competitor_b in matches:
+            for prompt_template in self.prompts:
+                jobs.append((_elo_match_competitor_a, _elo_match_competitor_b, model_config, prompt_template, seed))
+        
+        # Process matches in parallel
+        match_results = self._run_parallel_matches(jobs, model_name, temperature, top_p, seed)
+        
+        # Calculate ratings and create result executions
+        return self._create_result_executions(match_results, model_name, temperature, top_p, seed, base_execution)
+
+    def _run_parallel_matches(
+        self,
+        jobs: List[Tuple],
+        model_name: str,
+        temperature: float,
+        top_p: float,
+        seed: int
+    ) -> List[Dict[str, Any]]:
+        """
+        Run matches in parallel using ThreadPoolExecutor.
+        
+        Args:
+            jobs: List of match jobs to process
+            model_name: Name of the model being used
+            temperature: Model temperature setting
+            top_p: Model top_p setting
+            seed: Current seed value
+            
+        Returns:
+            List of match results
+        """
+        match_results = []
+        self._current_match_results = []  # Track current match results for draw detection
+        
+        with ThreadPoolExecutor(max_workers=self.parallel) as executor:
+            futures = []
+            for _elo_match_competitor_a, _elo_match_competitor_b, model_config, prompt_template, seed_val in jobs:
+                future = executor.submit(
+                    self.process_match,
+                    _elo_match_competitor_a,
+                    _elo_match_competitor_b,
+                    model_config,
+                    prompt_template,
+                    seed_val
+                )
+                futures.append(future)
+            
+            for future in tqdm(as_completed(futures), total=len(futures), desc=f"Processing Elo matches for {model_name} (seed {seed})"):
+                try:
+                    result = future.result()
+                    match_results.append(result)
+                    self._current_match_results.append(result)
+                except Exception as e:
+                    job = jobs[len(match_results)]
+                    _elo_match_competitor_a, _elo_match_competitor_b = job[0], job[1]
+                    match_results.append({
+                        '_elo_match_competitor_a': _elo_match_competitor_a,
+                        '_elo_match_competitor_b': _elo_match_competitor_b,
+                        'winner': None,
+                        'is_draw': False,
+                        'error': str(e),
+                        'model_name': model_name,
+                        'temperature': temperature,
+                        'top_p': top_p,
+                        'seed': seed
+                    })
+        
+        return match_results
+
+    def _calculate_ratings(self, match_results: List[Dict[str, Any]]) -> Tuple[Dict[str, float], Dict[str, int], Dict[str, int], Dict[str, int]]:
+        """
+        Calculate Elo ratings and match statistics from match results.
+        
+        Args:
+            match_results: List of match results
+            
+        Returns:
+            Tuple of (ratings, wins, losses, draws) dictionaries
+        """
+        ratings = {competitor: self.initial_rating for competitor in self.competitors}
+        wins = {competitor: 0 for competitor in self.competitors}
+        losses = {competitor: 0 for competitor in self.competitors}
+        draws = {competitor: 0 for competitor in self.competitors}
+
+        if self.symmetric_matches:
+            self._process_symmetric_matches(match_results, ratings, wins, losses, draws)
+        else:
+            self._process_regular_matches(match_results, ratings, wins, losses, draws)
+
+        return ratings, wins, losses, draws
+
+    def _process_symmetric_matches(
+        self,
+        match_results: List[Dict[str, Any]],
+        ratings: Dict[str, float],
+        wins: Dict[str, int],
+        losses: Dict[str, int],
+        draws: Dict[str, int]
+    ) -> None:
+        """Process matches in pairs for symmetric matches to detect draws."""
+        match_pairs = {}
+        for match in match_results:
+            if match['error'] or not match['winner']:
+                continue
+            a, b = match['_elo_match_competitor_a'], match['_elo_match_competitor_b']
+            pair_key = tuple(sorted([a, b]))
+            if pair_key not in match_pairs:
+                match_pairs[pair_key] = []
+            match_pairs[pair_key].append(match)
+        
+        for pair_key, pair_matches in match_pairs.items():
+            if len(pair_matches) != 2:
+                continue
+            
+            a, b = pair_key
+            a_wins = sum(1 for m in pair_matches if m['winner'] == a)
+            b_wins = sum(1 for m in pair_matches if m['winner'] == b)
+            
+            if a_wins == b_wins == 1:  # Draw
+                draws[a] += 1
+                draws[b] += 1
+                a_score = 0.5
+                b_score = 0.5
+            else:
+                if a_wins > b_wins:
+                    wins[a] += 1
+                    losses[b] += 1
+                    a_score = 1
+                    b_score = 0
+                else:
+                    wins[b] += 1
+                    losses[a] += 1
+                    a_score = 0
+                    b_score = 1
+            
+            a_expected = self.calculate_expected_score(ratings[a], ratings[b])
+            b_expected = 1 - a_expected
+            ratings[a] = self.update_elo_rating(ratings[a], a_expected, a_score)
+            ratings[b] = self.update_elo_rating(ratings[b], b_expected, b_score)
+
+    def _process_regular_matches(
+        self,
+        match_results: List[Dict[str, Any]],
+        ratings: Dict[str, float],
+        wins: Dict[str, int],
+        losses: Dict[str, int],
+        draws: Dict[str, int]
+    ) -> None:
+        """Process matches individually for non-symmetric matches."""
+        for match in match_results:
+            if match['error'] or not match['winner']:
+                continue
+            a = match['_elo_match_competitor_a']
+            b = match['_elo_match_competitor_b']
+            winner = match['winner']
+            
+            if winner == a:
+                wins[a] += 1
+                losses[b] += 1
+                a_score = 1
+                b_score = 0
+            else:
+                wins[b] += 1
+                losses[a] += 1
+                a_score = 0
+                b_score = 1
+            
+            a_expected = self.calculate_expected_score(ratings[a], ratings[b])
+            b_expected = 1 - a_expected
+            ratings[a] = self.update_elo_rating(ratings[a], a_expected, a_score)
+            ratings[b] = self.update_elo_rating(ratings[b], b_expected, b_score)
+
+    def _create_result_executions(
+        self,
+        match_results: List[Dict[str, Any]],
+        model_name: str,
+        temperature: float,
+        top_p: float,
+        seed: int,
+        base_execution: Execution
+    ) -> List[Execution]:
+        """
+        Create execution objects for match results and ratings.
+        
+        Args:
+            match_results: List of match results
+            model_name: Name of the model used
+            temperature: Model temperature setting
+            top_p: Model top_p setting
+            seed: Current seed value
+            base_execution: Base execution to copy from
+            
+        Returns:
+            List of executions containing match results and ratings
+        """
+        result_executions = []
+        
+        # Calculate ratings
+        ratings, wins, losses, draws = self._calculate_ratings(match_results)
+        
+        # Add match results
+        for match in match_results:
+            if match['error'] or not match['winner']:
+                continue
+            match_execution = base_execution.copy()
+            match_execution.add_variable('_elo_match_competitor_a', match['_elo_match_competitor_a'])
+            match_execution.add_variable('_elo_match_competitor_b', match['_elo_match_competitor_b'])
+            match_execution.add_variable('_elo_match_winner', None if match['is_draw'] else match['winner'])
+            match_execution.add_variable('_elo_match_draw', match['is_draw'])
+            match_execution.add_variable('_seed', seed)
+            match_execution.add_variable('_model_name', model_name)
+            match_execution.add_variable('_model_temperature', temperature)
+            match_execution.add_variable('_model_top_p', top_p)
+            result_executions.append(match_execution)
+        
+        # Add final Elo ratings
+        for competitor, rating in ratings.items():
+            rating_execution = base_execution.copy()
+            rating_execution.add_variable('_elo_competitor', competitor)
+            rating_execution.add_variable('_elo_rating', int(rating))
+            rating_execution.add_variable('_elo_wins', wins[competitor])
+            rating_execution.add_variable('_elo_loss', losses[competitor])
+            rating_execution.add_variable('_elo_draws', draws[competitor])
+            rating_execution.add_variable('_seed', seed)
+            rating_execution.add_variable('_model_name', model_name)
+            rating_execution.add_variable('_model_temperature', temperature)
+            rating_execution.add_variable('_model_top_p', top_p)
+            result_executions.append(rating_execution)
+        
+        return result_executions
+
     def process(self, executions: List[Execution]) -> List[Execution]:
         """
         Process input executions, run Elo rating matches, and return results.
@@ -288,166 +545,13 @@ class PromptEloRatingStage(Stage):
         """
         # We only need one base execution to work with
         base_execution = executions[0] if executions else Execution()
-
         result_executions = []
 
         for model_config in self.models:
-            model_name = model_config.get('name')
-            temperature = float(model_config.get('temperature', 0.0))
-            top_p = float(model_config.get('top_p', 1.0))
             iterations = int(model_config.get('iterations', 1))
-
             for seed in range(iterations):
-                # Generate matches for this (model, seed)
-                matches = self.generate_matches()
-
-                # Create match jobs for this (model, seed)
-                jobs = []
-                for _elo_match_competitor_a, _elo_match_competitor_b in matches:
-                    for prompt_template in self.prompts:
-                        jobs.append((_elo_match_competitor_a, _elo_match_competitor_b, model_config, prompt_template, seed))
-
-                # Process matches in parallel for this (model, seed)
-                match_results = []
-                self._current_match_results = []  # Track current match results for draw detection
-                
-                with ThreadPoolExecutor(max_workers=self.parallel) as executor:
-                    futures = []
-                    for _elo_match_competitor_a, _elo_match_competitor_b, model_config, prompt_template, seed_val in jobs:
-                        future = executor.submit(
-                            self.process_match,
-                            _elo_match_competitor_a,
-                            _elo_match_competitor_b,
-                            model_config,
-                            prompt_template,
-                            seed_val
-                        )
-                        futures.append(future)
-                    for future in tqdm(as_completed(futures), total=len(futures), desc=f"Processing Elo matches for {model_name} (seed {seed})"):
-                        try:
-                            result = future.result()
-                            match_results.append(result)
-                            self._current_match_results.append(result)  # Track for draw detection
-                        except Exception as e:
-                            job = jobs[len(match_results)]
-                            _elo_match_competitor_a, _elo_match_competitor_b = job[0], job[1]
-                            match_results.append({
-                                '_elo_match_competitor_a': _elo_match_competitor_a,
-                                '_elo_match_competitor_b': _elo_match_competitor_b,
-                                'winner': None,
-                                'is_draw': False,
-                                'error': str(e),
-                                'model_name': model_name,
-                                'temperature': temperature,
-                                'top_p': top_p,
-                                'seed': seed
-                            })
-
-                # Calculate Elo ratings for this (model, seed)
-                ratings = {competitor: self.initial_rating for competitor in self.competitors}
-                wins = {competitor: 0 for competitor in self.competitors}
-                losses = {competitor: 0 for competitor in self.competitors}
-                draws = {competitor: 0 for competitor in self.competitors}
-
-                # Process matches in pairs for symmetric matches to detect draws
-                if self.symmetric_matches:
-                    # Group matches by competitor pairs
-                    match_pairs = {}
-                    for match in match_results:
-                        if match['error'] or not match['winner']:
-                            continue
-                        a, b = match['_elo_match_competitor_a'], match['_elo_match_competitor_b']
-                        pair_key = tuple(sorted([a, b]))  # Sort to ensure consistent key regardless of order
-                        if pair_key not in match_pairs:
-                            match_pairs[pair_key] = []
-                        match_pairs[pair_key].append(match)
-                    
-                    # Process each pair of matches
-                    for pair_key, pair_matches in match_pairs.items():
-                        if len(pair_matches) != 2:  # Skip if we don't have both matches
-                            continue
-                        
-                        a, b = pair_key
-                        match1, match2 = pair_matches
-                        
-                        # Count wins for each competitor
-                        a_wins = sum(1 for m in pair_matches if m['winner'] == a)
-                        b_wins = sum(1 for m in pair_matches if m['winner'] == b)
-                        
-                        if a_wins == b_wins == 1:  # Draw (1-1)
-                            draws[a] += 1
-                            draws[b] += 1
-                            a_score = 0.5
-                            b_score = 0.5
-                        else:
-                            if a_wins > b_wins:
-                                wins[a] += 1
-                                losses[b] += 1
-                                a_score = 1
-                                b_score = 0
-                            else:
-                                wins[b] += 1
-                                losses[a] += 1
-                                a_score = 0
-                                b_score = 1
-                        
-                        # Update Elo ratings
-                        a_expected = self.calculate_expected_score(ratings[a], ratings[b])
-                        b_expected = 1 - a_expected
-                        ratings[a] = self.update_elo_rating(ratings[a], a_expected, a_score)
-                        ratings[b] = self.update_elo_rating(ratings[b], b_expected, b_score)
-                else:
-                    # Process matches individually for non-symmetric matches
-                    for match in match_results:
-                        if match['error'] or not match['winner']:
-                            continue
-                        a = match['_elo_match_competitor_a']
-                        b = match['_elo_match_competitor_b']
-                        winner = match['winner']
-                        
-                        if winner == a:
-                            wins[a] += 1
-                            losses[b] += 1
-                            a_score = 1
-                            b_score = 0
-                        else:
-                            wins[b] += 1
-                            losses[a] += 1
-                            a_score = 0
-                            b_score = 1
-                        
-                        a_expected = self.calculate_expected_score(ratings[a], ratings[b])
-                        b_expected = 1 - a_expected
-                        ratings[a] = self.update_elo_rating(ratings[a], a_expected, a_score)
-                        ratings[b] = self.update_elo_rating(ratings[b], b_expected, b_score)
-
-                # Add match results for this (model, seed)
-                for match in match_results:
-                    if match['error'] or not match['winner']:
-                        continue
-                    match_execution = base_execution.copy()
-                    match_execution.add_variable('_elo_match_competitor_a', match['_elo_match_competitor_a'])
-                    match_execution.add_variable('_elo_match_competitor_b', match['_elo_match_competitor_b'])
-                    match_execution.add_variable('_elo_match_winner', None if match['is_draw'] else match['winner'])
-                    match_execution.add_variable('_elo_match_draw', match['is_draw'])
-                    match_execution.add_variable('_seed', seed)
-                    match_execution.add_variable('_model_name', model_name)
-                    match_execution.add_variable('_model_temperature', temperature)
-                    match_execution.add_variable('_model_top_p', top_p)
-                    result_executions.append(match_execution)
-
-                # Add final Elo ratings for this (model, seed)
-                for competitor, rating in ratings.items():
-                    rating_execution = base_execution.copy()
-                    rating_execution.add_variable('_elo_competitor', competitor)
-                    rating_execution.add_variable('_elo_rating', int(rating))
-                    rating_execution.add_variable('_elo_wins', wins[competitor])
-                    rating_execution.add_variable('_elo_loss', losses[competitor])
-                    rating_execution.add_variable('_elo_draws', draws[competitor])
-                    rating_execution.add_variable('_seed', seed)
-                    rating_execution.add_variable('_model_name', model_name)
-                    rating_execution.add_variable('_model_temperature', temperature)
-                    rating_execution.add_variable('_model_top_p', top_p)
-                    result_executions.append(rating_execution)
+                result_executions.extend(
+                    self._process_model_iteration(model_config, seed, base_execution)
+                )
 
         return result_executions 
