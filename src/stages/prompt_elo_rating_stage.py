@@ -276,6 +276,56 @@ class PromptEloRatingStage(Stage):
             matches = matches + [(b, a) for (a, b) in matches]
         return matches
     
+    def _extract_model_config(self, model_config: Dict[str, Any]) -> Tuple[str, float, float]:
+        """Extract common model configuration parameters."""
+        return (
+            model_config.get('name'),
+            float(model_config.get('temperature', 0.0)),
+            float(model_config.get('top_p', 1.0))
+        )
+
+    def _create_base_execution_vars(
+        self,
+        execution: Execution,
+        model_name: str,
+        temperature: float,
+        top_p: float,
+        seed: int
+    ) -> None:
+        """Add common model-related variables to an execution."""
+        execution.add_variable('_seed', seed)
+        execution.add_variable('_model_name', model_name)
+        execution.add_variable('_model_temperature', temperature)
+        execution.add_variable('_model_top_p', top_p)
+
+    def _update_ratings_and_stats(
+        self,
+        a: str,
+        b: str,
+        a_score: float,
+        b_score: float,
+        ratings: Dict[str, float],
+        wins: Dict[str, int],
+        losses: Dict[str, int],
+        draws: Dict[str, int]
+    ) -> None:
+        """Update Elo ratings and match statistics for a pair of competitors."""
+        a_expected = self.calculate_expected_score(ratings[a], ratings[b])
+        b_expected = 1 - a_expected
+        
+        ratings[a] = self.update_elo_rating(ratings[a], a_expected, a_score)
+        ratings[b] = self.update_elo_rating(ratings[b], b_expected, b_score)
+        
+        if a_score == 1:
+            wins[a] += 1
+            losses[b] += 1
+        elif b_score == 1:
+            wins[b] += 1
+            losses[a] += 1
+        elif a_score == 0.5:
+            draws[a] += 1
+            draws[b] += 1
+
     def _process_model_iteration(
         self,
         model_config: Dict[str, Any],
@@ -293,9 +343,7 @@ class PromptEloRatingStage(Stage):
         Returns:
             List of executions containing match results and ratings
         """
-        model_name = model_config.get('name')
-        temperature = float(model_config.get('temperature', 0.0))
-        top_p = float(model_config.get('top_p', 1.0))
+        model_name, temperature, top_p = self._extract_model_config(model_config)
         
         # Generate matches for this (model, seed)
         matches = self.generate_matches()
@@ -421,26 +469,11 @@ class PromptEloRatingStage(Stage):
             b_wins = sum(1 for m in pair_matches if m['winner'] == b)
             
             if a_wins == b_wins == 1:  # Draw
-                draws[a] += 1
-                draws[b] += 1
-                a_score = 0.5
-                b_score = 0.5
+                self._update_ratings_and_stats(a, b, 0.5, 0.5, ratings, wins, losses, draws)
             else:
-                if a_wins > b_wins:
-                    wins[a] += 1
-                    losses[b] += 1
-                    a_score = 1
-                    b_score = 0
-                else:
-                    wins[b] += 1
-                    losses[a] += 1
-                    a_score = 0
-                    b_score = 1
-            
-            a_expected = self.calculate_expected_score(ratings[a], ratings[b])
-            b_expected = 1 - a_expected
-            ratings[a] = self.update_elo_rating(ratings[a], a_expected, a_score)
-            ratings[b] = self.update_elo_rating(ratings[b], b_expected, b_score)
+                a_score = 1 if a_wins > b_wins else 0
+                b_score = 1 - a_score
+                self._update_ratings_and_stats(a, b, a_score, b_score, ratings, wins, losses, draws)
 
     def _process_regular_matches(
         self,
@@ -458,21 +491,9 @@ class PromptEloRatingStage(Stage):
             b = match['_elo_match_competitor_b']
             winner = match['winner']
             
-            if winner == a:
-                wins[a] += 1
-                losses[b] += 1
-                a_score = 1
-                b_score = 0
-            else:
-                wins[b] += 1
-                losses[a] += 1
-                a_score = 0
-                b_score = 1
-            
-            a_expected = self.calculate_expected_score(ratings[a], ratings[b])
-            b_expected = 1 - a_expected
-            ratings[a] = self.update_elo_rating(ratings[a], a_expected, a_score)
-            ratings[b] = self.update_elo_rating(ratings[b], b_expected, b_score)
+            a_score = 1 if winner == a else 0
+            b_score = 1 - a_score
+            self._update_ratings_and_stats(a, b, a_score, b_score, ratings, wins, losses, draws)
 
     def _create_result_executions(
         self,
@@ -511,10 +532,7 @@ class PromptEloRatingStage(Stage):
             match_execution.add_variable('_elo_match_competitor_b', match['_elo_match_competitor_b'])
             match_execution.add_variable('_elo_match_winner', None if match['is_draw'] else match['winner'])
             match_execution.add_variable('_elo_match_draw', match['is_draw'])
-            match_execution.add_variable('_seed', seed)
-            match_execution.add_variable('_model_name', model_name)
-            match_execution.add_variable('_model_temperature', temperature)
-            match_execution.add_variable('_model_top_p', top_p)
+            self._create_base_execution_vars(match_execution, model_name, temperature, top_p, seed)
             result_executions.append(match_execution)
         
         # Add final Elo ratings
@@ -525,10 +543,7 @@ class PromptEloRatingStage(Stage):
             rating_execution.add_variable('_elo_wins', wins[competitor])
             rating_execution.add_variable('_elo_loss', losses[competitor])
             rating_execution.add_variable('_elo_draws', draws[competitor])
-            rating_execution.add_variable('_seed', seed)
-            rating_execution.add_variable('_model_name', model_name)
-            rating_execution.add_variable('_model_temperature', temperature)
-            rating_execution.add_variable('_model_top_p', top_p)
+            self._create_base_execution_vars(rating_execution, model_name, temperature, top_p, seed)
             result_executions.append(rating_execution)
         
         return result_executions
