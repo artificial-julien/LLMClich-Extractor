@@ -3,7 +3,7 @@ import os
 from src.stage import Stage
 from src.execution import Execution
 from src.registry import StageRegistry
-from src.llm_client import LLMClient
+from src.llm import LLMClient
 import itertools
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from tqdm import tqdm

@@ -1,7 +1,8 @@
 import os
-from typing import Dict, Any, List, Optional, Union
+from typing import Dict, Any, List, Optional, Union, Literal
 from openai import OpenAI
 import json
+from .prompt_engineering import extract_json_from_text, generate_constrained_prompt
 
 class LLMClient:
     """
@@ -33,7 +34,8 @@ class LLMClient:
         possible_answers: List[str],
         temperature: float = 0.0,
         top_p: float = 1.0,
-        seed: Optional[int] = None
+        seed: Optional[int] = None,
+        constraint_method: Literal["json_schema", "prompt_engineering"] = "json_schema"
     ) -> Dict[str, Any]:
         """
         Generate a completion with a constrained set of possible answers.
@@ -45,42 +47,61 @@ class LLMClient:
             temperature: Sampling temperature (0-2)
             top_p: Nucleus sampling parameter (0-1)
             seed: Optional seed for deterministic generation
+            constraint_method: Method to use for constraining responses
+                             - "json_schema": Use JSON schema (default, requires model support)
+                             - "prompt_engineering": Use prompt engineering and JSON extraction
             
         Returns:
             Dictionary with results including chosen answer, probabilities, etc.
         """
         try:
-            response = self.client.chat.completions.create(
-                model=model,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=temperature,
-                top_p=top_p,
-                seed=seed,
-                logprobs=True,
-                top_logprobs=10,
-                extra_body={
-                    "response_format": {
-                        "type": "json_schema",
-                        "json_schema": {
-                            "name": "numerical_answer",
-                            "schema": {
-                                "type": "object",
-                                "properties": {
-                                    "answer": {
-                                        "type": "integer",
-                                        "minimum": 1,
-                                        "maximum": len(possible_answers)
-                                    }
-                                },
-                                "required": ["answer"]
+            if constraint_method == "json_schema":
+                response = self.client.chat.completions.create(
+                    model=model,
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=temperature,
+                    top_p=top_p,
+                    seed=seed,
+                    logprobs=True,
+                    top_logprobs=10,
+                    extra_body={
+                        "response_format": {
+                            "type": "json_schema",
+                            "json_schema": {
+                                "name": "numerical_answer",
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "answer": {
+                                            "type": "integer",
+                                            "minimum": 1,
+                                            "maximum": len(possible_answers)
+                                        }
+                                    },
+                                    "required": ["answer"]
+                                }
                             }
                         }
-                    }
-                },
-            )
+                    },
+                )
+                response_content = json.loads(response.choices[0].message.content)
+            else:  # prompt_engineering
+                enhanced_prompt = generate_constrained_prompt(prompt, possible_answers)
+                response = self.client.chat.completions.create(
+                    model=model,
+                    messages=[{"role": "user", "content": enhanced_prompt}],
+                    temperature=temperature,
+                    top_p=top_p,
+                    seed=seed,
+                    logprobs=True,
+                    top_logprobs=10
+                )
+                
+                # Extract JSON from the response
+                response_content = extract_json_from_text(response.choices[0].message.content)
+                if not response_content or "answer" not in response_content:
+                    raise ValueError("Failed to extract valid answer from response")
             
-            # Parse the response content
-            response_content = json.loads(response.choices[0].message.content)
             answer_index = response_content["answer"] - 1
             
             # Validate the answer index
@@ -111,7 +132,7 @@ class LLMClient:
                 "answer_number": answer_index + 1,
                 "error": error_message,
                 "probabilities": probabilities,
-                "answer_probability": probabilities[str(answer_index + 1)],
+                "answer_probability": probabilities.get(str(answer_index + 1)),
                 "raw_response": response
             }
             
