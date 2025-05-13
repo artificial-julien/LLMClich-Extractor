@@ -12,16 +12,20 @@ class ExportToCsvStage(Stage):
     Stage that exports execution results to a CSV file.
     """
     
-    def __init__(self, output_file: str, columns: List[str]):
+    DEFAULT_OUTPUT_FILE = "output.csv"
+    
+    def __init__(self, output_file: Optional[str] = None, columns: List[str] = None, input_folder: Optional[str] = None):
         """
         Initialize the export to CSV stage.
         
         Args:
-            output_file: Path to the output CSV file
+            output_file: Path to the output CSV file. If not provided, defaults to "output.csv"
             columns: List of variable names to include as columns
+            input_folder: Optional path to the input folder. If provided, output_file will be relative to this folder.
         """
-        self.output_file = output_file
-        self.columns = columns
+        self.output_file = output_file or self.DEFAULT_OUTPUT_FILE
+        self.columns = columns or []
+        self.input_folder = input_folder
     
     @classmethod
     def from_config(cls, config: Dict[str, Any]) -> 'ExportToCsvStage':
@@ -30,8 +34,9 @@ class ExportToCsvStage(Stage):
         
         Args:
             config: Dictionary containing:
-                - 'output_file': Path to the output CSV file
+                - 'output_file': Optional path to the output CSV file. If not provided, defaults to "output.csv"
                 - 'columns': List of variable names to include as columns
+                - 'input_folder': Optional path to the input folder
             
         Returns:
             An ExportToCsvStage instance
@@ -41,14 +46,12 @@ class ExportToCsvStage(Stage):
         """
         output_file = config.get('output_file')
         columns = config.get('columns')
-        
-        if not output_file:
-            raise ValueError("ExportToCsvStage config must contain an 'output_file'")
+        input_folder = config.get('input_folder')
         
         if not columns or not isinstance(columns, list):
             raise ValueError("ExportToCsvStage config must contain a 'columns' list")
         
-        return cls(output_file=output_file, columns=columns)
+        return cls(output_file=output_file, columns=columns, input_folder=input_folder)
     
     def process(self, executions: List[Execution]) -> List[Execution]:
         """
@@ -77,8 +80,13 @@ class ExportToCsvStage(Stage):
             
         new_data = pd.DataFrame(rows)
         
+        # Resolve output path relative to input folder if provided
+        if self.input_folder:
+            output_path = Path(self.input_folder) / self.output_file
+        else:
+            output_path = Path(self.output_file)
+            
         # Ensure directory exists
-        output_path = Path(self.output_file)
         output_path.parent.mkdir(parents=True, exist_ok=True)
         
         # Check if file exists and handle accordingly
