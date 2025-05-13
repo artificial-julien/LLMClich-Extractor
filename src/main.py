@@ -25,8 +25,8 @@ def process_json_file(json_path: str, verbose: bool = False, parallel: int = 1) 
         print(f"Loaded configuration from {json_path}")
         print(f"Pipeline has {len(config.get('foreach', []))} stages")
     
-    # Create the pipeline
-    pipeline = Pipeline.from_config(config)
+    # Create the pipeline with input folder
+    pipeline = Pipeline.from_config(config, input_folder=str(json_path.parent))
     
     if verbose:
         print(f"Created pipeline with {len(pipeline.stages)} stages")

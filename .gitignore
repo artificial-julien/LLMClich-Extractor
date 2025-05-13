@@ -29,6 +29,8 @@ build/
 
 .env
 
+# Output results
 examples/**/output_results.csv
+**results**.csv
 
 .~lock.*
