@@ -1,5 +1,5 @@
 from typing import List, Dict, Any, Optional
-from ..types import MatchResult, ModelConfig
+from ..types import Round, ModelConfig
 from src.llm import LLMClient
 
 class LLMProcessorMixin:
@@ -27,16 +27,16 @@ class LLMProcessorMixin:
         
         return formatted_prompt
     
-    def process_match(
+    def process_round(
         self,
         competitor_a: str,
         competitor_b: str,
         model_config: ModelConfig,
         prompt_template: str,
         seed: int
-    ) -> MatchResult:
+    ) -> Round:
         """
-        Process a single match between two competitors.
+        Process a single round (LLM call) between two competitors.
         
         Args:
             competitor_a: First competitor
@@ -46,7 +46,7 @@ class LLMProcessorMixin:
             seed: Seed value for reproducibility
             
         Returns:
-            Match result
+            Round result from the LLM call
         """
         # Format the prompt with competitor names
         formatted_prompt = self.format_prompt(prompt_template, competitor_a, competitor_b)
@@ -61,8 +61,8 @@ class LLMProcessorMixin:
             seed=seed
         )
         
-        # Create match result
-        return MatchResult(
+        # Create round result
+        return Round(
             competitor_a=competitor_a,
             competitor_b=competitor_b,
             winner=result['chosen_answer'] if not result['error'] else None,
