@@ -35,7 +35,7 @@ class LLMClient:
         temperature: float = 0.0,
         top_p: float = 1.0,
         seed: Optional[int] = None,
-        constraint_method: Literal["json_schema", "prompt_engineering"] = "json_schema"
+        constraint_method: Literal["json_schema", "prompt_engineering", "function_calling"] = "json_schema"
     ) -> Dict[str, Any]:
         """
         Generate a completion with a constrained set of possible answers.
@@ -50,6 +50,7 @@ class LLMClient:
             constraint_method: Method to use for constraining responses
                              - "json_schema": Use JSON schema (default, requires model support)
                              - "prompt_engineering": Use prompt engineering and JSON extraction
+                             - "function_calling": Use function calling to constrain responses
             
         Returns:
             Dictionary with results including chosen answer, probabilities, etc.
@@ -85,6 +86,47 @@ class LLMClient:
                     },
                 )
                 response_content = json.loads(response.choices[0].message.content)
+            elif constraint_method == "function_calling":
+                # Define the function to constrain the response
+                function = {
+                    "name": "select_answer",
+                    "description": "Select one answer from the given options",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "answer": {
+                                "type": "integer",
+                                "description": "The number of the selected answer (1-based index)",
+                                "minimum": 1,
+                                "maximum": len(possible_answers)
+                            }
+                        },
+                        "required": ["answer"]
+                    }
+                }
+                
+                response = self.client.chat.completions.create(
+                    model=model,
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=temperature,
+                    top_p=top_p,
+                    seed=seed,
+                    logprobs=True,
+                    top_logprobs=10,
+                    tools=[{"type": "function", "function": function}],
+                    tool_choice={"type": "function", "function": {"name": "select_answer"}}
+                )
+                
+                # Extract the function call response
+                tool_calls = response.choices[0].message.tool_calls
+                if not tool_calls or len(tool_calls) == 0:
+                    raise ValueError("No function call in response")
+                    
+                function_call = tool_calls[0]
+                if function_call.function.name != "select_answer":
+                    raise ValueError("Unexpected function call")
+                    
+                response_content = json.loads(function_call.function.arguments)
             else:  # prompt_engineering
                 enhanced_prompt = generate_constrained_prompt(prompt, possible_answers)
                 response = self.client.chat.completions.create(
