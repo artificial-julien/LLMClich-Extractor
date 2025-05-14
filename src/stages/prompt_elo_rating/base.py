@@ -31,7 +31,7 @@ class PromptEloRatingStage(
         models: List[Dict[str, Any]],
         competitors: List[str],
         prompts: List[str],
-        matches_per_entity: int = 4,
+        batches_per_model: int = 4,
         initial_rating: int = DEFAULT_INITIAL_RATING,
         symmetric_matches: bool = False,
         parallel: int = 2
@@ -43,7 +43,7 @@ class PromptEloRatingStage(
             models: List of model configurations
             competitors: List of competitors to be ranked
             prompts: List of prompt templates
-            matches_per_entity: Number of matches per competitor
+            batches_per_model: Number of batches to process for each model
             initial_rating: Initial Elo rating for all competitors
             symmetric_matches: Whether to run matches in both directions
             parallel: Number of parallel requests
@@ -56,7 +56,7 @@ class PromptEloRatingStage(
         self.models = models
         self.competitors = competitors
         self.prompts = prompts
-        self.matches_per_entity = matches_per_entity
+        self.batches_per_model = batches_per_model
         self.initial_rating = initial_rating
         self.symmetric_matches = symmetric_matches
     
@@ -115,7 +115,7 @@ class PromptEloRatingStage(
             matches_per_batch = len(self.competitors) // 2
             rounds_per_match = len(self.prompts) * (2 if self.symmetric_matches else 1)
             rounds_per_batch = matches_per_batch * rounds_per_match
-            total_rounds += model_config.iterations * self.matches_per_entity * rounds_per_batch
+            total_rounds += model_config.iterations * self.batches_per_model * rounds_per_batch
         
         # Create a single progress bar for the entire process
         with tqdm(total=total_rounds, desc="Processing Elo rating rounds") as pbar:
@@ -126,8 +126,8 @@ class PromptEloRatingStage(
                 
                 # Process all seeds for this model
                 for seed in range(model_config.iterations):
-                    # Process batches based on a counter instead of matches_per_entity
-                    num_batches = self.matches_per_entity
+                    # Process batches based on a counter instead of batches_per_model
+                    num_batches = self.batches_per_model
                     
                     for batch_counter in range(num_batches):
                         # Generate and process batch

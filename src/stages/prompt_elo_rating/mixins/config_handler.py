@@ -63,7 +63,7 @@ class ConfigHandlerMixin:
             'models': [cls.parse_model_config(m) for m in config['models']],
             'competitors': config['competitors'],
             'prompts': config['prompts'],
-            'matches_per_entity': config.get('matches_per_entity', 4),
+            'batches_per_model': config.get('batches_per_model', 4),
             'initial_rating': config.get('initial_rating', DEFAULT_INITIAL_RATING),
             'symmetric_matches': config.get('symmetric_matches', False),
             'parallel': config.get('parallel', 2)
