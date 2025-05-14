@@ -66,7 +66,6 @@ class LLMProcessorMixin:
             competitor_a=competitor_a,
             competitor_b=competitor_b,
             winner=result['chosen_answer'] if not result['error'] else None,
-            is_draw=False,  # Will be updated by batch processor if needed
             error=result['error'],
             model_name=model_config.name,
             temperature=model_config.temperature,
