@@ -8,7 +8,7 @@ from .mixins.llm_processor import LLMProcessorMixin
 from .mixins.batch_processor import BatchProcessorMixin
 from .mixins.execution_manager import ExecutionManagerMixin
 from .mixins.config_handler import ConfigHandlerMixin
-from .types import CompetitorStats, DEFAULT_INITIAL_RATING
+from .types import CompetitorStats, DEFAULT_INITIAL_RATING, Round, Match
 
 @StageRegistry.register("prompt_elo_rating")
 class PromptEloRatingStage(
@@ -124,21 +124,26 @@ class PromptEloRatingStage(
                         self.symmetric_matches
                     )
                     
-                    match_results = self.process_batch(jobs, self.symmetric_matches)
+                    # Process rounds (individual LLM calls)
+                    round_results = self.process_batch(jobs, self.symmetric_matches)
                     
-                    # Create executions for match results
-                    for result in match_results:
-                        if result.error or not result.winner:
+                    # Group rounds into matches
+                    matches = self.group_rounds_into_matches(round_results)
+                    
+                    # Create executions for match results and update ratings
+                    for match in matches:
+                        if not match.winner and not match.is_draw:
                             continue
-                        match_execution = self.create_match_execution(base_execution, result)
+                            
+                        match_execution = self.create_match_execution(base_execution, match)
                         model_result_executions.append(match_execution)
                         
                         # Update ratings and stats
-                        a_score = 1.0 if result.winner == result.competitor_a else (0.5 if result.is_draw else 0.0)
-                        b_score = 1.0 if result.winner == result.competitor_b else (0.5 if result.is_draw else 0.0)
+                        a_score = 1.0 if match.winner == match.competitor_a else (0.5 if match.is_draw else 0.0)
+                        b_score = 1.0 if match.winner == match.competitor_b else (0.5 if match.is_draw else 0.0)
                         self.update_ratings_and_stats(
-                            result.competitor_a,
-                            result.competitor_b,
+                            match.competitor_a,
+                            match.competitor_b,
                             a_score,
                             b_score,
                             stats
