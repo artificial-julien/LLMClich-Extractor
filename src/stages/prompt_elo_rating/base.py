@@ -105,13 +105,12 @@ class PromptEloRatingStage(
         all_result_executions = []
 
         for model_config in self.models:
-            iterations = model_config.iterations
+            # Initialize tracking for this model (single stats across all seeds)
+            stats = self._initialize_stats()
+            model_result_executions = []
             
-            for seed in range(iterations):
-                # Initialize tracking for this model iteration
-                stats = self._initialize_stats()
-                model_result_executions = []
-                
+            # Process all seeds for this model
+            for seed in range(model_config.iterations):
                 # Process batches until all competitors have played enough matches
                 while any(s['matches_played'] < self.matches_per_entity for s in stats.values()):
                     # Generate and process batch
@@ -144,21 +143,21 @@ class PromptEloRatingStage(
                             b_score,
                             stats
                         )
-                
-                # Add final ratings for this model iteration
-                for competitor, competitor_stats in stats.items():
-                    rating_execution = self.create_rating_execution(
-                        base_execution,
-                        competitor,
-                        competitor_stats['rating'],
-                        competitor_stats['wins'],
-                        competitor_stats['losses'],
-                        competitor_stats['draws'],
-                        model_config,
-                        seed
-                    )
-                    model_result_executions.append(rating_execution)
-                
-                all_result_executions.extend(model_result_executions)
+            
+            # Add final ratings for this model (after all seeds)
+            for competitor, competitor_stats in stats.items():
+                rating_execution = self.create_rating_execution(
+                    base_execution,
+                    competitor,
+                    competitor_stats['rating'],
+                    competitor_stats['wins'],
+                    competitor_stats['losses'],
+                    competitor_stats['draws'],
+                    model_config,
+                    -1  # Use -1 to indicate this is the final rating across all seeds
+                )
+                model_result_executions.append(rating_execution)
+            
+            all_result_executions.extend(model_result_executions)
 
         return all_result_executions 
