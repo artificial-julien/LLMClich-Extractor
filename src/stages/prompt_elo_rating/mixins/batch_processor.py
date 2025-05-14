@@ -1,39 +1,40 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, DefaultDict
+from collections import defaultdict
 from tqdm import tqdm
-from ..types import MatchJob, MatchResult, CompetitorStats, DEFAULT_PARALLEL_WORKERS
+from ..types import RoundJob, Round, Match, CompetitorStats, DEFAULT_PARALLEL_WORKERS
 
 class BatchProcessorMixin:
     """Mixin providing batch processing functionality."""
     
     def __init__(self, parallel_workers: int = DEFAULT_PARALLEL_WORKERS):
         self.parallel_workers = parallel_workers
-        self._current_match_results: List[MatchResult] = []
+        self._current_rounds: List[Round] = []
     
     def process_batch(
         self,
-        jobs: List[MatchJob],
+        jobs: List[RoundJob],
         symmetric_matches: bool
-    ) -> Tuple[List[MatchResult], Dict[str, CompetitorStats]]:
+    ) -> List[Round]:
         """
-        Process a batch of matches in parallel.
+        Process a batch of rounds in parallel.
         
         Args:
-            jobs: List of match jobs to process
-            symmetric_matches: Whether matches are symmetric
+            jobs: List of round jobs to process
+            symmetric_matches: Whether rounds are symmetric
             
         Returns:
-            Tuple of (match results, updated competitor stats)
+            List of processed rounds
         """
-        match_results = []
-        self._current_match_results = []
+        rounds = []
+        self._current_rounds = []
         
-        # Run matches in parallel
+        # Run rounds in parallel
         with ThreadPoolExecutor(max_workers=self.parallel_workers) as executor:
             futures = []
             for job in jobs:
                 future = executor.submit(
-                    self.process_match,
+                    self.process_round,
                     job['competitor_a'],
                     job['competitor_b'],
                     job['model_config'],
@@ -42,14 +43,14 @@ class BatchProcessorMixin:
                 )
                 futures.append(future)
             
-            for future in tqdm(as_completed(futures), total=len(futures), desc="Processing Elo matches"):
+            for future in tqdm(as_completed(futures), total=len(futures), desc="Processing Elo rounds"):
                 try:
                     result = future.result()
-                    match_results.append(result)
-                    self._current_match_results.append(result)
+                    rounds.append(result)
+                    self._current_rounds.append(result)
                 except Exception as e:
-                    job = jobs[len(match_results)]
-                    match_results.append(MatchResult(
+                    job = jobs[len(rounds)]
+                    rounds.append(Round(
                         competitor_a=job['competitor_a'],
                         competitor_b=job['competitor_b'],
                         winner=None,
@@ -61,34 +62,80 @@ class BatchProcessorMixin:
                         seed=job['seed']
                     ))
         
-        # Update draw status for symmetric matches
+        # Update draw status for symmetric rounds
         if symmetric_matches:
-            self._update_draw_status(match_results)
+            self._update_draw_status(rounds)
         
-        return match_results
+        return rounds
     
-    def _update_draw_status(self, match_results: List[MatchResult]) -> None:
+    def group_rounds_into_matches(self, rounds: List[Round]) -> List[Match]:
         """
-        Update draw status for symmetric matches.
+        Group rounds into matches based on competitors.
         
         Args:
-            match_results: List of match results to update
-        """
-        for result in match_results:
-            if result.error or not result.winner:
-                continue
-                
-            # Find the corresponding reverse match
-            reverse_match = next(
-                (m for m in self._current_match_results if 
-                 m.competitor_a == result.competitor_b and 
-                 m.competitor_b == result.competitor_a and
-                 m.model_name == result.model_name and
-                 m.seed == result.seed),
-                None
-            )
+            rounds: List of rounds to group
             
-            # If reverse match exists and has same winner, it's a draw
-            if reverse_match and reverse_match.winner == result.winner:
-                result.is_draw = True
-                reverse_match.is_draw = True 
+        Returns:
+            List of matches containing grouped rounds
+        """
+        # Group rounds by competitor pairs
+        match_groups = defaultdict(list)
+        for round_result in rounds:
+            # Standardize key to ensure (A,B) and (B,A) are grouped together
+            competitors = sorted([round_result.competitor_a, round_result.competitor_b])
+            key = (competitors[0], competitors[1])
+            match_groups[key].append(round_result)
+        
+        # Create Match objects from grouped rounds
+        matches = []
+        for (comp_a, comp_b), grouped_rounds in match_groups.items():
+            # Count wins for each competitor
+            wins_a = sum(1 for r in grouped_rounds if r.winner == comp_a)
+            wins_b = sum(1 for r in grouped_rounds if r.winner == comp_b)
+            draws = sum(1 for r in grouped_rounds if r.is_draw)
+            
+            # Determine match winner
+            is_draw = wins_a == wins_b
+            winner = None
+            if not is_draw:
+                winner = comp_a if wins_a > wins_b else comp_b
+            
+            match = Match(
+                competitor_a=comp_a,
+                competitor_b=comp_b,
+                rounds=grouped_rounds,
+                winner=winner,
+                is_draw=is_draw
+            )
+            matches.append(match)
+        
+        return matches
+    
+    def _update_draw_status(self, rounds: List[Round]) -> None:
+        """
+        Update draw status for symmetric rounds.
+        
+        Args:
+            rounds: List of rounds to update
+        """
+        # Group rounds by competitor pairs
+        round_map = {}
+        for round_result in rounds:
+            key = (round_result.competitor_a, round_result.competitor_b)
+            if key in round_map:
+                continue
+            round_map[key] = round_result
+        
+        # Update draw status for symmetric rounds
+        for (a, b), round_a_b in round_map.items():
+            reverse_key = (b, a)
+            if reverse_key in round_map:
+                round_b_a = round_map[reverse_key]
+                # If both agree on the same winner, keep it
+                if (round_a_b.winner == a and round_b_a.winner == a) or (round_a_b.winner == b and round_b_a.winner == b):
+                    continue
+                # Otherwise, mark as draw
+                round_a_b.is_draw = True
+                round_b_a.is_draw = True
+                round_a_b.winner = None
+                round_b_a.winner = None

@@ -1,6 +1,6 @@
 import random
 from typing import List, Set, Tuple, Dict
-from ..types import CompetitorStats, MatchJob, ModelConfig
+from ..types import CompetitorStats, RoundJob, ModelConfig
 
 class MatchGeneratorMixin:
     """Mixin providing Swiss system match generation functionality."""
@@ -14,9 +14,9 @@ class MatchGeneratorMixin:
         seed: int,
         matches_per_entity: int,
         symmetric_matches: bool
-    ) -> List[MatchJob]:
+    ) -> List[RoundJob]:
         """
-        Generate a batch of matches using Swiss system approach.
+        Generate a batch of round jobs using Swiss system approach.
         
         Args:
             competitors: List of competitors
@@ -28,7 +28,7 @@ class MatchGeneratorMixin:
             symmetric_matches: Whether to generate symmetric matches
             
         Returns:
-            List of match jobs
+            List of round jobs
         """
         matches = []
         scheduled_pairs: Set[Tuple[str, str]] = set()
@@ -79,7 +79,7 @@ class MatchGeneratorMixin:
                 break
 
         # Create jobs for each match and prompt
-        jobs: List[MatchJob] = []
+        jobs: List[RoundJob] = []
         for a, b in matches:
             for prompt_template in prompt_templates:
                 jobs.append({

@@ -1,6 +1,6 @@
-from typing import List, Dict, Any
+from typing import Dict, Any, Optional, List
 from src.execution import Execution
-from ..types import MatchResult, ModelConfig
+from ..types import Round, Match
 
 class ExecutionManagerMixin:
     """Mixin providing execution management functionality."""
@@ -14,48 +14,84 @@ class ExecutionManagerMixin:
         seed: int
     ) -> None:
         """
-        Add common model-related variables to an execution.
+        Create base execution variables.
         
         Args:
-            execution: Execution to add variables to
-            model_name: Name of the model
-            temperature: Model temperature
-            top_p: Model top_p
+            execution: Execution to update
+            model_name: Model name
+            temperature: Temperature value
+            top_p: Top-p value
             seed: Seed value
         """
-        execution.add_variable('_seed', seed)
         execution.add_variable('_model_name', model_name)
         execution.add_variable('_model_temperature', temperature)
         execution.add_variable('_model_top_p', top_p)
+        execution.add_variable('_seed', seed)
+    
+    def create_round_execution(
+        self,
+        base_execution: Execution,
+        round_result: Round
+    ) -> Execution:
+        """
+        Create an execution for a round result.
+        
+        Args:
+            base_execution: Base execution to copy from
+            round_result: Round result to create execution for
+            
+        Returns:
+            New execution with round result variables
+        """
+        round_execution = base_execution.copy()
+        round_execution.add_variable('_elo_match_competitor_a', round_result.competitor_a)
+        round_execution.add_variable('_elo_match_competitor_b', round_result.competitor_b)
+        round_execution.add_variable('_elo_match_winner', None if round_result.is_draw else round_result.winner)
+        round_execution.add_variable('_elo_match_draw', round_result.is_draw)
+        
+        self.create_base_execution_vars(
+            round_execution,
+            round_result.model_name,
+            round_result.temperature,
+            round_result.top_p,
+            round_result.seed
+        )
+        
+        return round_execution
     
     def create_match_execution(
         self,
         base_execution: Execution,
-        match_result: MatchResult
+        match: Match
     ) -> Execution:
         """
-        Create an execution for a match result.
+        Create an execution for a match result (aggregation of rounds).
         
         Args:
             base_execution: Base execution to copy from
-            match_result: Match result to create execution for
+            match: Match result to create execution for
             
         Returns:
             New execution with match result variables
         """
         match_execution = base_execution.copy()
-        match_execution.add_variable('_elo_match_competitor_a', match_result.competitor_a)
-        match_execution.add_variable('_elo_match_competitor_b', match_result.competitor_b)
-        match_execution.add_variable('_elo_match_winner', None if match_result.is_draw else match_result.winner)
-        match_execution.add_variable('_elo_match_draw', match_result.is_draw)
+        match_execution.add_variable('_elo_match_competitor_a', match.competitor_a)
+        match_execution.add_variable('_elo_match_competitor_b', match.competitor_b)
+        match_execution.add_variable('_elo_match_winner', None if match.is_draw else match.winner)
+        match_execution.add_variable('_elo_match_draw', match.is_draw)
+        match_execution.add_variable('_elo_match_wins_a', match.round_wins_a)
+        match_execution.add_variable('_elo_match_wins_b', match.round_wins_b)
         
-        self.create_base_execution_vars(
-            match_execution,
-            match_result.model_name,
-            match_result.temperature,
-            match_result.top_p,
-            match_result.seed
-        )
+        # Use the first round for model information
+        if match.rounds:
+            first_round = match.rounds[0]
+            self.create_base_execution_vars(
+                match_execution,
+                first_round.model_name,
+                first_round.temperature,
+                first_round.top_p,
+                first_round.seed
+            )
         
         return match_execution
     
@@ -67,7 +103,7 @@ class ExecutionManagerMixin:
         wins: int,
         losses: int,
         draws: int,
-        model_config: ModelConfig,
+        model_config: Any,
         seed: int
     ) -> Execution:
         """
