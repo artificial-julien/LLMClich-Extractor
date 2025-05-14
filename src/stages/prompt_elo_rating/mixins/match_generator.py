@@ -12,7 +12,6 @@ class MatchGeneratorMixin:
         model_config: ModelConfig,
         prompt_templates: List[str],
         seed: int,
-        matches_per_entity: int,
         symmetric_matches: bool
     ) -> List[RoundJob]:
         """
@@ -24,7 +23,7 @@ class MatchGeneratorMixin:
             model_config: Model configuration
             prompt_templates: List of prompt templates
             seed: Current seed value
-            matches_per_entity: Number of matches per competitor
+            batch_counter: Current batch counter
             symmetric_matches: Whether to generate symmetric matches
             
         Returns:
@@ -38,11 +37,7 @@ class MatchGeneratorMixin:
             for i in range(len(competitors)):
                 for j in range(i+1, len(competitors)):
                     a, b = competitors[i], competitors[j]
-                    if (
-                        stats[a]['matches_played'] < matches_per_entity and
-                        stats[b]['matches_played'] < matches_per_entity and
-                        (a, b) not in scheduled_pairs and (b, a) not in scheduled_pairs
-                    ):
+                    if (a, b) not in scheduled_pairs and (b, a) not in scheduled_pairs:
                         pairs.append((a, b))
             return pairs
 
@@ -74,8 +69,8 @@ class MatchGeneratorMixin:
             matches.append((a, b))
             scheduled_pairs.add((a, b))
             
-            # Stop if all competitors have reached matches_per_entity
-            if all(stats[c]['matches_played'] == matches_per_entity for c in competitors):
+            # Stop after generating a certain number of matches
+            if len(matches) >= len(competitors) // 2:
                 break
 
         # Create jobs for each match and prompt
