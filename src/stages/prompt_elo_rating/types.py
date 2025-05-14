@@ -7,6 +7,16 @@ class ModelConfig:
     temperature: float
     top_p: float
     iterations: int
+    
+    @classmethod
+    def create(cls, name: str, temperature: float = 0.0, top_p: float = 1.0, iterations: int = 1) -> 'ModelConfig':
+        """Create a ModelConfig instance with default values."""
+        return cls(
+            name=name,
+            temperature=temperature,
+            top_p=top_p,
+            iterations=iterations
+        )
 
 @dataclass
 class Round:
@@ -21,6 +31,22 @@ class Round:
     temperature: float
     top_p: float
     seed: int
+    
+    @classmethod
+    def create(cls, competitor_a: str, competitor_b: str, model_name: str, seed: int, 
+              temperature: float = 0.0, top_p: float = 1.0, winner: Optional[str] = None, 
+              error: Optional[str] = None) -> 'Round':
+        """Create a Round instance with default values."""
+        return cls(
+            competitor_a=competitor_a,
+            competitor_b=competitor_b,
+            winner=winner,
+            error=error,
+            model_name=model_name,
+            temperature=temperature,
+            top_p=top_p,
+            seed=seed
+        )
 
 @dataclass
 class Match:
@@ -40,6 +66,18 @@ class Match:
     @property
     def round_wins_b(self) -> int:
         return sum(1 for round in self.rounds if round.winner == self.competitor_b)
+    
+    @classmethod
+    def create(cls, competitor_a: str, competitor_b: str, rounds: List[Round], 
+              winner: Optional[str] = None, is_draw: bool = False) -> 'Match':
+        """Create a Match instance with default values."""
+        return cls(
+            competitor_a=competitor_a,
+            competitor_b=competitor_b,
+            rounds=rounds,
+            winner=winner,
+            is_draw=is_draw
+        )
 
 class CompetitorStats(TypedDict):
     rating: float

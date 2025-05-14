@@ -62,7 +62,7 @@ class LLMProcessorMixin:
         )
         
         # Create round result
-        return Round(
+        return Round.create(
             competitor_a=competitor_a,
             competitor_b=competitor_b,
             winner=result['chosen_answer'] if not result['error'] else None,

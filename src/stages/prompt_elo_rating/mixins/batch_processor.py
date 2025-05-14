@@ -53,7 +53,7 @@ class BatchProcessorMixin:
                         pbar.update(1)
                 except Exception as e:
                     job = jobs[len(rounds)]
-                    rounds.append(Round(
+                    rounds.append(Round.create(
                         competitor_a=job['competitor_a'],
                         competitor_b=job['competitor_b'],
                         winner=None,
@@ -103,7 +103,7 @@ class BatchProcessorMixin:
             if not is_draw:
                 winner = comp_a if wins_a > wins_b else comp_b
             
-            match = Match(
+            match = Match.create(
                 competitor_a=comp_a,
                 competitor_b=comp_b,
                 rounds=grouped_rounds,

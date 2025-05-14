@@ -61,7 +61,7 @@ class ConfigHandlerMixin:
         Returns:
             ModelConfig object
         """
-        return ModelConfig(
+        return ModelConfig.create(
             name=model_config['name'],
             temperature=float(model_config.get('temperature', 0.0)),
             top_p=float(model_config.get('top_p', 1.0)),
