@@ -1,0 +1,95 @@
+{
+  "foreach": [
+    {
+      "node_type": "prompt_elo_rating",
+      "models": [
+        {
+          "name": "gpt-4.1-mini",
+          "temperature": 0.0,
+          "top_p": 1.0,
+          "iterations": 1
+        }
+      ],
+      "competitors": [
+        "Ludwig van Beethoven",
+        "Miles Davis",
+        "Led Zeppelin",
+        "Taylor Swift",
+        "Kendrick Lamar",
+        "Beyoncé",
+        "Daft Punk",
+        "Johnny Cash",
+        "B.B. King",
+        "Bob Dylan",
+        "Bob Marley",
+        "The Ramones",
+        "Metallica",
+        "Radiohead",
+        "Arctic Monkeys",
+        "Kirk Franklin",
+        "Youssou N'Dour",
+        "James Brown",
+        "ABBA",
+        "Brian Eno",
+        "Maria Callas",
+        "Alison Krauss",
+        "The Mighty Mighty Bosstones",
+        "Daddy Yankee",
+        "Celia Cruz",
+        "Marc Anthony",
+        "Carl Cox",
+        "Frankie Knuckles",
+        "Armin van Buuren",
+        "Ravi Shankar",
+        "BTS",
+        "BABYMETAL",
+        "Fela Kuti",
+        "Green Day",
+        "Nirvana",
+        "Pink Floyd",
+        "Johann Sebastian Bach",
+        "Monteverdi",
+        "Björk"
+      ],
+      "prompts": [
+          "Two strangers found themselves sharing the last umbrella during a sudden downpour. While waiting for the rain to subside, one was humming along to [_elo_match_competitor_a], while the other was lost in their headphones playing [_elo_match_competitor_b].\nWho of the one who listens to [_elo_match_competitor_a] and [_elo_match_competitor_b] is the smartest?",
+          "At the local coffee shop, two baristas were preparing for the morning rush. One was energetically dancing to [_elo_match_competitor_a], while the other was quietly nodding their head to [_elo_match_competitor_b] as they arranged the pastries.\nWho of the one who listens to [_elo_match_competitor_a] and [_elo_match_competitor_b] is the smartest?",
+          "During a long train journey, two passengers found themselves sharing a table. One was studying with [_elo_match_competitor_a] playing softly in their earbuds, while the other was reading a book and occasionally tapping their foot to [_elo_match_competitor_b].\nWho of the one who listens to [_elo_match_competitor_a] and [_elo_match_competitor_b] is the smartest?",
+          "At the gym, two fitness enthusiasts were working out side by side. One was powering through their workout with [_elo_match_competitor_a] pumping through their headphones, while the other was maintaining their rhythm with [_elo_match_competitor_b].\nWho of the one who listens to [_elo_match_competitor_a] and [_elo_match_competitor_b] is the smartest?",
+          "At a park bench, two strangers were enjoying their lunch breaks. One was eating while listening to [_elo_match_competitor_a], while the other was people-watching with [_elo_match_competitor_b] providing the soundtrack to their observations.\nWho of the one who listens to [_elo_match_competitor_a] and [_elo_match_competitor_b] is the smartest?"
+      ],
+      "batches_per_model": 13,
+      "initial_rating": 1000,
+      "symmetric_matches": true
+    },
+    {
+      "node_type": "export_to_csv",
+      "output_file": "output_results.big.bands.elo.ranking.csv",
+      "columns": [
+        "_model_name",
+        "_model_temperature",
+        "_model_top_p",
+        "_elo_competitor",
+        "_elo_rating",
+        "_elo_wins",
+        "_elo_loss",
+        "_elo_draws"
+      ]
+    },
+    {
+      "node_type": "export_to_csv",
+      "output_file": "output_results.big.bands.elo.matches.csv",
+      "columns": [
+        "_model_name",
+        "_model_temperature",
+        "_model_top_p",
+        "_elo_match_competitor_a",
+        "_elo_match_competitor_b",
+        "_elo_match_winner",
+        "_elo_match_draw",
+        "_elo_match_wins_a",
+        "_elo_match_wins_b"
+      ]
+    }
+  ]
+}

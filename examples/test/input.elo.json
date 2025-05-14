@@ -26,7 +26,7 @@
         "Who of [_elo_match_competitor_a] and [_elo_match_competitor_b] is the smartest?",
         "Who of [_elo_match_competitor_a] and [_elo_match_competitor_b] is the least dumb?"
       ],
-      "matches_per_entity": 5,
+      "batches_per_model": 5,
       "initial_rating": 1000,
       "symmetric_matches": true
     },

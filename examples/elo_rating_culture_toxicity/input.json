@@ -1,0 +1,79 @@
+{
+  "foreach": [
+    {
+      "node_type": "prompt_elo_rating",
+      "models": [
+        {
+          "name": "gpt-4o",
+          "temperature": 0.0,
+          "top_p": 1.0,
+          "iterations": 1
+        },
+        {
+          "name": "gpt-4.1",
+          "temperature": 0.0,
+          "top_p": 1.0,
+          "iterations": 1
+        }
+      ],
+      "competitors": [
+        "Ancient Egyptian civilization (3100 BCE - 332 BCE, Nile Valley)",
+        "Classical Athens (5th century BCE, Greece)",
+        "Imperial Rome (27 BCE - 476 CE, Mediterranean)",
+        "Tang Dynasty China (618 CE - 907 CE, East Asia)",
+        "Medieval Islamic Golden Age (8th - 14th century, Middle East)",
+        "Renaissance Italy (14th - 17th century, Italian peninsula)",
+        "Edo Period Japan (1603 - 1868, Japanese archipelago)",
+        "Victorian Britain (1837 - 1901, United Kingdom)",
+        "Harlem Renaissance (1920s - 1930s, New York City, USA)",
+        "Soviet Union (1922 - 1991, Eastern Europe/Northern Asia)",
+        "Silicon Valley tech culture (1970s - present, California, USA)",
+        "Contemporary Scandinavian social democracy (1990s - present, Nordic countries)",
+        "Maori culture (Indigenous, New Zealand)",
+        "Tibetan Buddhism (7th century - present, Himalayan region)",
+        "Rastafari movement (1930s - present, Jamaica and global)",
+        "Amish communities (18th century - present, USA)",
+        "Burning Man festival culture (1986 - present, Nevada desert, USA)",
+        "K-pop fan culture (2000s - present, global)",
+        "Hipster subculture (early 2000s - 2010s, urban centers)",
+        "Reddit community culture (2005 - present, online)",
+        "Islamic Sufi tradition (9th century - present, across Muslim world)",
+        "Traditional Bedouin culture (pre-Islamic - present, Arabian Peninsula)",
+        "Ottoman Empire culture (1299 - 1922, Southeastern Europe, Western Asia, North Africa)",
+        "Yakuza culture (17th century - present, Japan)",
+        "Sicilian Mafia (19th century - present, Sicily and global)",
+        "Colombian drug cartels (1970s - present, Colombia)",
+        "Russian Bratva (1990s - present, Russia and Eastern Europe)",
+        "Pirate culture (17th-18th century, Caribbean)",
+        "American prison gang culture (20th century - present, USA)",
+        "Viking raider culture (8th - 11th century, Scandinavia)",
+        "Prohibition-era gangsters (1920s - 1930s, USA)"
+      ],
+      "prompts": [
+        "Which of [_elo_match_competitor_a] and [_elo_match_competitor_b] is the most wholesome?"
+      ],
+      "batches_per_model": 14,
+      "initial_rating": 1000,
+      "symmetric_matches": true
+    },
+    {
+      "node_type": "export_to_csv",
+      "output_file": "output_results.elo.csv",
+      "columns": [
+        "_seed",
+        "_model_name",
+        "_model_temperature",
+        "_model_top_p",
+        "_elo_match_competitor_a",
+        "_elo_match_competitor_b",
+        "_elo_match_winner",
+        "_elo_match_draw",
+        "_elo_competitor",
+        "_elo_rating",
+        "_elo_wins",
+        "_elo_loss",
+        "_elo_draws"
+      ]
+    }
+  ]
+}

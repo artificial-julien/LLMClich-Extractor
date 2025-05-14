@@ -1,0 +1,72 @@
+{
+  "foreach": [
+    {
+      "node_type": "prompt_elo_rating",
+      "models": [
+        {
+          "name": "gpt-4.1-nano",
+          "temperature": 0.0,
+          "top_p": 1.0,
+          "iterations": 1
+        }
+      ],
+      "competitors": [
+        "Classical",
+        "Jazz",
+        "Rock",
+        "Hip Hop/Rap",
+        "Country",
+        "Reggae",
+        "Metal",
+        "Gospel",
+        "World Music",
+        "Opera",
+        "Reggaeton",
+        "Latin",
+        "Techno",
+        "Classical Indian",
+        "K-Pop",
+        "Afrobeat",
+        "Baroque",
+        "Experimental"
+      ],
+      "prompts": [
+          "Two strangers found themselves sharing the last umbrella during a sudden downpour. While waiting for the rain to subside, one was humming along to [_elo_match_competitor_a], while the other was lost in their headphones playing [_elo_match_competitor_b].\nWho of the one who listens to [_elo_match_competitor_a] and [_elo_match_competitor_b] is the smartest?"
+      ],
+      "batches_per_model": 10,
+      "initial_rating": 1000,
+      "symmetric_matches": true
+    },
+    {
+      "node_type": "export_to_csv",
+      "output_file": "output_results.small.elo.ranking.csv",
+      "columns": [
+        "_model_name",
+        "_model_temperature",
+        "_model_top_p",
+        "_elo_competitor",
+        "_elo_rating",
+        "_elo_wins",
+        "_elo_loss",
+        "_elo_draws"
+      ]
+    },
+    {
+      "node_type": "export_to_csv",
+      "output_file": "output_results.small.elo.matches.csv",
+      "skip_empty_rows": true,
+      "columns": [
+        "_seed",
+        "_model_name",
+        "_model_temperature",
+        "_model_top_p",
+        "_elo_match_competitor_a",
+        "_elo_match_competitor_b",
+        "_elo_match_winner",
+        "_elo_match_draw",
+        "_elo_match_wins_a",
+        "_elo_match_wins_b"
+      ]
+    }
+  ]
+}

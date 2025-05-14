@@ -47,7 +47,7 @@
       "prompts": [
         "Who of [_elo_match_competitor_a] and [_elo_match_competitor_b] is the smartest?"
       ],
-      "matches_per_entity": 8,
+      "batches_per_model": 8,
       "initial_rating": 1000,
       "symmetric_matches": true
     },
