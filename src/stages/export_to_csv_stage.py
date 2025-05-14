@@ -14,7 +14,7 @@ class ExportToCsvStage(Stage):
     
     DEFAULT_OUTPUT_FILE = "output.csv"
     
-    def __init__(self, output_file: Optional[str] = None, columns: List[str] = None, input_folder: Optional[str] = None):
+    def __init__(self, output_file: Optional[str] = None, columns: List[str] = None, input_folder: Optional[str] = None, skip_empty_rows: bool = True):
         """
         Initialize the export to CSV stage.
         
@@ -22,10 +22,12 @@ class ExportToCsvStage(Stage):
             output_file: Path to the output CSV file. If not provided, defaults to "output.csv"
             columns: List of variable names to include as columns
             input_folder: Optional path to the input folder. If provided, output_file will be relative to this folder.
+            skip_empty_rows: If True, rows with any empty fields will be skipped. Defaults to True.
         """
         self.output_file = output_file or self.DEFAULT_OUTPUT_FILE
         self.columns = columns or []
         self.input_folder = input_folder
+        self.skip_empty_rows = skip_empty_rows
     
     @classmethod
     def from_config(cls, config: Dict[str, Any]) -> 'ExportToCsvStage':
@@ -37,6 +39,7 @@ class ExportToCsvStage(Stage):
                 - 'output_file': Optional path to the output CSV file. If not provided, defaults to "output.csv"
                 - 'columns': List of variable names to include as columns
                 - 'input_folder': Optional path to the input folder
+                - 'skip_empty_rows': Optional boolean to skip rows with empty fields. Defaults to True.
             
         Returns:
             An ExportToCsvStage instance
@@ -47,11 +50,12 @@ class ExportToCsvStage(Stage):
         output_file = config.get('output_file')
         columns = config.get('columns')
         input_folder = config.get('input_folder')
+        skip_empty_rows = config.get('skip_empty_rows', True)
         
         if not columns or not isinstance(columns, list):
             raise ValueError("ExportToCsvStage config must contain a 'columns' list")
         
-        return cls(output_file=output_file, columns=columns, input_folder=input_folder)
+        return cls(output_file=output_file, columns=columns, input_folder=input_folder, skip_empty_rows=skip_empty_rows)
     
     def process(self, executions: List[Execution]) -> List[Execution]:
         """
@@ -79,6 +83,10 @@ class ExportToCsvStage(Stage):
             return executions
             
         new_data = pd.DataFrame(rows)
+        
+        # Filter out rows with empty fields if skip_empty_rows is True
+        if self.skip_empty_rows:
+            new_data = new_data.dropna(how='any')
         
         # Resolve output path relative to input folder if provided
         if self.input_folder:
