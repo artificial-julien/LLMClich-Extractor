@@ -2,6 +2,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import List, Dict, Tuple, DefaultDict, Optional
 from collections import defaultdict
 from tqdm import tqdm
+import signal
 from ..types import RoundJob, Round, Match, CompetitorStats, DEFAULT_PARALLEL_WORKERS
 
 class BatchProcessorMixin:
@@ -10,6 +11,8 @@ class BatchProcessorMixin:
     def __init__(self, parallel_workers: int = DEFAULT_PARALLEL_WORKERS):
         self.parallel_workers = parallel_workers
         self._current_rounds: List[Round] = []
+        self._executor = None
+        self._futures = []
     
     def process_batch(
         self,
@@ -30,47 +33,75 @@ class BatchProcessorMixin:
         """
         rounds = []
         
-        # Run rounds in parallel
-        with ThreadPoolExecutor(max_workers=self.parallel_workers) as executor:
-            futures = []
-            for job in jobs:
-                future = executor.submit(
-                    self.process_round,
-                    job['competitor_a'],
-                    job['competitor_b'],
-                    job['model_config'],
-                    job['prompt_template'],
-                    job['seed']
-                )
-                futures.append(future)
+        # Set up signal handler for graceful shutdown
+        original_handler = signal.getsignal(signal.SIGINT)
+        
+        def signal_handler(signum, frame):
+            if self._executor:
+                # Cancel all pending futures
+                for future in self._futures:
+                    if not future.done():
+                        future.cancel()
+                # Shutdown executor
+                self._executor.shutdown(wait=False)
+            # Restore original handler and re-raise
+            signal.signal(signal.SIGINT, original_handler)
+            raise KeyboardInterrupt()
+        
+        try:
+            # Set our signal handler
+            signal.signal(signal.SIGINT, signal_handler)
             
-            for future in as_completed(futures):
-                try:
-                    result = future.result()
-                    rounds.append(result)
-                    self._current_rounds.append(result)
-                    if pbar is not None:
-                        pbar.update(1)
-                except Exception as e:
-                    job = jobs[len(rounds)]
-                    rounds.append(Round.create(
-                        competitor_a=job['competitor_a'],
-                        competitor_b=job['competitor_b'],
-                        winner=None,
-                        error=str(e),
-                        model_name=job['model_config'].name,
-                        temperature=job['model_config'].temperature,
-                        top_p=job['model_config'].top_p,
-                        seed=job['seed']
-                    ))
-                    if pbar is not None:
-                        pbar.update(1)
-        
-        # Update symmetric matches if needed
-        if symmetric_matches:
-            self._update_symmetric_matches(rounds)
-        
-        return rounds
+            # Run rounds in parallel
+            with ThreadPoolExecutor(max_workers=self.parallel_workers) as executor:
+                self._executor = executor
+                futures = []
+                for job in jobs:
+                    future = executor.submit(
+                        self.process_round,
+                        job['competitor_a'],
+                        job['competitor_b'],
+                        job['model_config'],
+                        job['prompt_template'],
+                        job['seed']
+                    )
+                    futures.append(future)
+                
+                self._futures = futures
+                
+                for future in as_completed(futures):
+                    try:
+                        result = future.result()
+                        rounds.append(result)
+                        self._current_rounds.append(result)
+                        if pbar is not None:
+                            pbar.update(1)
+                    except Exception as e:
+                        job = jobs[len(rounds)]
+                        rounds.append(Round.create(
+                            competitor_a=job['competitor_a'],
+                            competitor_b=job['competitor_b'],
+                            winner=None,
+                            error=str(e),
+                            model_name=job['model_config'].name,
+                            temperature=job['model_config'].temperature,
+                            top_p=job['model_config'].top_p,
+                            seed=job['seed']
+                        ))
+                        if pbar is not None:
+                            pbar.update(1)
+            
+            # Update symmetric matches if needed
+            if symmetric_matches:
+                self._update_symmetric_matches(rounds)
+            
+            return rounds
+            
+        finally:
+            # Restore original signal handler
+            signal.signal(signal.SIGINT, original_handler)
+            self._executor = None
+            self._futures = []
     
     def group_rounds_into_matches(self, rounds: List[Round]) -> List[Match]:
         """
