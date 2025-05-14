@@ -46,8 +46,7 @@ class ExecutionManagerMixin:
         round_execution = base_execution.copy()
         round_execution.add_variable('_elo_match_competitor_a', round_result.competitor_a)
         round_execution.add_variable('_elo_match_competitor_b', round_result.competitor_b)
-        round_execution.add_variable('_elo_match_winner', None if round_result.is_draw else round_result.winner)
-        round_execution.add_variable('_elo_match_draw', round_result.is_draw)
+        round_execution.add_variable('_elo_match_winner', round_result.winner)
         
         self.create_base_execution_vars(
             round_execution,

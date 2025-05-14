@@ -2,7 +2,7 @@ import random
 from typing import List, Set, Tuple, Dict
 from ..types import CompetitorStats, RoundJob, ModelConfig
 
-class MatchGeneratorMixin:
+class BatchGeneratorMixin:
     """Mixin providing Swiss system match generation functionality."""
     
     def generate_match_batch(
