@@ -1,8 +1,27 @@
 from typing import List, Dict, Any
 from ..types import ModelConfig, DEFAULT_INITIAL_RATING
+import json
 
 class ConfigHandlerMixin:
     """Mixin providing configuration handling functionality."""
+    
+    @classmethod
+    def validate_json_format(cls, config: Dict[str, Any]) -> None:
+        """
+        Validate the JSON format of the configuration.
+        
+        Args:
+            config: Dictionary containing stage configuration
+            
+        Raises:
+            ValueError: If the JSON format is invalid
+        """
+        try:
+            # Try to serialize and deserialize to validate JSON format
+            json_str = json.dumps(config)
+            json.loads(json_str)
+        except (TypeError, ValueError) as e:
+            raise ValueError(f"Invalid JSON format: {str(e)}")
     
     @classmethod
     def validate_config(cls, config: Dict[str, Any]) -> None:
@@ -15,6 +34,9 @@ class ConfigHandlerMixin:
         Raises:
             ValueError: If the config is invalid
         """
+        # First validate JSON format
+        cls.validate_json_format(config)
+        
         models = config.get('models')
         competitors = config.get('competitors')
         prompts = config.get('prompts')
