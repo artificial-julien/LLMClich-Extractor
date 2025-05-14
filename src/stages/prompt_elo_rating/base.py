@@ -3,7 +3,7 @@ from src.stage import Stage
 from src.execution import Execution
 from src.registry import StageRegistry
 from .mixins.elo_calculator import EloCalculatorMixin
-from .mixins.match_generator import MatchGeneratorMixin
+from .mixins.batch_generator import BatchGeneratorMixin
 from .mixins.llm_processor import LLMProcessorMixin
 from .mixins.batch_processor import BatchProcessorMixin
 from .mixins.execution_manager import ExecutionManagerMixin
@@ -14,7 +14,7 @@ from .types import CompetitorStats, DEFAULT_INITIAL_RATING, Round, Match
 class PromptEloRatingStage(
     Stage,
     EloCalculatorMixin,
-    MatchGeneratorMixin,
+    BatchGeneratorMixin,
     LLMProcessorMixin,
     BatchProcessorMixin,
     ExecutionManagerMixin,

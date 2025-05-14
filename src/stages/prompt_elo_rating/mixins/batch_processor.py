@@ -21,13 +21,12 @@ class BatchProcessorMixin:
         
         Args:
             jobs: List of round jobs to process
-            symmetric_matches: Whether rounds are symmetric
+            symmetric_matches: Whether to run matches in both directions
             
         Returns:
-            List of processed rounds
+            List of round results
         """
         rounds = []
-        self._current_rounds = []
         
         # Run rounds in parallel
         with ThreadPoolExecutor(max_workers=self.parallel_workers) as executor:
@@ -54,7 +53,6 @@ class BatchProcessorMixin:
                         competitor_a=job['competitor_a'],
                         competitor_b=job['competitor_b'],
                         winner=None,
-                        is_draw=False,
                         error=str(e),
                         model_name=job['model_config'].name,
                         temperature=job['model_config'].temperature,
@@ -62,9 +60,9 @@ class BatchProcessorMixin:
                         seed=job['seed']
                     ))
         
-        # Update draw status for symmetric rounds
+        # Update symmetric matches if needed
         if symmetric_matches:
-            self._update_draw_status(rounds)
+            self._update_symmetric_matches(rounds)
         
         return rounds
     
@@ -92,7 +90,6 @@ class BatchProcessorMixin:
             # Count wins for each competitor
             wins_a = sum(1 for r in grouped_rounds if r.winner == comp_a)
             wins_b = sum(1 for r in grouped_rounds if r.winner == comp_b)
-            draws = sum(1 for r in grouped_rounds if r.is_draw)
             
             # Determine match winner
             is_draw = wins_a == wins_b
@@ -111,9 +108,9 @@ class BatchProcessorMixin:
         
         return matches
     
-    def _update_draw_status(self, rounds: List[Round]) -> None:
+    def _update_symmetric_matches(self, rounds: List[Round]) -> None:
         """
-        Update draw status for symmetric rounds.
+        Update symmetric matches to ensure consistency.
         
         Args:
             rounds: List of rounds to update
@@ -126,7 +123,7 @@ class BatchProcessorMixin:
                 continue
             round_map[key] = round_result
         
-        # Update draw status for symmetric rounds
+        # Update symmetric matches
         for (a, b), round_a_b in round_map.items():
             reverse_key = (b, a)
             if reverse_key in round_map:
@@ -134,8 +131,6 @@ class BatchProcessorMixin:
                 # If both agree on the same winner, keep it
                 if (round_a_b.winner == a and round_b_a.winner == a) or (round_a_b.winner == b and round_b_a.winner == b):
                     continue
-                # Otherwise, mark as draw
-                round_a_b.is_draw = True
-                round_b_a.is_draw = True
+                # Otherwise, set both to None (will be handled at match level)
                 round_a_b.winner = None
                 round_b_a.winner = None

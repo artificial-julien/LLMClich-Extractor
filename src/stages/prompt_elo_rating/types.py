@@ -16,7 +16,6 @@ class Round:
     competitor_a: str
     competitor_b: str
     winner: Optional[str]
-    is_draw: bool
     error: Optional[str]
     model_name: str
     temperature: float
@@ -41,10 +40,6 @@ class Match:
     @property
     def round_wins_b(self) -> int:
         return sum(1 for round in self.rounds if round.winner == self.competitor_b)
-    
-    @property
-    def round_draws(self) -> int:
-        return sum(1 for round in self.rounds if round.is_draw)
 
 class CompetitorStats(TypedDict):
     rating: float
