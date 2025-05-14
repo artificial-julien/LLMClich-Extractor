@@ -111,8 +111,10 @@ class PromptEloRatingStage(
             
             # Process all seeds for this model
             for seed in range(model_config.iterations):
-                # Process batches until all competitors have played enough matches
-                while any(s['matches_played'] < self.matches_per_entity for s in stats.values()):
+                # Process batches based on a counter instead of matches_per_entity
+                num_batches = self.matches_per_entity
+                
+                for batch_counter in range(num_batches):
                     # Generate and process batch
                     jobs = self.generate_match_batch(
                         self.competitors,
@@ -120,7 +122,6 @@ class PromptEloRatingStage(
                         model_config,
                         self.prompts,
                         seed,
-                        self.matches_per_entity,
                         self.symmetric_matches
                     )
                     
