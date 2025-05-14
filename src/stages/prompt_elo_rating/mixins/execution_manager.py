@@ -78,8 +78,8 @@ class ExecutionManagerMixin:
         match_execution.add_variable('_elo_match_competitor_b', match.competitor_b)
         match_execution.add_variable('_elo_match_winner', None if match.is_draw else match.winner)
         match_execution.add_variable('_elo_match_draw', match.is_draw)
-        match_execution.add_variable('_elo_match_wins_a', match.round_wins_a)
-        match_execution.add_variable('_elo_match_wins_b', match.round_wins_b)
+        match_execution.add_variable('_elo_match_wins_a', int(match.round_wins_a))
+        match_execution.add_variable('_elo_match_wins_b', int(match.round_wins_b))
         
         # Use the first round for model information
         if match.rounds:
