@@ -11,25 +11,28 @@ class Pipeline:
     in the correct order, then provides methods to execute the pipeline.
     """
     
-    def __init__(self, stages: List[Stage], input_folder: Optional[str] = None):
+    def __init__(self, stages: List[Stage], input_folder: Optional[str] = None, seed: Optional[int] = None):
         """
         Initialize a pipeline with a list of stages.
         
         Args:
             stages: List of Stage instances to be executed in order
             input_folder: Optional path to the input folder
+            seed: Optional seed for deterministic batch generation in Elo stage
         """
         self.stages = stages
         self.input_folder = input_folder
+        self.seed = seed
     
     @classmethod
-    def from_config(cls, config: Dict[str, Any], input_folder: Optional[str] = None) -> 'Pipeline':
+    def from_config(cls, config: Dict[str, Any], input_folder: Optional[str] = None, seed: Optional[int] = None) -> 'Pipeline':
         """
         Create a pipeline from a configuration dictionary.
         
         Args:
             config: Configuration dictionary with a 'foreach' list of stage configs
             input_folder: Optional path to the input folder
+            seed: Optional seed for deterministic batch generation in Elo stage
             
         Returns:
             A Pipeline instance
@@ -46,10 +49,13 @@ class Pipeline:
             # Add input folder to stage config if it's an export_to_csv stage
             if stage_config.get('node_type') == 'export_to_csv':
                 stage_config['input_folder'] = input_folder
+            # Add seed to stage config if it's a prompt_elo_rating stage
+            if stage_config.get('node_type') == 'prompt_elo_rating':
+                stage_config['seed'] = seed
             stage = StageRegistry.create_stage(stage_config)
             stages.append(stage)
         
-        return cls(stages, input_folder)
+        return cls(stages, input_folder, seed)
     
     def run(self, initial_variables: Dict[str, Any] = None) -> List[Execution]:
         """

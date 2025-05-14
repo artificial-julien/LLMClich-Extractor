@@ -7,7 +7,7 @@ from src.pipeline import Pipeline
 from src.execution import Execution
 from typing import Dict, Any, Optional
 
-def process_json_file(json_path: str, verbose: bool = False, parallel: int = 1) -> None:
+def process_json_file(json_path: str, verbose: bool = False, parallel: int = 1, seed: Optional[int] = None) -> None:
     """
     Process a JSON configuration file and run the pipeline.
     
@@ -15,6 +15,7 @@ def process_json_file(json_path: str, verbose: bool = False, parallel: int = 1) 
         json_path: Path to the JSON configuration file
         verbose: Whether to enable verbose logging
         parallel: Number of parallel requests
+        seed: Seed for deterministic batch generation in Elo stage
     """    
     # Load the JSON configuration
     json_path = Path(json_path)
@@ -26,7 +27,7 @@ def process_json_file(json_path: str, verbose: bool = False, parallel: int = 1) 
         print(f"Pipeline has {len(config.get('foreach', []))} stages")
     
     # Create the pipeline with input folder
-    pipeline = Pipeline.from_config(config, input_folder=str(json_path.parent))
+    pipeline = Pipeline.from_config(config, input_folder=str(json_path.parent), seed=seed)
     
     if verbose:
         print(f"Created pipeline with {len(pipeline.stages)} stages")
@@ -47,6 +48,7 @@ def main():
     parser.add_argument('input_json', help='JSON input file with pipeline configuration')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')
     parser.add_argument('--parallel', type=int, default=2, help='Number of parallel requests (default: 2)')
+    parser.add_argument('--seed', type=int, help='Seed for deterministic batch generation in Elo stage')
     args = parser.parse_args()
     
     # Check for API key
@@ -55,7 +57,7 @@ def main():
         raise ValueError("Please set OPENAI_API_KEY environment variable")
     
     # Process the JSON file
-    process_json_file(args.input_json, verbose=args.verbose, parallel=args.parallel)
+    process_json_file(args.input_json, verbose=args.verbose, parallel=args.parallel, seed=args.seed)
 
 if __name__ == "__main__":
     main() 
