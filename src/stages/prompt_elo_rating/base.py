@@ -1,4 +1,5 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
+import random
 from src.stage import Stage
 from src.execution import Execution
 from src.registry import StageRegistry
@@ -34,7 +35,8 @@ class PromptEloRatingStage(
         batches_per_model: int = 4,
         initial_rating: int = DEFAULT_INITIAL_RATING,
         symmetric_matches: bool = False,
-        parallel: int = 2
+        parallel: int = 2,
+        seed: Optional[int] = None
     ):
         """
         Initialize the prompt Elo rating stage.
@@ -47,6 +49,7 @@ class PromptEloRatingStage(
             initial_rating: Initial Elo rating for all competitors
             symmetric_matches: Whether to run matches in both directions
             parallel: Number of parallel requests
+            seed: Optional seed for deterministic batch generation
         """
         # Initialize mixins
         LLMProcessorMixin.__init__(self)
@@ -59,6 +62,11 @@ class PromptEloRatingStage(
         self.batches_per_model = batches_per_model
         self.initial_rating = initial_rating
         self.symmetric_matches = symmetric_matches
+        self.seed = seed
+        
+        # Seed the random number generator if a seed is provided
+        if seed is not None:
+            random.seed(seed)
     
     @classmethod
     def from_config(cls, config: Dict[str, Any]) -> 'PromptEloRatingStage':
