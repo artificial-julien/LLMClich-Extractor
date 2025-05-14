@@ -9,6 +9,7 @@ from .mixins.batch_processor import BatchProcessorMixin
 from .mixins.execution_manager import ExecutionManagerMixin
 from .mixins.config_handler import ConfigHandlerMixin
 from .types import CompetitorStats, DEFAULT_INITIAL_RATING, Round, Match
+from tqdm import tqdm
 
 @StageRegistry.register("prompt_elo_rating")
 class PromptEloRatingStage(
@@ -104,66 +105,80 @@ class PromptEloRatingStage(
         base_execution = executions[0] if executions else Execution()
         all_result_executions = []
 
+        # Calculate total number of rounds for progress bar
+        # For each model, seed, and batch:
+        # - Number of matches = len(competitors) // 2
+        # - Each match has len(prompts) rounds
+        # - If symmetric_matches is True, double the number of rounds
+        total_rounds = 0
         for model_config in self.models:
-            # Initialize tracking for this model (single stats across all seeds)
-            stats = self._initialize_stats()
-            model_result_executions = []
-            
-            # Process all seeds for this model
-            for seed in range(model_config.iterations):
-                # Process batches based on a counter instead of matches_per_entity
-                num_batches = self.matches_per_entity
+            matches_per_batch = len(self.competitors) // 2
+            rounds_per_match = len(self.prompts) * (2 if self.symmetric_matches else 1)
+            rounds_per_batch = matches_per_batch * rounds_per_match
+            total_rounds += model_config.iterations * self.matches_per_entity * rounds_per_batch
+        
+        # Create a single progress bar for the entire process
+        with tqdm(total=total_rounds, desc="Processing Elo rating rounds") as pbar:
+            for model_config in self.models:
+                # Initialize tracking for this model (single stats across all seeds)
+                stats = self._initialize_stats()
+                model_result_executions = []
                 
-                for batch_counter in range(num_batches):
-                    # Generate and process batch
-                    jobs = self.generate_match_batch(
-                        self.competitors,
-                        stats,
-                        model_config,
-                        self.prompts,
-                        seed,
-                        self.symmetric_matches
-                    )
+                # Process all seeds for this model
+                for seed in range(model_config.iterations):
+                    # Process batches based on a counter instead of matches_per_entity
+                    num_batches = self.matches_per_entity
                     
-                    # Process rounds (individual LLM calls)
-                    round_results = self.process_batch(jobs, self.symmetric_matches)
-                    
-                    # Group rounds into matches
-                    matches = self.group_rounds_into_matches(round_results)
-                    
-                    # Create executions for match results and update ratings
-                    for match in matches:
-                        if not match.winner and not match.is_draw:
-                            continue
-                            
-                        match_execution = self.create_match_execution(base_execution, match)
-                        model_result_executions.append(match_execution)
-                        
-                        # Update ratings and stats
-                        a_score = 1.0 if match.winner == match.competitor_a else (0.5 if match.is_draw else 0.0)
-                        b_score = 1.0 if match.winner == match.competitor_b else (0.5 if match.is_draw else 0.0)
-                        self.update_ratings_and_stats(
-                            match.competitor_a,
-                            match.competitor_b,
-                            a_score,
-                            b_score,
-                            stats
+                    for batch_counter in range(num_batches):
+                        # Generate and process batch
+                        jobs = self.generate_match_batch(
+                            self.competitors,
+                            stats,
+                            model_config,
+                            self.prompts,
+                            seed,
+                            self.symmetric_matches
                         )
-            
-            # Add final ratings for this model (after all seeds)
-            for competitor, competitor_stats in stats.items():
-                rating_execution = self.create_rating_execution(
-                    base_execution,
-                    competitor,
-                    competitor_stats['rating'],
-                    competitor_stats['wins'],
-                    competitor_stats['losses'],
-                    competitor_stats['draws'],
-                    model_config,
-                    -1  # Use -1 to indicate this is the final rating across all seeds
-                )
-                model_result_executions.append(rating_execution)
-            
-            all_result_executions.extend(model_result_executions)
+                        
+                        # Process rounds (individual LLM calls)
+                        round_results = self.process_batch(jobs, self.symmetric_matches, pbar)
+                        
+                        # Group rounds into matches
+                        matches = self.group_rounds_into_matches(round_results)
+                        
+                        # Create executions for match results and update ratings
+                        for match in matches:
+                            if not match.winner and not match.is_draw:
+                                continue
+                                
+                            match_execution = self.create_match_execution(base_execution, match)
+                            model_result_executions.append(match_execution)
+                            
+                            # Update ratings and stats
+                            a_score = 1.0 if match.winner == match.competitor_a else (0.5 if match.is_draw else 0.0)
+                            b_score = 1.0 if match.winner == match.competitor_b else (0.5 if match.is_draw else 0.0)
+                            self.update_ratings_and_stats(
+                                match.competitor_a,
+                                match.competitor_b,
+                                a_score,
+                                b_score,
+                                stats
+                            )
+                
+                # Add final ratings for this model (after all seeds)
+                for competitor, competitor_stats in stats.items():
+                    rating_execution = self.create_rating_execution(
+                        base_execution,
+                        competitor,
+                        competitor_stats['rating'],
+                        competitor_stats['wins'],
+                        competitor_stats['losses'],
+                        competitor_stats['draws'],
+                        model_config,
+                        -1  # Use -1 to indicate this is the final rating across all seeds
+                    )
+                    model_result_executions.append(rating_execution)
+                
+                all_result_executions.extend(model_result_executions)
 
         return all_result_executions 

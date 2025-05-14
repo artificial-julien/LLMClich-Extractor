@@ -1,5 +1,5 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import List, Dict, Tuple, DefaultDict
+from typing import List, Dict, Tuple, DefaultDict, Optional
 from collections import defaultdict
 from tqdm import tqdm
 from ..types import RoundJob, Round, Match, CompetitorStats, DEFAULT_PARALLEL_WORKERS
@@ -14,7 +14,8 @@ class BatchProcessorMixin:
     def process_batch(
         self,
         jobs: List[RoundJob],
-        symmetric_matches: bool
+        symmetric_matches: bool,
+        pbar: Optional[tqdm] = None
     ) -> List[Round]:
         """
         Process a batch of rounds in parallel.
@@ -22,6 +23,7 @@ class BatchProcessorMixin:
         Args:
             jobs: List of round jobs to process
             symmetric_matches: Whether to run matches in both directions
+            pbar: Optional progress bar to update
             
         Returns:
             List of round results
@@ -42,11 +44,13 @@ class BatchProcessorMixin:
                 )
                 futures.append(future)
             
-            for future in tqdm(as_completed(futures), total=len(futures), desc="Processing Elo rounds"):
+            for future in as_completed(futures):
                 try:
                     result = future.result()
                     rounds.append(result)
                     self._current_rounds.append(result)
+                    if pbar is not None:
+                        pbar.update(1)
                 except Exception as e:
                     job = jobs[len(rounds)]
                     rounds.append(Round(
@@ -59,6 +63,8 @@ class BatchProcessorMixin:
                         top_p=job['model_config'].top_p,
                         seed=job['seed']
                     ))
+                    if pbar is not None:
+                        pbar.update(1)
         
         # Update symmetric matches if needed
         if symmetric_matches:
