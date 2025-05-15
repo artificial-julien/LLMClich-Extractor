@@ -11,16 +11,16 @@ class Pipeline:
     in the correct order, then provides methods to execute the pipeline.
     """
     
-    def __init__(self, stages: List[Stage], input_folder: Optional[str] = None):
+    def __init__(self, stages: List[Stage], output_folder: Optional[str] = None):
         """
         Initialize a pipeline with a list of stages.
         
         Args:
             stages: List of Stage instances to be executed in order
-            input_folder: Optional path to the input folder
+            output_folder: Optional path to the output folder for exported files
         """
         self.stages = stages
-        self.input_folder = input_folder
+        self.output_folder = output_folder
     
     @classmethod
     def from_config(cls, config: Dict[str, Any], input_folder: Optional[str] = None) -> 'Pipeline':
@@ -29,7 +29,7 @@ class Pipeline:
         
         Args:
             config: Configuration dictionary with a 'foreach' list of stage configs
-            input_folder: Optional path to the input folder
+            input_folder: Optional path to use as output folder (kept for backward compatibility)
             
         Returns:
             A Pipeline instance
@@ -43,13 +43,13 @@ class Pipeline:
         
         stages = []
         for stage_config in foreach:
-            # Add input folder to stage config if it's an export_to_csv stage
+            # Add output folder to stage config if it's an export_to_csv stage
             if stage_config.get('node_type') == 'export_to_csv':
-                stage_config['input_folder'] = input_folder
+                stage_config['output_folder'] = input_folder  # Using input_folder as output_folder
             stage = StageRegistry.create_stage(stage_config)
             stages.append(stage)
         
-        return cls(stages, input_folder)
+        return cls(stages, output_folder=input_folder)  # Using input_folder as output_folder
     
     def run(self, initial_variables: Dict[str, Any] = None) -> List[Execution]:
         """
