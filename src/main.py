@@ -48,6 +48,7 @@ def main():
     parser.add_argument('--output-dir', help='Base directory for output files (default: same as input file)')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')
     parser.add_argument('--parallel', type=int, default=2, help='Number of parallel requests (default: 2)')
+    parser.add_argument('--batch-seed', type=int, help='Seed for batch processing reproducibility')
     args = parser.parse_args()
     
     # Check for API key
@@ -60,7 +61,8 @@ def main():
         json_path=args.input_json,
         output_dir=args.output_dir,
         verbose=args.verbose,
-        parallel=args.parallel
+        parallel=args.parallel,
+        batch_seed=args.batch_seed
     )
     process_json_file(pipeline_config)
 

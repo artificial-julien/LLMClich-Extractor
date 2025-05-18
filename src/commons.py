@@ -8,3 +8,4 @@ class PipelineConfig:
     verbose: bool = False
     parallel: int = 1 
     llm_seed: Optional[int] = None
+    batch_seed: Optional[int] = None
