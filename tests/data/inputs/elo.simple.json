@@ -1,0 +1,73 @@
+{
+  "foreach": [
+    {
+      "node_type": "prompt_elo_rating",
+      "models": [
+        {
+          "name": "gpt-4.1-mini",
+          "temperature": 0.0,
+          "top_p": 1.0,
+          "iterations": 1
+        }
+      ],
+      "competitors": [
+        "Homer Simpson",
+        "SpongeBob SquarePants",
+        "Peter Griffin",
+        "Stewie Griffin",
+        "Glenn Quagmire",
+        "Eric Cartman",
+        "Bugs Bunny",
+        "Donald Duck",
+        "Patrick Star",
+        "Kenny McCormick",
+        "Squidward Tentacles",
+        "Pinky and the Brain",
+        "Wile E. Coyote",
+        "Courage the Cowardly Dog",
+        "Stimpy",
+        "Bender from Futurama",
+        "Scooby-Doo",
+        "Plankton",
+        "Mr. Bean Animated"
+      ],
+      "prompts": [
+        "Who is funnier between '[_elo_match_competitor_a]' and '[_elo_match_competitor_b]'?",
+        "Between '[_elo_match_competitor_a]' and '[_elo_match_competitor_b]', which character makes people laugh more?"
+      ],
+      "batches_per_model": 8,
+      "initial_rating": 1000,
+      "symmetric_matches": true
+    },
+    {
+      "node_type": "export_to_csv",
+      "output_file": "output_results.elo.ranking.csv",
+      "columns": [
+        "_model_name",
+        "_model_temperature",
+        "_model_top_p",
+        "_elo_competitor",
+        "_elo_rating",
+        "_elo_wins",
+        "_elo_loss",
+        "_elo_draws"
+      ]
+    },
+    {
+      "node_type": "export_to_csv",
+      "output_file": "output_results.elo.matches.csv",
+      "skip_empty_rows": false,
+      "columns": [
+        "_model_name",
+        "_model_temperature",
+        "_model_top_p",
+        "_elo_match_competitor_a",
+        "_elo_match_competitor_b",
+        "_elo_match_winner",
+        "_elo_match_draw",
+        "_elo_match_wins_a",
+        "_elo_match_wins_b"
+      ]
+    }
+  ]
+}
