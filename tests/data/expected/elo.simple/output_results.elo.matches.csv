@@ -1,0 +1,92 @@
+_model_name,_model_temperature,_model_top_p,_elo_match_competitor_a,_elo_match_competitor_b,_elo_match_winner,_elo_match_draw,_elo_match_wins_a,_elo_match_wins_b
+gpt-4.1-mini,0.0,1.0,Plankton,Stimpy,Stimpy,False,0.0,4.0
+gpt-4.1-mini,0.0,1.0,SpongeBob SquarePants,Wile E. Coyote,SpongeBob SquarePants,False,4.0,0.0
+gpt-4.1-mini,0.0,1.0,Donald Duck,Homer Simpson,Homer Simpson,False,0.0,4.0
+gpt-4.1-mini,0.0,1.0,Glenn Quagmire,Pinky and the Brain,Pinky and the Brain,False,0.0,2.0
+gpt-4.1-mini,0.0,1.0,Plankton,Stewie Griffin,Stewie Griffin,False,0.0,4.0
+gpt-4.1-mini,0.0,1.0,Stewie Griffin,Wile E. Coyote,Stewie Griffin,False,4.0,0.0
+gpt-4.1-mini,0.0,1.0,Eric Cartman,Peter Griffin,Eric Cartman,False,2.0,0.0
+gpt-4.1-mini,0.0,1.0,Pinky and the Brain,SpongeBob SquarePants,SpongeBob SquarePants,False,0.0,4.0
+gpt-4.1-mini,0.0,1.0,Bender from Futurama,Pinky and the Brain,Bender from Futurama,False,4.0,0.0
+gpt-4.1-mini,0.0,1.0,Mr. Bean Animated,Scooby-Doo,Mr. Bean Animated,False,4.0,0.0
+gpt-4.1-mini,0.0,1.0,Bugs Bunny,Courage the Cowardly Dog,Bugs Bunny,False,4.0,0.0
+gpt-4.1-mini,0.0,1.0,Bugs Bunny,Patrick Star,Bugs Bunny,False,4.0,0.0
+gpt-4.1-mini,0.0,1.0,Mr. Bean Animated,Patrick Star,Patrick Star,False,1.0,3.0
+gpt-4.1-mini,0.0,1.0,Patrick Star,Scooby-Doo,Patrick Star,False,4.0,0.0
+gpt-4.1-mini,0.0,1.0,Kenny McCormick,Squidward Tentacles,Squidward Tentacles,False,0.0,4.0
+gpt-4.1-mini,0.0,1.0,Bugs Bunny,Scooby-Doo,Bugs Bunny,False,4.0,0.0
+gpt-4.1-mini,0.0,1.0,Mr. Bean Animated,Squidward Tentacles,Mr. Bean Animated,False,4.0,0.0
+gpt-4.1-mini,0.0,1.0,Bugs Bunny,Squidward Tentacles,Bugs Bunny,False,4.0,0.0
+gpt-4.1-mini,0.0,1.0,Glenn Quagmire,Peter Griffin,Peter Griffin,False,0.0,4.0
+gpt-4.1-mini,0.0,1.0,Eric Cartman,Homer Simpson,Homer Simpson,False,0.0,4.0
+gpt-4.1-mini,0.0,1.0,Courage the Cowardly Dog,Donald Duck,Donald Duck,False,0.0,4.0
+gpt-4.1-mini,0.0,1.0,Courage the Cowardly Dog,Peter Griffin,Peter Griffin,False,0.0,4.0
+gpt-4.1-mini,0.0,1.0,Kenny McCormick,Peter Griffin,Peter Griffin,False,0.0,4.0
+gpt-4.1-mini,0.0,1.0,Donald Duck,Glenn Quagmire,,True,2.0,2.0
+gpt-4.1-mini,0.0,1.0,Donald Duck,Peter Griffin,Peter Griffin,False,0.0,4.0
+gpt-4.1-mini,0.0,1.0,Bender from Futurama,Homer Simpson,Homer Simpson,False,0.0,2.0
+gpt-4.1-mini,0.0,1.0,Glenn Quagmire,Kenny McCormick,Glenn Quagmire,False,4.0,0.0
+gpt-4.1-mini,0.0,1.0,Courage the Cowardly Dog,Kenny McCormick,Courage the Cowardly Dog,False,3.0,1.0
+gpt-4.1-mini,0.0,1.0,Donald Duck,Pinky and the Brain,Donald Duck,False,2.0,0.0
+gpt-4.1-mini,0.0,1.0,Glenn Quagmire,Squidward Tentacles,Glenn Quagmire,False,3.0,1.0
+gpt-4.1-mini,0.0,1.0,Mr. Bean Animated,Stimpy,Mr. Bean Animated,False,2.0,0.0
+gpt-4.1-mini,0.0,1.0,Plankton,Wile E. Coyote,Wile E. Coyote,False,0.0,4.0
+gpt-4.1-mini,0.0,1.0,Bender from Futurama,Eric Cartman,Eric Cartman,False,0.0,2.0
+gpt-4.1-mini,0.0,1.0,Pinky and the Brain,Squidward Tentacles,Pinky and the Brain,False,3.0,1.0
+gpt-4.1-mini,0.0,1.0,Donald Duck,Squidward Tentacles,Donald Duck,False,4.0,0.0
+gpt-4.1-mini,0.0,1.0,Patrick Star,Stimpy,Patrick Star,False,2.0,0.0
+gpt-4.1-mini,0.0,1.0,SpongeBob SquarePants,Stewie Griffin,SpongeBob SquarePants,False,2.0,0.0
+gpt-4.1-mini,0.0,1.0,Bender from Futurama,Stimpy,Bender from Futurama,False,4.0,0.0
+gpt-4.1-mini,0.0,1.0,Patrick Star,SpongeBob SquarePants,SpongeBob SquarePants,False,0.0,4.0
+gpt-4.1-mini,0.0,1.0,Mr. Bean Animated,SpongeBob SquarePants,SpongeBob SquarePants,False,0.0,4.0
+gpt-4.1-mini,0.0,1.0,Stimpy,Wile E. Coyote,,True,2.0,2.0
+gpt-4.1-mini,0.0,1.0,Bender from Futurama,Pinky and the Brain,Bender from Futurama,False,4.0,0.0
+gpt-4.1-mini,0.0,1.0,Bender from Futurama,Wile E. Coyote,Bender from Futurama,False,4.0,0.0
+gpt-4.1-mini,0.0,1.0,Pinky and the Brain,Stimpy,Pinky and the Brain,False,2.0,0.0
+gpt-4.1-mini,0.0,1.0,Mr. Bean Animated,Patrick Star,Patrick Star,False,1.0,3.0
+gpt-4.1-mini,0.0,1.0,Eric Cartman,Stewie Griffin,Eric Cartman,False,2.0,0.0
+gpt-4.1-mini,0.0,1.0,Plankton,Scooby-Doo,Scooby-Doo,False,0.0,4.0
+gpt-4.1-mini,0.0,1.0,Eric Cartman,Homer Simpson,Homer Simpson,False,0.0,4.0
+gpt-4.1-mini,0.0,1.0,Homer Simpson,Stewie Griffin,Homer Simpson,False,4.0,0.0
+gpt-4.1-mini,0.0,1.0,Scooby-Doo,Stewie Griffin,Stewie Griffin,False,0.0,4.0
+gpt-4.1-mini,0.0,1.0,Eric Cartman,Scooby-Doo,Eric Cartman,False,4.0,0.0
+gpt-4.1-mini,0.0,1.0,Plankton,Stewie Griffin,Stewie Griffin,False,0.0,4.0
+gpt-4.1-mini,0.0,1.0,Eric Cartman,Plankton,Eric Cartman,False,4.0,0.0
+gpt-4.1-mini,0.0,1.0,Homer Simpson,Scooby-Doo,Homer Simpson,False,4.0,0.0
+gpt-4.1-mini,0.0,1.0,Courage the Cowardly Dog,Kenny McCormick,Courage the Cowardly Dog,False,3.0,1.0
+gpt-4.1-mini,0.0,1.0,Bugs Bunny,Courage the Cowardly Dog,Bugs Bunny,False,4.0,0.0
+gpt-4.1-mini,0.0,1.0,Bugs Bunny,Kenny McCormick,Bugs Bunny,False,4.0,0.0
+gpt-4.1-mini,0.0,1.0,Donald Duck,Stewie Griffin,Stewie Griffin,False,0.0,4.0
+gpt-4.1-mini,0.0,1.0,Glenn Quagmire,Mr. Bean Animated,Mr. Bean Animated,False,1.0,3.0
+gpt-4.1-mini,0.0,1.0,Courage the Cowardly Dog,Wile E. Coyote,Wile E. Coyote,False,0.0,4.0
+gpt-4.1-mini,0.0,1.0,Kenny McCormick,Squidward Tentacles,Squidward Tentacles,False,0.0,4.0
+gpt-4.1-mini,0.0,1.0,Eric Cartman,Peter Griffin,Eric Cartman,False,2.0,0.0
+gpt-4.1-mini,0.0,1.0,Bender from Futurama,Patrick Star,Patrick Star,False,0.0,2.0
+gpt-4.1-mini,0.0,1.0,Glenn Quagmire,Pinky and the Brain,Pinky and the Brain,False,0.0,2.0
+gpt-4.1-mini,0.0,1.0,Squidward Tentacles,Stimpy,Stimpy,False,0.0,4.0
+gpt-4.1-mini,0.0,1.0,Glenn Quagmire,Wile E. Coyote,Glenn Quagmire,False,3.0,1.0
+gpt-4.1-mini,0.0,1.0,Courage the Cowardly Dog,Squidward Tentacles,Squidward Tentacles,False,0.0,4.0
+gpt-4.1-mini,0.0,1.0,Pinky and the Brain,Wile E. Coyote,Pinky and the Brain,False,4.0,0.0
+gpt-4.1-mini,0.0,1.0,Courage the Cowardly Dog,Stimpy,Stimpy,False,0.0,4.0
+gpt-4.1-mini,0.0,1.0,Peter Griffin,Stewie Griffin,Peter Griffin,False,4.0,0.0
+gpt-4.1-mini,0.0,1.0,Bender from Futurama,Mr. Bean Animated,,True,1.0,1.0
+gpt-4.1-mini,0.0,1.0,Bugs Bunny,SpongeBob SquarePants,,True,1.0,1.0
+gpt-4.1-mini,0.0,1.0,,,,,,
+gpt-4.1-mini,0.0,1.0,,,,,,
+gpt-4.1-mini,0.0,1.0,,,,,,
+gpt-4.1-mini,0.0,1.0,,,,,,
+gpt-4.1-mini,0.0,1.0,,,,,,
+gpt-4.1-mini,0.0,1.0,,,,,,
+gpt-4.1-mini,0.0,1.0,,,,,,
+gpt-4.1-mini,0.0,1.0,,,,,,
+gpt-4.1-mini,0.0,1.0,,,,,,
+gpt-4.1-mini,0.0,1.0,,,,,,
+gpt-4.1-mini,0.0,1.0,,,,,,
+gpt-4.1-mini,0.0,1.0,,,,,,
+gpt-4.1-mini,0.0,1.0,,,,,,
+gpt-4.1-mini,0.0,1.0,,,,,,
+gpt-4.1-mini,0.0,1.0,,,,,,
+gpt-4.1-mini,0.0,1.0,,,,,,
+gpt-4.1-mini,0.0,1.0,,,,,,
+gpt-4.1-mini,0.0,1.0,,,,,,
+gpt-4.1-mini,0.0,1.0,,,,,,

@@ -31,7 +31,8 @@ build/
 
 # Output results
 examples/**/output_results.csv
-**results**.csv
+tests/data/actual/**
+temp_tests/*
 
 .~lock.*
 
