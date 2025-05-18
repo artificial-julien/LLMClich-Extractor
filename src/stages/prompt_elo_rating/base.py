@@ -140,7 +140,8 @@ class PromptEloRatingStage(
                             model_config,
                             self.prompts,
                             llm_seed,
-                            self.symmetric_matches
+                            self.symmetric_matches,
+                            batch_seed=self.config.batch_seed if self.config else None
                         )
                         
                         # Process rounds (individual LLM calls)

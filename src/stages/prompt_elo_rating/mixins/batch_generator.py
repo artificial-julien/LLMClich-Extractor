@@ -1,5 +1,5 @@
 import random
-from typing import List, Set, Tuple, Dict
+from typing import List, Set, Tuple, Dict, Optional
 from ..types import CompetitorStats, RoundJob, ModelConfig
 
 class BatchGeneratorMixin:
@@ -12,7 +12,8 @@ class BatchGeneratorMixin:
         model_config: ModelConfig,
         prompt_templates: List[str],
         llm_seed: int,
-        symmetric_matches: bool
+        symmetric_matches: bool,
+        batch_seed: Optional[int] = None
     ) -> List[RoundJob]:
         """
         Generate a batch of round jobs using Swiss system approach.
@@ -23,12 +24,15 @@ class BatchGeneratorMixin:
             model_config: Model configuration
             prompt_templates: List of prompt templates
             llm_seed: Current llm_seed value
-            batch_counter: Current batch counter
             symmetric_matches: Whether to generate symmetric matches
+            batch_seed: Optional seed for reproducible batch generation
             
         Returns:
             List of round jobs
         """
+        # Create a dedicated random number generator instance
+        rng = random.Random(batch_seed)
+            
         matches = []
         scheduled_pairs: Set[Tuple[str, str]] = set()
         
@@ -63,8 +67,8 @@ class BatchGeneratorMixin:
                 if abs(stats[pair[0]]['rating'] - stats[pair[1]]['rating']) == min_elo_diff
             ]
             
-            # Choose random pair from best pairs
-            chosen_pair = random.choice(best_pairs)
+            # Choose random pair from best pairs using the dedicated RNG instance
+            chosen_pair = rng.choice(best_pairs)
             a, b = chosen_pair
             matches.append((a, b))
             scheduled_pairs.add((a, b))
