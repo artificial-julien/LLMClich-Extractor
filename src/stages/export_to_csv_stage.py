@@ -4,6 +4,7 @@ from pathlib import Path
 from src.stage import Stage
 from src.execution import Execution
 from src.registry import StageRegistry
+from src.commons import PipelineConfig
 import os
 
 @StageRegistry.register("export_to_csv")
@@ -14,23 +15,23 @@ class ExportToCsvStage(Stage):
     
     DEFAULT_OUTPUT_FILE = "output.csv"
     
-    def __init__(self, output_file: Optional[str] = None, columns: List[str] = None, output_folder: Optional[str] = None, skip_empty_rows: bool = True):
+    def __init__(self, output_file: Optional[str] = None, columns: List[str] = None, config: Optional[PipelineConfig] = None, skip_empty_rows: bool = True):
         """
         Initialize the export to CSV stage.
         
         Args:
             output_file: Path to the output CSV file. If not provided, defaults to "output.csv"
             columns: List of variable names to include as columns
-            output_folder: Optional path to the output folder. If provided, output_file will be relative to this folder.
+            config: PipelineConfig instance containing pipeline settings
             skip_empty_rows: If True, rows with any empty fields will be skipped. Defaults to True.
         """
         self.output_file = output_file or self.DEFAULT_OUTPUT_FILE
         self.columns = columns or []
-        self.output_folder = output_folder
+        self.config = config
         self.skip_empty_rows = skip_empty_rows
     
     @classmethod
-    def from_config(cls, config: Dict[str, Any]) -> 'ExportToCsvStage':
+    def from_config(cls, config: Dict[str, Any], pipeline_config: Optional[PipelineConfig] = None) -> 'ExportToCsvStage':
         """
         Create an ExportToCsvStage from configuration.
         
@@ -38,8 +39,8 @@ class ExportToCsvStage(Stage):
             config: Dictionary containing:
                 - 'output_file': Optional path to the output CSV file. If not provided, defaults to "output.csv"
                 - 'columns': List of variable names to include as columns
-                - 'output_folder': Optional path to the output folder
                 - 'skip_empty_rows': Optional boolean to skip rows with empty fields. Defaults to True.
+            pipeline_config: Optional PipelineConfig instance containing pipeline settings
             
         Returns:
             An ExportToCsvStage instance
@@ -49,13 +50,12 @@ class ExportToCsvStage(Stage):
         """
         output_file = config.get('output_file')
         columns = config.get('columns')
-        output_folder = config.get('output_folder')
         skip_empty_rows = config.get('skip_empty_rows', True)
         
         if not columns or not isinstance(columns, list):
             raise ValueError("ExportToCsvStage config must contain a 'columns' list")
         
-        return cls(output_file=output_file, columns=columns, output_folder=output_folder, skip_empty_rows=skip_empty_rows)
+        return cls(output_file=output_file, columns=columns, config=pipeline_config, skip_empty_rows=skip_empty_rows)
     
     def process(self, executions: List[Execution]) -> List[Execution]:
         """
@@ -89,8 +89,8 @@ class ExportToCsvStage(Stage):
             new_data = new_data.dropna(how='any')
         
         # Resolve output path relative to output folder if provided
-        if self.output_folder:
-            output_path = Path(self.output_folder) / self.output_file
+        if self.config and self.config.output_dir:
+            output_path = Path(self.config.output_dir) / self.output_file
         else:
             output_path = Path(self.output_file)
             
