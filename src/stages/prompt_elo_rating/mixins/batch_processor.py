@@ -40,7 +40,7 @@ class BatchProcessorMixin:
                     job['competitor_b'],
                     job['model_config'],
                     job['prompt_template'],
-                    job['seed']
+                    job['llm_seed']
                 )
                 futures.append(future)
             
@@ -61,7 +61,7 @@ class BatchProcessorMixin:
                         model_name=job['model_config'].name,
                         temperature=job['model_config'].temperature,
                         top_p=job['model_config'].top_p,
-                        seed=job['seed']
+                        llm_seed=job['llm_seed']
                     ))
                     if pbar is not None:
                         pbar.update(1)

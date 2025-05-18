@@ -20,7 +20,7 @@ class Round:
     model_name: str
     temperature: float
     top_p: float
-    seed: int
+    llm_seed: int
 
 @dataclass
 class Match:
@@ -53,7 +53,7 @@ class RoundJob(TypedDict):
     competitor_b: str
     model_config: ModelConfig
     prompt_template: str
-    seed: int
+    llm_seed: int
 
 # Maintain backward compatibility
 # TODO: Can be removed after refactoring all code to use the new types

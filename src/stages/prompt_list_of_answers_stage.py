@@ -119,7 +119,7 @@ class PromptListOfAnswersStage(Stage):
             execution: Input execution with variables
             model_config: Model configuration
             prompt_template: Prompt template
-            iteration: Iteration number (for seed)
+            iteration: Iteration number (for llm_seed)
             
         Returns:
             New execution with result variables
@@ -138,7 +138,7 @@ class PromptListOfAnswersStage(Stage):
             possible_answers=self.possible_answers,
             temperature=temperature,
             top_p=top_p,
-            seed=iteration
+            llm_seed=iteration
         )
         
         # Create a new execution with the result
@@ -151,7 +151,7 @@ class PromptListOfAnswersStage(Stage):
         new_execution.add_variable('model-name', model_name)
         new_execution.add_variable('temperature', temperature)
         new_execution.add_variable('top_p', top_p)
-        new_execution.add_variable('seed', iteration)
+        new_execution.add_variable('llm_seed', iteration)
         new_execution.add_variable('error', result['error'])
         
         # Store probabilities

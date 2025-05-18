@@ -109,7 +109,7 @@ class PromptEloRatingStage(
         all_result_executions = []
 
         # Calculate total number of rounds for progress bar
-        # For each model, seed, and batch:
+        # For each model, llm_seed, and batch:
         # - Number of matches = len(competitors) // 2
         # - Each match has len(prompts) rounds
         # - If symmetric_matches is True, double the number of rounds
@@ -128,7 +128,7 @@ class PromptEloRatingStage(
                 model_result_executions = []
                 
                 # Process all seeds for this model
-                for seed in range(model_config.iterations):
+                for llm_seed in range(model_config.iterations):
                     # Process batches based on a counter instead of batches_per_model
                     num_batches = self.batches_per_model
                     
@@ -139,7 +139,7 @@ class PromptEloRatingStage(
                             stats,
                             model_config,
                             self.prompts,
-                            seed,
+                            llm_seed,
                             self.symmetric_matches
                         )
                         
