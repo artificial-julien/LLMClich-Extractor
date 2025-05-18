@@ -2,6 +2,7 @@ from typing import List, Dict, Any, Optional
 from src.stage import Stage
 from src.execution import Execution
 from src.registry import StageRegistry
+from src.commons import PipelineConfig
 
 class Pipeline:
     """
@@ -11,25 +12,25 @@ class Pipeline:
     in the correct order, then provides methods to execute the pipeline.
     """
     
-    def __init__(self, stages: List[Stage], output_folder: Optional[str] = None):
+    def __init__(self, stages: List[Stage], config: PipelineConfig):
         """
         Initialize a pipeline with a list of stages.
         
         Args:
             stages: List of Stage instances to be executed in order
-            output_folder: Optional path to the output folder for exported files
+            config: PipelineConfig instance containing pipeline configuration
         """
         self.stages = stages
-        self.output_folder = output_folder
+        self.config = config
     
     @classmethod
-    def from_config(cls, config: Dict[str, Any], input_folder: Optional[str] = None) -> 'Pipeline':
+    def from_config(cls, config_pipeline: Dict[str, Any], config: PipelineConfig) -> 'Pipeline':
         """
         Create a pipeline from a configuration dictionary.
         
         Args:
-            config: Configuration dictionary with a 'foreach' list of stage configs
-            input_folder: Optional path to use as output folder (kept for backward compatibility)
+            config_pipeline: Configuration dictionary with a 'foreach' list of stage configs
+            config: PipelineConfig instance containing pipeline settings
             
         Returns:
             A Pipeline instance
@@ -37,7 +38,7 @@ class Pipeline:
         Raises:
             ValueError: If the config is invalid
         """
-        foreach = config.get('foreach')
+        foreach = config_pipeline.get('foreach')
         if not foreach or not isinstance(foreach, list):
             raise ValueError("Configuration must contain a 'foreach' list")
         
@@ -45,11 +46,11 @@ class Pipeline:
         for stage_config in foreach:
             # Add output folder to stage config if it's an export_to_csv stage
             if stage_config.get('node_type') == 'export_to_csv':
-                stage_config['output_folder'] = input_folder  # Using input_folder as output_folder
+                stage_config['output_folder'] = config.output_dir
             stage = StageRegistry.create_stage(stage_config)
             stages.append(stage)
         
-        return cls(stages, output_folder=input_folder)  # Using input_folder as output_folder
+        return cls(stages, config=config)
     
     def run(self, initial_variables: Dict[str, Any] = None) -> List[Execution]:
         """

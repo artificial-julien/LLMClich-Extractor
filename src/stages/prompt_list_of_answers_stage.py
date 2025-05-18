@@ -4,6 +4,7 @@ from src.stage import Stage
 from src.execution import Execution
 from src.registry import StageRegistry
 from src.llm import LLMClient
+from src.commons import PipelineConfig
 import itertools
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from tqdm import tqdm
@@ -20,7 +21,7 @@ class PromptListOfAnswersStage(Stage):
         prompts: List[str],
         possible_answers: List[str],
         result_var_name: str,
-        parallel: int = 2
+        config: Optional[PipelineConfig] = None
     ):
         """
         Initialize the prompt list of answers stage.
@@ -30,17 +31,17 @@ class PromptListOfAnswersStage(Stage):
             prompts: List of prompt templates
             possible_answers: List of allowed answers
             result_var_name: Variable name to store the result
-            parallel: Number of parallel requests
+            config: PipelineConfig instance containing pipeline settings
         """
         self.models = models
         self.prompts = prompts
         self.possible_answers = possible_answers
         self.result_var_name = result_var_name
-        self.parallel = parallel
+        self.config = config
         self.llm_client = LLMClient()
     
     @classmethod
-    def from_config(cls, config: Dict[str, Any]) -> 'PromptListOfAnswersStage':
+    def from_config(cls, config: Dict[str, Any], pipeline_config: Optional[PipelineConfig] = None) -> 'PromptListOfAnswersStage':
         """
         Create a PromptListOfAnswersStage from configuration.
         
@@ -50,6 +51,7 @@ class PromptListOfAnswersStage(Stage):
                 - 'prompts': List of prompt templates
                 - 'possible_answers': List of allowed answers
                 - 'result_var_name': Variable name to store the result
+            pipeline_config: Optional PipelineConfig instance containing pipeline settings
             
         Returns:
             A PromptListOfAnswersStage instance
@@ -74,14 +76,12 @@ class PromptListOfAnswersStage(Stage):
         if not result_var_name:
             raise ValueError("PromptListOfAnswersStage config must contain a 'result_var_name'")
         
-        parallel = int(os.getenv("PARALLEL_REQUESTS", "2"))
-        
         return cls(
             models=models,
             prompts=prompts,
             possible_answers=possible_answers,
             result_var_name=result_var_name,
-            parallel=parallel
+            config=pipeline_config
         )
     
     def _format_prompt(self, template: str, variables: Dict[str, Any]) -> str:
@@ -184,7 +184,7 @@ class PromptListOfAnswersStage(Stage):
                         jobs.append((execution, model_config, prompt_template, iteration))
         
         # Process in parallel
-        with ThreadPoolExecutor(max_workers=self.parallel) as executor:
+        with ThreadPoolExecutor(max_workers=self.config.parallel if self.config else 2) as executor:
             # Create and submit futures
             futures = []
             for execution, model_config, prompt_template, iteration in jobs:

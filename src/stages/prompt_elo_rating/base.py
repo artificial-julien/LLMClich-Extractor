@@ -1,7 +1,8 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from src.stage import Stage
 from src.execution import Execution
 from src.registry import StageRegistry
+from src.commons import PipelineConfig
 from .mixins.elo_calculator import EloCalculatorMixin
 from .mixins.batch_generator import BatchGeneratorMixin
 from .mixins.llm_processor import LLMProcessorMixin
@@ -34,7 +35,7 @@ class PromptEloRatingStage(
         batches_per_model: int = 4,
         initial_rating: int = DEFAULT_INITIAL_RATING,
         symmetric_matches: bool = False,
-        parallel: int = 2
+        config: Optional[PipelineConfig] = None
     ):
         """
         Initialize the prompt Elo rating stage.
@@ -46,11 +47,11 @@ class PromptEloRatingStage(
             batches_per_model: Number of batches to process for each model
             initial_rating: Initial Elo rating for all competitors
             symmetric_matches: Whether to run matches in both directions
-            parallel: Number of parallel requests
+            config: PipelineConfig instance containing pipeline settings
         """
         # Initialize mixins
         LLMProcessorMixin.__init__(self)
-        BatchProcessorMixin.__init__(self, parallel)
+        BatchProcessorMixin.__init__(self, config.parallel if config else 2)
         
         # Store configuration
         self.models = models
@@ -59,20 +60,22 @@ class PromptEloRatingStage(
         self.batches_per_model = batches_per_model
         self.initial_rating = initial_rating
         self.symmetric_matches = symmetric_matches
+        self.config = config
     
     @classmethod
-    def from_config(cls, config: Dict[str, Any]) -> 'PromptEloRatingStage':
+    def from_config(cls, config: Dict[str, Any], pipeline_config: Optional[PipelineConfig] = None) -> 'PromptEloRatingStage':
         """
         Create a PromptEloRatingStage from configuration.
         
         Args:
             config: Dictionary containing stage configuration
+            pipeline_config: Optional PipelineConfig instance containing pipeline settings
             
         Returns:
             A PromptEloRatingStage instance
         """
         values = cls.get_config_values(config)
-        return cls(**values)
+        return cls(**values, config=pipeline_config)
     
     def _initialize_stats(self) -> Dict[str, CompetitorStats]:
         """
