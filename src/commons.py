@@ -7,4 +7,4 @@ class PipelineConfig:
     output_dir: Optional[str] = None
     verbose: bool = False
     parallel: int = 1 
-    seed: Optional[int] = None
+    llm_seed: Optional[int] = None

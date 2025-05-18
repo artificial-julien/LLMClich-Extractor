@@ -11,7 +11,7 @@ class BatchGeneratorMixin:
         stats: Dict[str, CompetitorStats],
         model_config: ModelConfig,
         prompt_templates: List[str],
-        seed: int,
+        llm_seed: int,
         symmetric_matches: bool
     ) -> List[RoundJob]:
         """
@@ -22,7 +22,7 @@ class BatchGeneratorMixin:
             stats: Current competitor statistics
             model_config: Model configuration
             prompt_templates: List of prompt templates
-            seed: Current seed value
+            llm_seed: Current llm_seed value
             batch_counter: Current batch counter
             symmetric_matches: Whether to generate symmetric matches
             
@@ -82,7 +82,7 @@ class BatchGeneratorMixin:
                     'competitor_b': b,
                     'model_config': model_config,
                     'prompt_template': prompt_template,
-                    'seed': seed
+                    'llm_seed': llm_seed
                 })
                 if symmetric_matches:
                     jobs.append({
@@ -90,7 +90,7 @@ class BatchGeneratorMixin:
                         'competitor_b': a,
                         'model_config': model_config,
                         'prompt_template': prompt_template,
-                        'seed': seed
+                        'llm_seed': llm_seed
                     })
                     
         return jobs 

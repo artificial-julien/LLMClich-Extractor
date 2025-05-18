@@ -11,7 +11,7 @@ class ExecutionManagerMixin:
         model_name: str,
         temperature: float,
         top_p: float,
-        seed: int
+        llm_seed: int
     ) -> None:
         """
         Create base execution variables.
@@ -21,12 +21,12 @@ class ExecutionManagerMixin:
             model_name: Model name
             temperature: Temperature value
             top_p: Top-p value
-            seed: Seed value
+            llm_seed: llm_seed value
         """
         execution.add_variable('_model_name', model_name)
         execution.add_variable('_model_temperature', temperature)
         execution.add_variable('_model_top_p', top_p)
-        execution.add_variable('_seed', seed)
+        execution.add_variable('_seed', llm_seed)
     
     def create_round_execution(
         self,
@@ -53,7 +53,7 @@ class ExecutionManagerMixin:
             round_result.model_name,
             round_result.temperature,
             round_result.top_p,
-            round_result.seed
+            round_result.llm_seed
         )
         
         return round_execution
@@ -89,7 +89,7 @@ class ExecutionManagerMixin:
                 first_round.model_name,
                 first_round.temperature,
                 first_round.top_p,
-                first_round.seed
+                first_round.llm_seed
             )
         
         return match_execution
@@ -103,7 +103,7 @@ class ExecutionManagerMixin:
         losses: int,
         draws: int,
         model_config: Any,
-        seed: int
+        llm_seed: int
     ) -> Execution:
         """
         Create an execution for a competitor's final rating.
@@ -116,7 +116,7 @@ class ExecutionManagerMixin:
             losses: Number of losses
             draws: Number of draws
             model_config: Model configuration
-            seed: Seed value
+            llm_seed: llm seed value
             
         Returns:
             New execution with rating variables
@@ -133,7 +133,7 @@ class ExecutionManagerMixin:
             model_config.name,
             model_config.temperature,
             model_config.top_p,
-            seed
+            llm_seed
         )
         
         return rating_execution 

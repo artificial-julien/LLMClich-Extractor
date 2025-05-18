@@ -34,7 +34,7 @@ class LLMClient:
         possible_answers: List[str],
         temperature: float = 0.0,
         top_p: float = 1.0,
-        seed: Optional[int] = None,
+        llm_seed: Optional[int] = None,
         constraint_method: Literal["json_schema", "prompt_engineering"] = "json_schema"
     ) -> Dict[str, Any]:
         """
@@ -46,7 +46,7 @@ class LLMClient:
             possible_answers: List of possible answers to constrain responses
             temperature: Sampling temperature (0-2)
             top_p: Nucleus sampling parameter (0-1)
-            seed: Optional seed for deterministic generation
+            llm_seed: Optional llm_seed for deterministic generation
             constraint_method: Method to use for constraining responses
                              - "json_schema": Use JSON schema (default, requires model support)
                              - "prompt_engineering": Use prompt engineering and JSON extraction
@@ -61,7 +61,7 @@ class LLMClient:
                     messages=[{"role": "user", "content": prompt}],
                     temperature=temperature,
                     top_p=top_p,
-                    seed=seed,
+                    seed=llm_seed,
                     logprobs=True,
                     top_logprobs=10,
                     extra_body={
@@ -92,7 +92,7 @@ class LLMClient:
                     messages=[{"role": "user", "content": enhanced_prompt}],
                     temperature=temperature,
                     top_p=top_p,
-                    seed=seed,
+                    seed=llm_seed,
                     logprobs=True,
                     top_logprobs=10
                 )

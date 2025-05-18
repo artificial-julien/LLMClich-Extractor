@@ -33,7 +33,7 @@ class LLMProcessorMixin:
         competitor_b: str,
         model_config: ModelConfig,
         prompt_template: str,
-        seed: int
+        llm_seed: int
     ) -> Round:
         """
         Process a single round (LLM call) between two competitors.
@@ -43,7 +43,7 @@ class LLMProcessorMixin:
             competitor_b: Second competitor
             model_config: Model configuration
             prompt_template: Prompt template
-            seed: Seed value for reproducibility
+            llm_seed: llm_seed value for reproducibility
             
         Returns:
             Round result from the LLM call
@@ -58,7 +58,7 @@ class LLMProcessorMixin:
             possible_answers=[competitor_a, competitor_b],
             temperature=model_config.temperature,
             top_p=model_config.top_p,
-            seed=seed
+            llm_seed=llm_seed
         )
         
         # Create round result
@@ -70,5 +70,5 @@ class LLMProcessorMixin:
             model_name=model_config.name,
             temperature=model_config.temperature,
             top_p=model_config.top_p,
-            seed=seed
+            llm_seed=llm_seed
         ) 
