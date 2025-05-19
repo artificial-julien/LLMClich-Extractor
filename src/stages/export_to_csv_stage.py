@@ -89,7 +89,7 @@ class ExportToCsvStage(Stage):
         if pipeline_config.output_dir:
             output_path = Path(pipeline_config.output_dir) / self.output_file
         else:
-            output_path = Path(self.output_file)
+            output_path = Path(pipeline_config.json_path).parent / self.output_file
             
         # Ensure directory exists
         output_path.parent.mkdir(parents=True, exist_ok=True)
