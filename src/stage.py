@@ -1,7 +1,7 @@
 from typing import List, Dict, Any, Protocol
 from abc import ABC, abstractmethod
 from src.execution import Execution
-
+from src.commons import PipelineConfig
 class Stage(ABC):
     """
     Interface for all pipeline stages (node types).
@@ -10,7 +10,7 @@ class Stage(ABC):
     """
     
     @abstractmethod
-    def process(self, executions: List[Execution]) -> List[Execution]:
+    def process(self, pipeline_config: PipelineConfig, executions: List[Execution]) -> List[Execution]:
         """
         Process the input executions and return a list of new executions.
         
@@ -24,12 +24,12 @@ class Stage(ABC):
     
     @classmethod
     @abstractmethod
-    def from_config(cls, config: Dict[str, Any]) -> 'Stage':
+    def from_config(cls, stage_definition: Dict[str, Any]) -> 'Stage':
         """
         Create a stage instance from configuration dictionary.
         
         Args:
-            config: Configuration dictionary for this stage
+            stage_definition: Configuration dictionary for this stage
             
         Returns:
             An instance of the stage

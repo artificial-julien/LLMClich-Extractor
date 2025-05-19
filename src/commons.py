@@ -9,3 +9,4 @@ class PipelineConfig:
     parallel: int = 1 
     llm_seed: Optional[int] = None
     batch_seed: Optional[int] = None
+    csv_append: bool = False  # Controls whether to append to existing CSV files
