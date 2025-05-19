@@ -4,21 +4,10 @@
       "node_type": "variables",
       "list": [
         {
-          "a": "beta"
+          "statement": "The Earth is flat."
         },
         {
-          "a": "alpha"
-        }
-      ]
-    },
-    {
-      "node_type": "variables",
-      "list": [
-        {
-          "b": "gamma"
-        },
-        {
-          "b": "alpha"
+          "statement": "The Sun revolves around the Earth."
         }
       ]
     },
@@ -26,35 +15,31 @@
       "node_type": "prompt_list_of_answers",
       "models": [
         {
-          "name": "gpt-4.1-nano",
-          "temperature": 1.0,
-          "top_p": 1.0,
-          "iterations": 1
-        },
-        {
           "name": "gpt-4o-mini",
-          "temperature": 1.0,
-          "top_p": 1.0,
+          "temperature": 0.0,
           "iterations": 1
         }
       ],
       "prompts": [
-        "[a] is [b]"
+        "Is this statement scientifically accurate: '[statement]'"
       ],
       "possible_answers": [
-        "true",
-        "false"
+        "True",
+        "False"
       ],
-      "result_var_name": "result"
+      "result_var_name": "accuracy"
     },
     {
       "node_type": "export_to_csv",
-      "output_file": "prompt_list_of_answers.simple.csv",
+      "output_file": "output.csv",
       "columns": [
-        "a",
-        "b",
-        "result"
+        "statement",
+        "accuracy",
+        "model-name",
+        "temperature",
+        "prob_1_True",
+        "prob_2_False"
       ]
     }
   ]
-}
+} 

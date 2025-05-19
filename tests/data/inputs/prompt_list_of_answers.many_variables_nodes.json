@@ -1,0 +1,60 @@
+{
+  "foreach": [
+    {
+      "node_type": "variables",
+      "list": [
+        {
+          "a": "beta"
+        },
+        {
+          "a": "alpha"
+        }
+      ]
+    },
+    {
+      "node_type": "variables",
+      "list": [
+        {
+          "b": "gamma"
+        },
+        {
+          "b": "alpha"
+        }
+      ]
+    },
+    {
+      "node_type": "prompt_list_of_answers",
+      "models": [
+        {
+          "name": "gpt-4.1-nano",
+          "temperature": 1.0,
+          "top_p": 1.0,
+          "iterations": 1
+        },
+        {
+          "name": "gpt-4o-mini",
+          "temperature": 1.0,
+          "top_p": 1.0,
+          "iterations": 1
+        }
+      ],
+      "prompts": [
+        "[a] is [b]"
+      ],
+      "possible_answers": [
+        "true",
+        "false"
+      ],
+      "result_var_name": "result"
+    },
+    {
+      "node_type": "export_to_csv",
+      "output_file": "output.csv",
+      "columns": [
+        "a",
+        "b",
+        "result"
+      ]
+    }
+  ]
+}

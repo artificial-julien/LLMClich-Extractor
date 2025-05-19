@@ -40,7 +40,15 @@ def run_cli():
     
     return _run_cli
 
-@pytest.mark.parametrize("case_name", ["prompt_list_of_answers.simple", "elo.simple"])
+@pytest.mark.parametrize("case_name", [
+    "complex_pipeline",
+    "custom_variables",
+    "elo.simple",
+    "parallel_processing",
+    "prompt_list_of_answers.many_variables_nodes", 
+    "prompt_list_of_answers.simple", 
+    "simple_variables",
+])
 def test_e2e(case_name, run_cli, generate_missing):
     """End-to-end test comparing all output files between actual and expected directories"""
     

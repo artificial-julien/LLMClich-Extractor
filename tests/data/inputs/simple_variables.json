@@ -1,0 +1,33 @@
+{
+  "foreach": [
+    {
+      "node_type": "variables",
+      "list": [
+        {
+          "name": "Alice",
+          "age": 25,
+          "city": "New York"
+        },
+        {
+          "name": "Bob",
+          "age": 30,
+          "city": "San Francisco"
+        },
+        {
+          "name": "Charlie",
+          "age": 35,
+          "city": "Chicago"
+        }
+      ]
+    },
+    {
+      "node_type": "export_to_csv",
+      "output_file": "output.csv",
+      "columns": [
+        "name",
+        "age",
+        "city"
+      ]
+    }
+  ]
+} 
