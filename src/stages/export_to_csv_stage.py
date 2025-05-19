@@ -15,49 +15,46 @@ class ExportToCsvStage(Stage):
     
     DEFAULT_OUTPUT_FILE = "output.csv"
     
-    def __init__(self, output_file: Optional[str] = None, columns: List[str] = None, config: Optional[PipelineConfig] = None, skip_empty_rows: bool = True):
+    def __init__(self, output_file: Optional[str] = None, columns: List[str] = None, skip_empty_rows: bool = True):
         """
         Initialize the export to CSV stage.
         
         Args:
             output_file: Path to the output CSV file. If not provided, defaults to "output.csv"
             columns: List of variable names to include as columns
-            config: PipelineConfig instance containing pipeline settings
             skip_empty_rows: If True, rows with any empty fields will be skipped. Defaults to True.
         """
         self.output_file = output_file or self.DEFAULT_OUTPUT_FILE
         self.columns = columns or []
-        self.config = config
         self.skip_empty_rows = skip_empty_rows
     
     @classmethod
-    def from_config(cls, config: Dict[str, Any], pipeline_config: Optional[PipelineConfig] = None) -> 'ExportToCsvStage':
+    def from_config(cls, stage_definition: Dict[str, Any]) -> 'ExportToCsvStage':
         """
         Create an ExportToCsvStage from configuration.
         
         Args:
-            config: Dictionary containing:
+            stage_definition: Dictionary containing:
                 - 'output_file': Optional path to the output CSV file. If not provided, defaults to "output.csv"
                 - 'columns': List of variable names to include as columns
                 - 'skip_empty_rows': Optional boolean to skip rows with empty fields. Defaults to True.
-            pipeline_config: Optional PipelineConfig instance containing pipeline settings
             
         Returns:
             An ExportToCsvStage instance
             
         Raises:
-            ValueError: If the config is invalid
+            ValueError: If the stage_definition is invalid
         """
-        output_file = config.get('output_file')
-        columns = config.get('columns')
-        skip_empty_rows = config.get('skip_empty_rows', True)
+        output_file = stage_definition.get('output_file')
+        columns = stage_definition.get('columns')
+        skip_empty_rows = stage_definition.get('skip_empty_rows', True)
         
         if not columns or not isinstance(columns, list):
-            raise ValueError("ExportToCsvStage config must contain a 'columns' list")
+            raise ValueError("ExportToCsvStage stage_definition must contain a 'columns' list")
         
-        return cls(output_file=output_file, columns=columns, config=pipeline_config, skip_empty_rows=skip_empty_rows)
+        return cls(output_file=output_file, columns=columns, skip_empty_rows=skip_empty_rows)
     
-    def process(self, executions: List[Execution]) -> List[Execution]:
+    def process(self, pipeline_config: PipelineConfig, executions: List[Execution]) -> List[Execution]:
         """
         Process input executions by extracting variables and saving them to a CSV file.
         
@@ -89,8 +86,8 @@ class ExportToCsvStage(Stage):
             new_data = new_data.dropna(how='any')
         
         # Resolve output path relative to output folder if provided
-        if self.config and self.config.output_dir:
-            output_path = Path(self.config.output_dir) / self.output_file
+        if pipeline_config.output_dir:
+            output_path = Path(pipeline_config.output_dir) / self.output_file
         else:
             output_path = Path(self.output_file)
             
@@ -98,7 +95,7 @@ class ExportToCsvStage(Stage):
         output_path.parent.mkdir(parents=True, exist_ok=True)
         
         # Check if file exists and handle accordingly
-        if output_path.exists() and output_path.stat().st_size > 0:
+        if output_path.exists() and output_path.stat().st_size > 0 and pipeline_config.csv_append:
             try:
                 # Try to read existing file
                 existing_df = pd.read_csv(str(output_path))
@@ -134,7 +131,7 @@ class ExportToCsvStage(Stage):
                 # In case of any error reading the existing file, overwrite with new data
                 new_data.to_csv(str(output_path), index=False, na_rep='')
         else:
-            # If file doesn't exist or is empty, just write the new data
+            # If file doesn't exist, is empty, or append is disabled, just write the new data
             new_data.to_csv(str(output_path), index=False, na_rep='')
         
         return executions 

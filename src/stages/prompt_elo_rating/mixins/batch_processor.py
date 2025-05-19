@@ -2,17 +2,18 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import List, Dict, Tuple, DefaultDict, Optional
 from collections import defaultdict
 from tqdm import tqdm
-from ..types import RoundJob, Round, Match, CompetitorStats, DEFAULT_PARALLEL_WORKERS
+from ....commons import PipelineConfig
+from ..types import RoundJob, Round, Match, CompetitorStats
 
 class BatchProcessorMixin:
     """Mixin providing batch processing functionality."""
     
-    def __init__(self, parallel_workers: int = DEFAULT_PARALLEL_WORKERS):
-        self.parallel_workers = parallel_workers
+    def __init__(self):
         self._current_rounds: List[Round] = []
     
     def process_batch(
         self,
+        pipeline_config: PipelineConfig,
         jobs: List[RoundJob],
         symmetric_matches: bool,
         pbar: Optional[tqdm] = None
@@ -31,7 +32,7 @@ class BatchProcessorMixin:
         rounds = []
         
         # Run rounds in parallel
-        with ThreadPoolExecutor(max_workers=self.parallel_workers) as executor:
+        with ThreadPoolExecutor(max_workers=pipeline_config.parallel) as executor:
             futures = []
             for job in jobs:
                 future = executor.submit(

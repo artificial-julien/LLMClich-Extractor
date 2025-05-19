@@ -5,28 +5,28 @@ class ConfigHandlerMixin:
     """Mixin providing configuration handling functionality."""
     
     @classmethod
-    def validate_config(cls, config: Dict[str, Any]) -> None:
+    def validate_config(cls, stage_definition: Dict[str, Any]) -> None:
         """
         Validate the stage configuration.
         
         Args:
-            config: Dictionary containing stage configuration
+            stage_definition: Dictionary containing stage configuration
             
         Raises:
-            ValueError: If the config is invalid
+            ValueError: If the stage_definition is invalid
         """
-        models = config.get('models')
-        competitors = config.get('competitors')
-        prompts = config.get('prompts')
+        models = stage_definition.get('models')
+        competitors = stage_definition.get('competitors')
+        prompts = stage_definition.get('prompts')
         
         if not models or not isinstance(models, list):
-            raise ValueError("PromptEloRatingStage config must contain a 'models' list")
+            raise ValueError("PromptEloRatingStage stage_definition must contain a 'models' list")
         
         if not competitors or not isinstance(competitors, list):
-            raise ValueError("PromptEloRatingStage config must contain a 'competitors' list")
+            raise ValueError("PromptEloRatingStage stage_definition must contain a 'competitors' list")
         
         if not prompts or not isinstance(prompts, list):
-            raise ValueError("PromptEloRatingStage config must contain a 'prompts' list")
+            raise ValueError("PromptEloRatingStage stage_definition must contain a 'prompts' list")
     
     @classmethod
     def parse_model_config(cls, model_config: Dict[str, Any]) -> ModelConfig:
@@ -47,24 +47,23 @@ class ConfigHandlerMixin:
         )
     
     @classmethod
-    def get_config_values(cls, config: Dict[str, Any]) -> Dict[str, Any]:
+    def get_config_values(cls, stage_definition: Dict[str, Any]) -> Dict[str, Any]:
         """
         Extract and validate configuration values.
         
         Args:
-            config: Stage configuration dictionary
+            stage_definition: Stage configuration dictionary
             
         Returns:
             Dictionary of configuration values
         """
-        cls.validate_config(config)
+        cls.validate_config(stage_definition)
         
         return {
-            'models': [cls.parse_model_config(m) for m in config['models']],
-            'competitors': config['competitors'],
-            'prompts': config['prompts'],
-            'batches_per_model': config.get('batches_per_model', 4),
-            'initial_rating': config.get('initial_rating', DEFAULT_INITIAL_RATING),
-            'symmetric_matches': config.get('symmetric_matches', False),
-            'parallel': config.get('parallel', 2)
+            'models': [cls.parse_model_config(m) for m in stage_definition['models']],
+            'competitors': stage_definition['competitors'],
+            'prompts': stage_definition['prompts'],
+            'batches_per_model': stage_definition.get('batches_per_model', 4),
+            'initial_rating': stage_definition.get('initial_rating', DEFAULT_INITIAL_RATING),
+            'symmetric_matches': stage_definition.get('symmetric_matches', False)
         } 

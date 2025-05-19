@@ -16,12 +16,11 @@ class PromptListOfAnswersStage(Stage):
     """
     
     def __init__(
-        self, 
+        self,
         models: List[Dict[str, Any]],
         prompts: List[str],
         possible_answers: List[str],
-        result_var_name: str,
-        config: Optional[PipelineConfig] = None
+        result_var_name: str
     ):
         """
         Initialize the prompt list of answers stage.
@@ -31,57 +30,53 @@ class PromptListOfAnswersStage(Stage):
             prompts: List of prompt templates
             possible_answers: List of allowed answers
             result_var_name: Variable name to store the result
-            config: PipelineConfig instance containing pipeline settings
         """
         self.models = models
         self.prompts = prompts
         self.possible_answers = possible_answers
         self.result_var_name = result_var_name
-        self.config = config
         self.llm_client = LLMClient()
     
     @classmethod
-    def from_config(cls, config: Dict[str, Any], pipeline_config: Optional[PipelineConfig] = None) -> 'PromptListOfAnswersStage':
+    def from_config(cls, stage_definition: Dict[str, Any]) -> 'PromptListOfAnswersStage':
         """
         Create a PromptListOfAnswersStage from configuration.
         
         Args:
-            config: Dictionary containing:
+            stage_definition: Dictionary containing:
                 - 'models': List of model configurations
                 - 'prompts': List of prompt templates
                 - 'possible_answers': List of allowed answers
                 - 'result_var_name': Variable name to store the result
-            pipeline_config: Optional PipelineConfig instance containing pipeline settings
             
         Returns:
             A PromptListOfAnswersStage instance
             
         Raises:
-            ValueError: If the config is invalid
+            ValueError: If the stage_definition is invalid
         """
-        models = config.get('models')
-        prompts = config.get('prompts')
-        possible_answers = config.get('possible_answers')
-        result_var_name = config.get('result_var_name')
+        models = stage_definition.get('models')
+        prompts = stage_definition.get('prompts')
+        possible_answers = stage_definition.get('possible_answers')
+        result_var_name = stage_definition.get('result_var_name')
         
         if not models or not isinstance(models, list):
-            raise ValueError("PromptListOfAnswersStage config must contain a 'models' list")
+            raise ValueError("PromptListOfAnswersStage stage_definition must contain a 'models' list")
         
         if not prompts or not isinstance(prompts, list):
-            raise ValueError("PromptListOfAnswersStage config must contain a 'prompts' list")
+            raise ValueError("PromptListOfAnswersStage stage_definition must contain a 'prompts' list")
         
         if not possible_answers or not isinstance(possible_answers, list):
-            raise ValueError("PromptListOfAnswersStage config must contain a 'possible_answers' list")
+            raise ValueError("PromptListOfAnswersStage stage_definition must contain a 'possible_answers' list")
         
         if not result_var_name:
-            raise ValueError("PromptListOfAnswersStage config must contain a 'result_var_name'")
+            raise ValueError("PromptListOfAnswersStage stage_definition must contain a 'result_var_name'")
         
         return cls(
             models=models,
             prompts=prompts,
             possible_answers=possible_answers,
-            result_var_name=result_var_name,
-            config=pipeline_config
+            result_var_name=result_var_name
         )
     
     def _format_prompt(self, template: str, variables: Dict[str, Any]) -> str:
@@ -162,7 +157,7 @@ class PromptListOfAnswersStage(Stage):
         
         return new_execution
     
-    def process(self, executions: List[Execution]) -> List[Execution]:
+    def process(self, pipeline_config: PipelineConfig, executions: List[Execution]) -> List[Execution]:
         """
         Process input executions, send prompts to LLMs, and return new executions with results.
         
@@ -184,7 +179,7 @@ class PromptListOfAnswersStage(Stage):
                         jobs.append((execution, model_config, prompt_template, iteration))
         
         # Process in parallel
-        with ThreadPoolExecutor(max_workers=self.config.parallel if self.config else 2) as executor:
+        with ThreadPoolExecutor(max_workers=pipeline_config.parallel) as executor:
             # Create and submit futures
             futures = []
             for execution, model_config, prompt_template, iteration in jobs:

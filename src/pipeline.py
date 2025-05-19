@@ -12,47 +12,42 @@ class Pipeline:
     in the correct order, then provides methods to execute the pipeline.
     """
     
-    def __init__(self, stages: List[Stage], config: PipelineConfig):
+    def __init__(self, stages: List[Stage]):
         """
         Initialize a pipeline with a list of stages.
         
         Args:
             stages: List of Stage instances to be executed in order
-            config: PipelineConfig instance containing pipeline configuration
+            pipeline_config: PipelineConfig instance containing pipeline configuration
         """
         self.stages = stages
-        self.config = config
     
     @classmethod
-    def from_config(cls, config_pipeline: Dict[str, Any], config: PipelineConfig) -> 'Pipeline':
+    def from_config(cls, pipeline_definition: Dict[str, Any]) -> 'Pipeline':
         """
         Create a pipeline from a configuration dictionary.
         
         Args:
-            config_pipeline: Configuration dictionary with a 'foreach' list of stage configs
-            config: PipelineConfig instance containing pipeline settings
+            pipeline_definition: Configuration dictionary with a 'foreach' list of stage configs
             
         Returns:
             A Pipeline instance
             
         Raises:
-            ValueError: If the config is invalid
+            ValueError: If the pipeline_config is invalid
         """
-        foreach = config_pipeline.get('foreach')
+        foreach = pipeline_definition.get('foreach')
         if not foreach or not isinstance(foreach, list):
             raise ValueError("Configuration must contain a 'foreach' list")
         
         stages = []
-        for stage_config in foreach:
-            # Add output folder to stage config if it's an export_to_csv stage
-            if stage_config.get('node_type') == 'export_to_csv':
-                stage_config['output_folder'] = config.output_dir
-            stage = StageRegistry.create_stage(stage_config)
+        for stage_definition in foreach:
+            stage = StageRegistry.create_stage(stage_definition)
             stages.append(stage)
         
-        return cls(stages, config=config)
+        return cls(stages)
     
-    def run(self, initial_variables: Dict[str, Any] = None) -> List[Execution]:
+    def run(self, pipeline_config: PipelineConfig, initial_variables: Dict[str, Any]) -> List[Execution]:
         """
         Run the pipeline with an optional set of initial variables.
         
@@ -67,7 +62,7 @@ class Pipeline:
         
         # Process through each stage
         for stage in self.stages:            
-            processed_executions = stage.process([exec for exec in executions if not exec.has_error()])
+            processed_executions = stage.process(executions=[exec for exec in executions if not exec.has_error()], pipeline_config=pipeline_config)
             
             errored_executions = [exec for exec in executions if exec.has_error()]
             executions = processed_executions + errored_executions
@@ -75,4 +70,4 @@ class Pipeline:
             if not executions:
                 break
         
-        return executions 
+        return executions

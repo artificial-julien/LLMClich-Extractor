@@ -34,8 +34,7 @@ class PromptEloRatingStage(
         prompts: List[str],
         batches_per_model: int = 4,
         initial_rating: int = DEFAULT_INITIAL_RATING,
-        symmetric_matches: bool = False,
-        config: Optional[PipelineConfig] = None
+        symmetric_matches: bool = False
     ):
         """
         Initialize the prompt Elo rating stage.
@@ -47,11 +46,10 @@ class PromptEloRatingStage(
             batches_per_model: Number of batches to process for each model
             initial_rating: Initial Elo rating for all competitors
             symmetric_matches: Whether to run matches in both directions
-            config: PipelineConfig instance containing pipeline settings
         """
         # Initialize mixins
         LLMProcessorMixin.__init__(self)
-        BatchProcessorMixin.__init__(self, config.parallel if config else 2)
+        BatchProcessorMixin.__init__(self)
         
         # Store configuration
         self.models = models
@@ -60,22 +58,21 @@ class PromptEloRatingStage(
         self.batches_per_model = batches_per_model
         self.initial_rating = initial_rating
         self.symmetric_matches = symmetric_matches
-        self.config = config
     
     @classmethod
-    def from_config(cls, config: Dict[str, Any], pipeline_config: Optional[PipelineConfig] = None) -> 'PromptEloRatingStage':
+    def from_config(cls, stage_definition: Dict[str, Any]) -> 'PromptEloRatingStage':
         """
         Create a PromptEloRatingStage from configuration.
         
         Args:
-            config: Dictionary containing stage configuration
-            pipeline_config: Optional PipelineConfig instance containing pipeline settings
+            stage_definition: Dictionary containing stage configuration
+            pipeline_config: PipelineConfig instance containing pipeline settings
             
         Returns:
             A PromptEloRatingStage instance
         """
-        values = cls.get_config_values(config)
-        return cls(**values, config=pipeline_config)
+        values = cls.get_config_values(stage_definition)
+        return cls(**values)
     
     def _initialize_stats(self) -> Dict[str, CompetitorStats]:
         """
@@ -95,8 +92,8 @@ class PromptEloRatingStage(
             for competitor in self.competitors
         }
     
-    def process(self, executions: List[Execution]) -> List[Execution]:
-        """
+    def process(self, pipeline_config: PipelineConfig, executions: List[Execution]) -> List[Execution]:
+        """ 
         Process input executions, run Elo rating matches, and return results.
         
         Args:
@@ -141,11 +138,11 @@ class PromptEloRatingStage(
                             self.prompts,
                             llm_seed,
                             self.symmetric_matches,
-                            batch_seed=self.config.batch_seed if self.config else None
+                            batch_seed=pipeline_config.batch_seed
                         )
                         
                         # Process rounds (individual LLM calls)
-                        round_results = self.process_batch(jobs, self.symmetric_matches, pbar)
+                        round_results = self.process_batch(pipeline_config=pipeline_config, jobs=jobs, symmetric_matches=self.symmetric_matches, pbar=pbar)
                         
                         # Group rounds into matches
                         matches = self.group_rounds_into_matches(round_results)

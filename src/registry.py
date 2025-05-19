@@ -1,6 +1,6 @@
 from typing import Dict, Type, Any, Optional
 from src.stage import Stage
-
+from src.commons import PipelineConfig
 class StageRegistry:
     """
     Registry for mapping node_type strings to Stage classes.
@@ -41,12 +41,12 @@ class StageRegistry:
         return cls._registry.get(node_type)
     
     @classmethod
-    def create_stage(cls, config: Dict[str, Any]) -> Stage:
+    def create_stage(cls, stage_definition: Dict[str, Any]) -> Stage:
         """
         Create a Stage instance from a configuration dictionary.
         
         Args:
-            config: The stage configuration dictionary, must contain 'node_type'
+            stage_definition: The stage configuration dictionary, must contain 'node_type'
             
         Returns:
             An instance of the appropriate Stage class
@@ -54,7 +54,7 @@ class StageRegistry:
         Raises:
             ValueError: If node_type is missing or not registered
         """
-        node_type = config.get('node_type')
+        node_type = stage_definition.get('node_type')
         if not node_type:
             raise ValueError("Configuration missing 'node_type' field")
         
@@ -62,4 +62,4 @@ class StageRegistry:
         if not stage_class:
             raise ValueError(f"Unknown node_type: {node_type}")
         
-        return stage_class.from_config(config) 
+        return stage_class.from_config(stage_definition=stage_definition) 
