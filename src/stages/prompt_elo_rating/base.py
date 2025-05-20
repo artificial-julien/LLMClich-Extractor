@@ -167,6 +167,7 @@ class PromptEloRatingStage(
                             )
                 
                 # Add final ratings for this model (after all seeds)
+                rating_executions = []
                 for competitor, competitor_stats in stats.items():
                     rating_execution = self.create_rating_execution(
                         base_execution,
@@ -178,7 +179,11 @@ class PromptEloRatingStage(
                         model_config,
                         -1  # Use -1 to indicate this is the final rating across all seeds
                     )
-                    model_result_executions.append(rating_execution)
+                    rating_executions.append(rating_execution)
+                
+                # Sort rating executions by Elo rating in descending order
+                rating_executions.sort(key=lambda x: x.get_variable('_elo_rating'), reverse=True)
+                model_result_executions.extend(rating_executions)
                 
                 all_result_executions.extend(model_result_executions)
 
