@@ -4,6 +4,7 @@ from src.stage import Stage
 from src.execution import Execution
 from src.registry import StageRegistry
 from src.llm import LLMClient
+from src.llm.prompt_utils import format_template_variables, add_possible_answers
 from src.commons import PipelineConfig
 import itertools
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -90,15 +91,11 @@ class PromptListOfAnswersStage(Stage):
         Returns:
             Formatted prompt
         """
-        formatted_prompt = template
-        for key, value in variables.items():
-            formatted_prompt = formatted_prompt.replace(f"[{key}]", str(value))
+        # Format the template with variables
+        formatted_prompt = format_template_variables(template, variables)
         
-        # Add possible answers to the prompt
-        answers_str = "\n".join([f"{i+1}. {ans}" for i, ans in enumerate(self.possible_answers)])
-        formatted_prompt += f"\n\nPossible answers:\n{answers_str}"
-        
-        return formatted_prompt
+        # Add possible answers
+        return add_possible_answers(formatted_prompt, self.possible_answers)
     
     def _process_execution(
         self, 
