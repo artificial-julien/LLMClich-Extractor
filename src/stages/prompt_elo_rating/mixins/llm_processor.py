@@ -1,6 +1,8 @@
 from typing import List, Dict, Any, Optional
 from ..types import Round, ModelConfig
 from src.llm import LLMClient
+from src.llm.prompt_utils import format_template_variables, add_possible_answers
+from src.execution import Execution
 
 class LLMProcessorMixin:
     """Mixin providing LLM interaction functionality."""
@@ -8,29 +10,27 @@ class LLMProcessorMixin:
     def __init__(self):
         self.llm_client = LLMClient()
     
-    def format_prompt(self, template: str, competitor_a: str, competitor_b: str) -> str:
+    def format_prompt(self, template: str, execution: Execution) -> str:
         """
-        Format a prompt template with competitor variables.
+        Format a prompt template with variables from execution.
         
         Args:
-            template: Prompt template with [_elo_match_competitor_a] and [_elo_match_competitor_b] placeholders
-            competitor_a: First competitor
-            competitor_b: Second competitor
+            template: Prompt template with [variable] placeholders
+            execution: Execution object containing variables
             
         Returns:
             Formatted prompt
         """
-        formatted_prompt = template.replace("[_elo_match_competitor_a]", competitor_a).replace("[_elo_match_competitor_b]", competitor_b)
+        # Format the template with all variables from execution
+        formatted_prompt = format_template_variables(template, execution.variables)
         
-        # Add possible answers to the prompt
-        formatted_prompt += f"\n\nPossible answers:\n1. {competitor_a}\n2. {competitor_b}"
-        
-        return formatted_prompt
+        # Add possible answers using competitor variables
+        possible_answers = [execution.variables.get('_elo_match_competitor_a'), execution.variables.get('_elo_match_competitor_b')]
+        return add_possible_answers(formatted_prompt, possible_answers)
     
     def process_round(
         self,
-        competitor_a: str,
-        competitor_b: str,
+        execution: Execution,
         model_config: ModelConfig,
         prompt_template: str,
         llm_seed: int
@@ -39,8 +39,7 @@ class LLMProcessorMixin:
         Process a single round (LLM call) between two competitors.
         
         Args:
-            competitor_a: First competitor
-            competitor_b: Second competitor
+            execution: Execution object containing variables
             model_config: Model configuration
             prompt_template: Prompt template
             llm_seed: llm_seed value for reproducibility
@@ -48,8 +47,12 @@ class LLMProcessorMixin:
         Returns:
             Round result from the LLM call
         """
-        # Format the prompt with competitor names
-        formatted_prompt = self.format_prompt(prompt_template, competitor_a, competitor_b)
+        # Format the prompt with variables from execution
+        formatted_prompt = self.format_prompt(prompt_template, execution)
+        
+        # Get competitors from execution variables
+        competitor_a = execution.variables.get('_elo_match_competitor_a')
+        competitor_b = execution.variables.get('_elo_match_competitor_b')
         
         # Call the LLM with two possible answers (the two competitors)
         result = self.llm_client.generate_constrained_completion(
