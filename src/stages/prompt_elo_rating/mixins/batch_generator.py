@@ -1,20 +1,20 @@
 import random
 from typing import List, Set, Tuple, Dict, Optional
-from ..types import CompetitorStats, RoundJob, ModelConfig
-
+from ..types import EloCompetitorRating, EloRound, ModelConfig
+from src.execution import Execution
 class BatchGeneratorMixin:
     """Mixin providing Swiss system match generation functionality."""
     
     def generate_match_batch(
         self,
         competitors: List[str],
-        stats: Dict[str, CompetitorStats],
+        stats: Dict[str, EloCompetitorRating],
         model_config: ModelConfig,
         prompt_templates: List[str],
         llm_seed: int,
         symmetric_matches: bool,
         batch_seed: Optional[int] = None
-    ) -> List[RoundJob]:
+    ) -> List[EloRound]:
         """
         Generate a batch of round jobs using Swiss system approach.
         
@@ -51,20 +51,20 @@ class BatchGeneratorMixin:
                 break
                 
             # Find pairs with minimum matches played
-            min_matches = min(stats[a]['matches_played'] for pair in pairs for a in pair)
+            min_matches = min(stats[a].matches_played for pair in pairs for a in pair)
             min_pairs = [
                 pair for pair in pairs 
-                if stats[pair[0]]['matches_played'] == min_matches 
-                and stats[pair[1]]['matches_played'] == min_matches
+                if stats[pair[0]].matches_played == min_matches 
+                and stats[pair[1]].matches_played == min_matches
             ]
             if not min_pairs:
                 min_pairs = pairs
                 
             # Find pairs with minimum Elo difference
-            min_elo_diff = min(abs(stats[a]['rating'] - stats[b]['rating']) for a, b in min_pairs)
+            min_elo_diff = min(abs(stats[a].rating - stats[b].rating) for a, b in min_pairs)
             best_pairs = [
                 pair for pair in min_pairs 
-                if abs(stats[pair[0]]['rating'] - stats[pair[1]]['rating']) == min_elo_diff
+                if abs(stats[pair[0]].rating - stats[pair[1]].rating) == min_elo_diff
             ]
             
             # Choose random pair from best pairs using the dedicated RNG instance
@@ -78,23 +78,22 @@ class BatchGeneratorMixin:
                 break
 
         # Create jobs for each match and prompt
-        jobs: List[RoundJob] = []
+        jobs: List[EloRound] = []
         for a, b in matches:
             for prompt_template in prompt_templates:
-                jobs.append({
-                    'competitor_a': a,
-                    'competitor_b': b,
-                    'model_config': model_config,
-                    'prompt_template': prompt_template,
-                    'llm_seed': llm_seed
-                })
+                def create_elo_round(competitor_a: str, competitor_b: str) -> EloRound:
+                    return EloRound(
+                        execution=Execution(),
+                        competitor_a=competitor_a,
+                        competitor_b=competitor_b,
+                        model_config=model_config,
+                        prompt_template=prompt_template,
+                        llm_seed=llm_seed,
+                        winner=None
+                    )
+
+                jobs.append(create_elo_round(a, b))
                 if symmetric_matches:
-                    jobs.append({
-                        'competitor_a': b,
-                        'competitor_b': a,
-                        'model_config': model_config,
-                        'prompt_template': prompt_template,
-                        'llm_seed': llm_seed
-                    })
+                    jobs.append(create_elo_round(b, a))
                     
         return jobs 

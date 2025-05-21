@@ -1,5 +1,5 @@
 from typing import Dict, Tuple
-from ..types import CompetitorStats, DEFAULT_K_FACTOR
+from ..types import EloCompetitorRating, DEFAULT_K_FACTOR
 
 class EloCalculatorMixin:
     """Mixin providing Elo rating calculation functionality."""
@@ -44,7 +44,7 @@ class EloCalculatorMixin:
         competitor_b: str,
         a_score: float,
         b_score: float,
-        stats: Dict[str, CompetitorStats]
+        stats: Dict[str, EloCompetitorRating]
     ) -> None:
         """
         Update Elo ratings and match statistics for a pair of competitors.
@@ -56,21 +56,18 @@ class EloCalculatorMixin:
             b_score: Score for competitor B
             stats: Dictionary of competitor statistics
         """
-        a_expected = self.calculate_expected_score(stats[competitor_a]['rating'], stats[competitor_b]['rating'])
+        a_expected = self.calculate_expected_score(stats[competitor_a].rating, stats[competitor_b].rating)
         b_expected = 1 - a_expected
         
-        stats[competitor_a]['rating'] = self.update_elo_rating(stats[competitor_a]['rating'], a_expected, a_score)
-        stats[competitor_b]['rating'] = self.update_elo_rating(stats[competitor_b]['rating'], b_expected, b_score)
+        stats[competitor_a].rating = self.update_elo_rating(stats[competitor_a].rating, a_expected, a_score)
+        stats[competitor_b].rating = self.update_elo_rating(stats[competitor_b].rating, b_expected, b_score)
         
         if a_score == 1:
-            stats[competitor_a]['wins'] += 1
-            stats[competitor_b]['losses'] += 1
+            stats[competitor_a].wins += 1
+            stats[competitor_b].losses += 1
         elif b_score == 1:
-            stats[competitor_b]['wins'] += 1
-            stats[competitor_a]['losses'] += 1
+            stats[competitor_b].wins += 1
+            stats[competitor_a].losses += 1
         elif a_score == 0.5:
-            stats[competitor_a]['draws'] += 1
-            stats[competitor_b]['draws'] += 1
-            
-        stats[competitor_a]['matches_played'] += 1
-        stats[competitor_b]['matches_played'] += 1 
+            stats[competitor_a].draws += 1
+            stats[competitor_b].draws += 1
