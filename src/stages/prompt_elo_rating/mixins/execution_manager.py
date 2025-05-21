@@ -1,6 +1,6 @@
 from typing import Dict, Any, Optional, List
 from src.execution import Execution
-from ..types import Round, Match
+from ..types import EloRound, EloMatch
 
 class ExecutionManagerMixin:
     """Mixin providing execution management functionality."""
@@ -31,14 +31,14 @@ class ExecutionManagerMixin:
     def create_round_execution(
         self,
         base_execution: Execution,
-        round_result: Round
+        round_result: EloRound
     ) -> Execution:
         """
         Create an execution for a round result.
         
         Args:
             base_execution: Base execution to copy from
-            round_result: Round result to create execution for
+            round_result: EloRound result to create execution for
             
         Returns:
             New execution with round result variables
@@ -57,42 +57,6 @@ class ExecutionManagerMixin:
         )
         
         return round_execution
-    
-    def create_match_execution(
-        self,
-        base_execution: Execution,
-        match: Match
-    ) -> Execution:
-        """
-        Create an execution for a match result (aggregation of rounds).
-        
-        Args:
-            base_execution: Base execution to copy from
-            match: Match result to create execution for
-            
-        Returns:
-            New execution with match result variables
-        """
-        match_execution = base_execution.copy()
-        match_execution.add_variable('_elo_match_competitor_a', match.competitor_a)
-        match_execution.add_variable('_elo_match_competitor_b', match.competitor_b)
-        match_execution.add_variable('_elo_match_winner', None if match.is_draw else match.winner)
-        match_execution.add_variable('_elo_match_draw', match.is_draw)
-        match_execution.add_variable('_elo_match_wins_a', int(match.round_wins_a))
-        match_execution.add_variable('_elo_match_wins_b', int(match.round_wins_b))
-        
-        # Use the first round for model information
-        if match.rounds:
-            first_round = match.rounds[0]
-            self.create_base_execution_vars(
-                match_execution,
-                first_round.model_name,
-                first_round.temperature,
-                first_round.top_p,
-                first_round.llm_seed
-            )
-        
-        return match_execution
     
     def create_rating_execution(
         self,
