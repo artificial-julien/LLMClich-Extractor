@@ -81,21 +81,22 @@ class BatchGeneratorMixin:
         jobs: List[EloRound] = []
         for a, b in matches:
             for prompt_template in prompt_templates:
-                def create_elo_round(competitor_a: str, competitor_b: str) -> EloRound:
+                def create_elo_round(competitor_a: str, competitor_b: str, is_mirror: bool) -> EloRound:
                     round = EloRound(
                         competitor_a=competitor_a,
                         competitor_b=competitor_b,
                         model_config=model_config,
                         prompt_template=prompt_template,
                         llm_seed=llm_seed,
-                        winner=None
+                        winner=None,
+                        is_mirror=is_mirror
                     )
                     round.import_variables_from(base_execution)
 
                     return round
 
-                jobs.append(create_elo_round(a, b))
+                jobs.append(create_elo_round(a, b, False))
                 if symmetric_matches:
-                    jobs.append(create_elo_round(b, a))
+                    jobs.append(create_elo_round(b, a, True))
                     
         return jobs 

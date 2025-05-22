@@ -12,6 +12,7 @@ class EloRound(Execution):
     winner: Optional[str]
     prompt_template: str
     llm_seed: int
+    is_mirror: bool
 
     def get_specific_variables(self) -> Dict[str, Any]:
         return {
