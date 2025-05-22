@@ -57,10 +57,7 @@ class BatchProcessorMixin:
                 finally:
                     if pbar is not None:
                         pbar.update(1)
-        
-        # Update symmetric matches if needed
-        if symmetric_matches:
-            self._update_symmetric_matches(rounds)
+    
         
         return rounds
     
@@ -115,22 +112,6 @@ class BatchProcessorMixin:
         Args:
             rounds: List of rounds to update
         """
-        # Group rounds by competitor pairs
-        round_map = {}
-        for round_result in rounds:
-            key = (round_result.competitor_a, round_result.competitor_b)
-            if key in round_map:
-                continue
-            round_map[key] = round_result
-        
-        # Update symmetric matches
-        for (a, b), round_a_b in round_map.items():
-            reverse_key = (b, a)
-            if reverse_key in round_map:
-                round_b_a = round_map[reverse_key]
-                # If both agree on the same winner, keep it
-                if (round_a_b.winner == a and round_b_a.winner == a) or (round_a_b.winner == b and round_b_a.winner == b):
-                    continue
-                # Otherwise, set both to None (will be handled at match level)
-                round_a_b.winner = None
-                round_b_a.winner = None
+        for round in rounds:
+            if round.is_mirror:
+                round.winner = round.competitor_b if round.winner == round.competitor_a else round.competitor_a
