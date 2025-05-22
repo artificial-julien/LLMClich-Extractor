@@ -5,6 +5,7 @@ from pathlib import Path
 import pandas as pd
 import tempfile
 import shutil
+import multiprocessing
 
 # Constants for directory paths
 TESTS_DATA_DIR = os.path.join("tests", "data")
@@ -12,11 +13,24 @@ INPUTS_DIR = os.path.join(TESTS_DATA_DIR, "inputs")
 ACTUAL_DIR = os.path.join(TESTS_DATA_DIR, "actual")
 EXPECTED_DIR = os.path.join(TESTS_DATA_DIR, "expected")
 
+def pytest_addoption(parser):
+    parser.addoption(
+        "--parallel",
+        action="store",
+        default="1",
+        help="Number of parallel processes to use for testing"
+    )
+
+@pytest.fixture
+def parallel_workers(request):
+    """Fixture to get the number of parallel workers"""
+    return int(request.config.getoption("--parallel"))
+
 @pytest.fixture
 def run_cli():
     """Fixture to run CLI commands and verify output"""
-    def _run_cli(input_json: str, output_dir: str) -> bool:
-        cmd = ['python', '-m', 'src.main', input_json, '--batch-seed', '42', "--output-dir", output_dir]
+    def _run_cli(input_json: str, output_dir: str, parallel: int = 1) -> bool:
+        cmd = ['python', '-m', 'src.main', input_json, '--batch-seed', '42', "--output-dir", output_dir, '--parallel', str(parallel)]
         
         try:
             result = subprocess.run(
@@ -48,13 +62,14 @@ def run_cli():
     "prompt_list_of_answers.simple", 
     "simple_variables",
 ])
-def test_e2e(case_name, run_cli, generate_missing):
+@pytest.mark.parametrize("parallel", [1, 16])
+def test_e2e(case_name, run_cli, generate_missing, parallel):
     """End-to-end test comparing all output files between actual and expected directories"""
     
     # Setup paths
     input_json_path = os.path.join(INPUTS_DIR, f"{case_name}.json")
-    actual_case_dir = os.path.join(ACTUAL_DIR, case_name)
-    expected_case_dir = os.path.join(EXPECTED_DIR, case_name)
+    actual_case_dir = os.path.join(ACTUAL_DIR, f"{case_name}")
+    expected_case_dir = os.path.join(EXPECTED_DIR, f"{case_name}")
     
     # Verify input file exists
     assert os.path.exists(input_json_path), f"Input file {input_json_path} not found"
@@ -65,7 +80,7 @@ def test_e2e(case_name, run_cli, generate_missing):
     os.makedirs(actual_case_dir, exist_ok=True)
     
     # Run the CLI with actual directory as output
-    run_cli(input_json_path, actual_case_dir)
+    run_cli(input_json_path, actual_case_dir, parallel)
     
     # If expected directory doesn't exist and generate_missing is True, copy the actual output
     if not os.path.exists(expected_case_dir) and generate_missing:

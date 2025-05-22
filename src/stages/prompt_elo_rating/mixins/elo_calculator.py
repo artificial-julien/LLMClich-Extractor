@@ -1,5 +1,6 @@
-from typing import Dict, Tuple
-from ..types import EloCompetitorRating, DEFAULT_K_FACTOR
+from typing import Dict, Tuple, List
+from ..types import EloCompetitorRating, DEFAULT_K_FACTOR, EloMatch
+import copy
 
 class EloCalculatorMixin:
     """Mixin providing Elo rating calculation functionality."""
@@ -40,34 +41,55 @@ class EloCalculatorMixin:
     
     def update_ratings_and_stats(
         self,
-        competitor_a: str,
-        competitor_b: str,
-        a_score: float,
-        b_score: float,
+        matches: List[EloMatch],
         stats: Dict[str, EloCompetitorRating]
-    ) -> None:
+    ) -> Dict[str, EloCompetitorRating]:
         """
-        Update Elo ratings and match statistics for a pair of competitors.
+        Update Elo ratings and match statistics for a batch of matches using original ratings.
         
         Args:
-            competitor_a: First competitor
-            competitor_b: Second competitor
-            a_score: Score for competitor A
-            b_score: Score for competitor B
-            stats: Dictionary of competitor statistics
+            matches: List of EloMatch objects containing match results
+            stats: Dictionary of competitor statistics with original ratings
+            
+        Returns:
+            Updated dictionary of competitor statistics
         """
-        a_expected = self.calculate_expected_score(stats[competitor_a].rating, stats[competitor_b].rating)
-        b_expected = 1 - a_expected
+        # Create a deep copy of the stats dictionary to store final results
+        updated_stats = copy.deepcopy(stats)
         
-        stats[competitor_a].rating = self.update_elo_rating(stats[competitor_a].rating, a_expected, a_score)
-        stats[competitor_b].rating = self.update_elo_rating(stats[competitor_b].rating, b_expected, b_score)
+        # Calculate all expected scores and rating changes using original ratings
+        rating_changes = {}
+        for match in matches:
+            if not match.winner and not match.is_draw:
+                continue
+                
+            a_score = 1.0 if match.winner == match.competitor_a else (0.5 if match.is_draw else 0.0)
+            b_score = 1.0 if match.winner == match.competitor_b else (0.5 if match.is_draw else 0.0)
+            
+            a_expected = self.calculate_expected_score(stats[match.competitor_a].rating, stats[match.competitor_b].rating)
+            b_expected = 1 - a_expected
+            
+            # Calculate rating changes but don't apply them yet
+            a_change = self.update_elo_rating(stats[match.competitor_a].rating, a_expected, a_score) - stats[match.competitor_a].rating
+            b_change = self.update_elo_rating(stats[match.competitor_b].rating, b_expected, b_score) - stats[match.competitor_b].rating
+            
+            # Accumulate rating changes
+            rating_changes[match.competitor_a] = rating_changes.get(match.competitor_a, 0) + a_change
+            rating_changes[match.competitor_b] = rating_changes.get(match.competitor_b, 0) + b_change
+            
+            # Update match statistics
+            if a_score == 1:
+                updated_stats[match.competitor_a].wins += 1
+                updated_stats[match.competitor_b].losses += 1
+            elif b_score == 1:
+                updated_stats[match.competitor_b].wins += 1
+                updated_stats[match.competitor_a].losses += 1
+            elif a_score == 0.5:
+                updated_stats[match.competitor_a].draws += 1
+                updated_stats[match.competitor_b].draws += 1
         
-        if a_score == 1:
-            stats[competitor_a].wins += 1
-            stats[competitor_b].losses += 1
-        elif b_score == 1:
-            stats[competitor_b].wins += 1
-            stats[competitor_a].losses += 1
-        elif a_score == 0.5:
-            stats[competitor_a].draws += 1
-            stats[competitor_b].draws += 1
+        # Apply accumulated rating changes to original ratings
+        for competitor, change in rating_changes.items():
+            updated_stats[competitor].rating = stats[competitor].rating + change
+            
+        return updated_stats
