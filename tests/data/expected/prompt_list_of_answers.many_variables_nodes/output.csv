@@ -1,9 +1,9 @@
 a,b,result
-beta,gamma,false
-beta,gamma,false
 beta,alpha,false
-beta,alpha,true
-alpha,gamma,false
-alpha,gamma,true
+beta,alpha,false
+beta,beta,true
+beta,beta,true
 alpha,alpha,true
 alpha,alpha,true
+alpha,beta,false
+alpha,beta,false

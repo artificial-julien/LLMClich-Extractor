@@ -1,20 +1,20 @@
 _model_name,_model_temperature,_model_top_p,_elo_competitor,_elo_rating,_elo_wins,_elo_loss,_elo_draws
+gpt-4.1-mini,0.0,1.0,Bugs Bunny,1096.0,7.0,0.0,0.0
 gpt-4.1-mini,0.0,1.0,Homer Simpson,1085.0,6.0,0.0,0.0
-gpt-4.1-mini,0.0,1.0,SpongeBob SquarePants,1077.0,5.0,0.0,1.0
-gpt-4.1-mini,0.0,1.0,Peter Griffin,1043.0,5.0,2.0,0.0
-gpt-4.1-mini,0.0,1.0,Stewie Griffin,1013.0,5.0,4.0,0.0
-gpt-4.1-mini,0.0,1.0,Glenn Quagmire,986.0,3.0,4.0,1.0
+gpt-4.1-mini,0.0,1.0,SpongeBob SquarePants,1061.0,5.0,1.0,0.0
 gpt-4.1-mini,0.0,1.0,Eric Cartman,1057.0,6.0,2.0,0.0
-gpt-4.1-mini,0.0,1.0,Bugs Bunny,1080.0,6.0,0.0,1.0
-gpt-4.1-mini,0.0,1.0,Donald Duck,997.0,3.0,3.0,1.0
 gpt-4.1-mini,0.0,1.0,Patrick Star,1049.0,5.0,2.0,0.0
-gpt-4.1-mini,0.0,1.0,Kenny McCormick,898.0,0.0,7.0,0.0
-gpt-4.1-mini,0.0,1.0,Squidward Tentacles,954.0,3.0,6.0,0.0
-gpt-4.1-mini,0.0,1.0,Pinky and the Brain,1015.0,5.0,4.0,0.0
-gpt-4.1-mini,0.0,1.0,Wile E. Coyote,954.0,2.0,5.0,1.0
-gpt-4.1-mini,0.0,1.0,Courage the Cowardly Dog,923.0,2.0,7.0,0.0
-gpt-4.1-mini,0.0,1.0,Stimpy,984.0,3.0,4.0,1.0
-gpt-4.1-mini,0.0,1.0,Bender from Futurama,1014.0,4.0,3.0,1.0
-gpt-4.1-mini,0.0,1.0,Scooby-Doo,932.0,1.0,6.0,0.0
-gpt-4.1-mini,0.0,1.0,Plankton,912.0,0.0,6.0,0.0
+gpt-4.1-mini,0.0,1.0,Peter Griffin,1043.0,5.0,2.0,0.0
 gpt-4.1-mini,0.0,1.0,Mr. Bean Animated,1016.0,4.0,3.0,1.0
+gpt-4.1-mini,0.0,1.0,Pinky and the Brain,1015.0,5.0,4.0,0.0
+gpt-4.1-mini,0.0,1.0,Bender from Futurama,1014.0,4.0,3.0,1.0
+gpt-4.1-mini,0.0,1.0,Stewie Griffin,1013.0,5.0,4.0,0.0
+gpt-4.1-mini,0.0,1.0,Donald Duck,997.0,3.0,3.0,1.0
+gpt-4.1-mini,0.0,1.0,Glenn Quagmire,986.0,3.0,4.0,1.0
+gpt-4.1-mini,0.0,1.0,Stimpy,984.0,3.0,4.0,1.0
+gpt-4.1-mini,0.0,1.0,Squidward Tentacles,954.0,3.0,6.0,0.0
+gpt-4.1-mini,0.0,1.0,Wile E. Coyote,954.0,2.0,5.0,1.0
+gpt-4.1-mini,0.0,1.0,Scooby-Doo,932.0,1.0,6.0,0.0
+gpt-4.1-mini,0.0,1.0,Courage the Cowardly Dog,923.0,2.0,7.0,0.0
+gpt-4.1-mini,0.0,1.0,Plankton,912.0,0.0,6.0,0.0
+gpt-4.1-mini,0.0,1.0,Kenny McCormick,898.0,0.0,7.0,0.0

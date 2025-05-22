@@ -96,7 +96,6 @@ class BatchProcessorMixin:
                 winner = comp_a if wins_a > wins_b else comp_b
             
             match = EloMatch(
-                execution=base_execution.copy(),
                 competitor_a=comp_a,
                 competitor_b=comp_b,
                 rounds=grouped_rounds,
@@ -104,6 +103,7 @@ class BatchProcessorMixin:
                 is_draw=is_draw,
                 model_config=grouped_rounds[0].model_config,
             )
+            match.import_variables_from(base_execution)
             matches.append(match)
         
         return matches

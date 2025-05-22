@@ -7,7 +7,7 @@ class BatchGeneratorMixin:
     
     def generate_match_batch(
         self,
-        competitors: List[str],
+        base_execution: Execution,
         stats: Dict[str, EloCompetitorRating],
         model_config: ModelConfig,
         prompt_templates: List[str],
@@ -19,7 +19,6 @@ class BatchGeneratorMixin:
         Generate a batch of round jobs using Swiss system approach.
         
         Args:
-            competitors: List of competitors
             stats: Current competitor statistics
             model_config: Model configuration
             prompt_templates: List of prompt templates
@@ -35,6 +34,7 @@ class BatchGeneratorMixin:
             
         matches = []
         scheduled_pairs: Set[Tuple[str, str]] = set()
+        competitors = list(stats.keys())
         
         def available_pairs() -> List[Tuple[str, str]]:
             pairs = []
@@ -82,8 +82,7 @@ class BatchGeneratorMixin:
         for a, b in matches:
             for prompt_template in prompt_templates:
                 def create_elo_round(competitor_a: str, competitor_b: str) -> EloRound:
-                    return EloRound(
-                        execution=Execution(),
+                    round = EloRound(
                         competitor_a=competitor_a,
                         competitor_b=competitor_b,
                         model_config=model_config,
@@ -91,6 +90,9 @@ class BatchGeneratorMixin:
                         llm_seed=llm_seed,
                         winner=None
                     )
+                    round.import_variables_from(base_execution)
+
+                    return round
 
                 jobs.append(create_elo_round(a, b))
                 if symmetric_matches:

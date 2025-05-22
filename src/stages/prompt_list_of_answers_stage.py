@@ -121,7 +121,7 @@ class PromptListOfAnswersStage(Stage):
         top_p = float(model_config.get('top_p', 1.0))
         
         # Format the prompt with variables
-        formatted_prompt = self._format_prompt(prompt_template, execution.variables)
+        formatted_prompt = self._format_prompt(prompt_template, execution.get_all_variables())
         
         # Call the LLM
         result = self.llm_client.generate_constrained_completion(
