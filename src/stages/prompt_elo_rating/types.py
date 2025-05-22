@@ -1,34 +1,9 @@
 from typing import TypedDict, List, Dict, Any, Optional, Tuple
 from dataclasses import dataclass, field
-from abc import ABC, abstractmethod
-from src.execution import Execution
-@dataclass
-class ModelConfig:
-    name: str
-    temperature: float
-    top_p: float
-    iterations: int
+from src.execution import Execution, ModelConfig
 
-@dataclass
-class Job(ABC):
-    """
-    Abstract base class for all job types in the system.
-    """
-    execution: Execution
-    model_config: ModelConfig
-
-    def to_execution_variables(self) -> Dict[str, Any]:
-        """Convert job properties to execution variables."""
-        return {
-            '_model_name': self.model_config.name,
-            '_model_temperature': self.model_config.temperature,
-            '_model_top_p': self.model_config.top_p,
-            '_model_iterations': self.model_config.iterations,
-            '_error': self.execution.error
-        }
-
-@dataclass
-class EloRound(Job):
+@dataclass(kw_only=True)
+class EloRound(Execution):
     """
     Represents a single LLM call between two competitors.
     """
@@ -38,19 +13,18 @@ class EloRound(Job):
     prompt_template: str
     llm_seed: int
 
-    def to_execution_variables(self) -> Dict[str, Any]:
-        vars = super().to_execution_variables()
-        vars.update({
-            '_elo_round_competitor_a': self.competitor_a,
-            '_elo_round_competitor_b': self.competitor_b,
+    def get_specific_variables(self) -> Dict[str, Any]:
+        return {
+            # Note : prefix is _elo_match here because it's used in the prompt template
+            '_elo_match_competitor_a': self.competitor_a,
+            '_elo_match_competitor_b': self.competitor_b,
             '_elo_round_winner': self.winner,
             '_elo_round_prompt_template': self.prompt_template,
             '_elo_round_llm_seed': self.llm_seed
-        })
-        return vars
+        }
 
-@dataclass
-class EloMatch(Job):
+@dataclass(kw_only=True)
+class EloMatch(Execution):
     """
     Represents an aggregation of multiple rounds between 2 competitors within a batch.
     """
@@ -68,20 +42,18 @@ class EloMatch(Job):
     def round_wins_b(self) -> int:
         return sum(1 for round in self.rounds if round.winner == self.competitor_b)
 
-    def to_execution_variables(self) -> Dict[str, Any]:
-        vars = super().to_execution_variables()
-        vars.update({
+    def get_specific_variables(self) -> Dict[str, Any]:
+        return {
             '_elo_match_competitor_a': self.competitor_a,
             '_elo_match_competitor_b': self.competitor_b,
             '_elo_match_winner': self.winner,
-            '_elo_match_is_draw': self.is_draw,
-            '_elo_match_round_wins_a': self.round_wins_a,
-            '_elo_match_round_wins_b': self.round_wins_b
-        })
-        return vars
+            '_elo_match_draw': self.is_draw,
+            '_elo_match_wins_a': self.round_wins_a,
+            '_elo_match_wins_b': self.round_wins_b
+        }
 
-@dataclass
-class EloCompetitorRating(Job):
+@dataclass(kw_only=True)
+class EloCompetitorRating(Execution):
     competitor: str
     rating: float
     wins: int = 0
@@ -92,16 +64,14 @@ class EloCompetitorRating(Job):
     def matches_played(self) -> int:
         return self.wins + self.losses + self.draws
 
-    def to_execution_variables(self) -> Dict[str, Any]:
-        vars = super().to_execution_variables()
-        vars.update({
+    def get_specific_variables(self) -> Dict[str, Any]:
+        return {
             '_elo_competitor': self.competitor,
-            '_elo_rating': self.rating,
-            '_elo_wins': self.wins,
-            '_elo_losses': self.losses,
-            '_elo_draws': self.draws
-        })
-        return vars
+            '_elo_rating': int(self.rating),
+            '_elo_wins': int(self.wins),
+            '_elo_loss': int(self.losses),
+            '_elo_draws': int(self.draws)
+        }
 
 # Constants
 DEFAULT_INITIAL_RATING = 1000

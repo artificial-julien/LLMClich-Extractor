@@ -56,7 +56,6 @@
     {
       "node_type": "export_to_csv",
       "output_file": "output.elo.matches.csv",
-      "skip_empty_rows": false,
       "columns": [
         "_model_name",
         "_model_temperature",
