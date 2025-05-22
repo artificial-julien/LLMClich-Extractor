@@ -135,27 +135,22 @@ class PromptEloRatingStage(
                                     pbar=pbar
                                 )
                                 
-                                # Group rounds into matches
                                 matches: List[EloMatch] = self.group_rounds_into_matches(base_execution, round_results)
                                 
-                                # Create executions for match results and update ratings
+                                valid_matches = []
                                 for match in matches:
                                     if not match.winner and not match.is_draw:
                                         continue
                                         
                                     model_result_executions.append(match)
-                                    
-                                    # Update ratings and stats
-                                    a_score = 1.0 if match.winner == match.competitor_a else (0.5 if match.is_draw else 0.0)
-                                    b_score = 1.0 if match.winner == match.competitor_b else (0.5 if match.is_draw else 0.0)
-                                    self.update_ratings_and_stats(
-                                        match.competitor_a,
-                                        match.competitor_b,
-                                        a_score,
-                                        b_score,
+                                    valid_matches.append(match)
+                                
+                                if valid_matches:
+                                    competitors_ratings = self.update_ratings_and_stats(
+                                        valid_matches,
                                         competitors_ratings
                                     )
-                        # Add final ratings for this model (after all seeds), sorted by Elo rating
+                        
                         sorted_ratings = sorted(
                             competitors_ratings.values(), 
                             key=lambda x: x.rating,
