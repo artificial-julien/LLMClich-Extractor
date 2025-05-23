@@ -11,33 +11,18 @@
         }
       ],
       "competitors": [
-        "Homer Simpson",
-        "SpongeBob SquarePants",
-        "Peter Griffin",
-        "Stewie Griffin",
-        "Glenn Quagmire",
-        "Eric Cartman",
-        "Bugs Bunny",
-        "Donald Duck",
-        "Patrick Star",
-        "Kenny McCormick",
-        "Squidward Tentacles",
-        "Pinky and the Brain",
-        "Wile E. Coyote",
-        "Courage the Cowardly Dog",
-        "Stimpy",
-        "Bender from Futurama",
-        "Scooby-Doo",
-        "Plankton",
-        "Mr. Bean Animated"
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
       ],
       "prompts": [
-        "Who is funnier between '[_elo_match_competitor_a]' and '[_elo_match_competitor_b]'?",
-        "Between '[_elo_match_competitor_a]' and '[_elo_match_competitor_b]', which character makes people laugh more?"
+        "Which number is greater '[_elo_match_competitor_a]' or '[_elo_match_competitor_b]'?"
       ],
-      "batches_per_model": 4,
+      "batches_per_model": 7,
       "initial_rating": 1000,
-      "symmetric_matches": true
+      "symmetric_matches": false
     },
     {
       "node_type": "export_to_csv",
