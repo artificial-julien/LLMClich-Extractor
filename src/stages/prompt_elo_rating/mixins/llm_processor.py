@@ -4,6 +4,7 @@ from src.llm import LLMClient
 from src.llm.prompt_utils import format_template_variables, add_possible_answers
 from src.execution import Execution
 from src.commons import PipelineConfig
+from src.prompt_exception import LLMException
 
 class LLMProcessorMixin:
     """Mixin providing LLM interaction functionality."""
@@ -47,17 +48,20 @@ class LLMProcessorMixin:
         competitor_a = round.competitor_a
         competitor_b = round.competitor_b
         
-        # Call the LLM with two possible answers (the two competitors)
-        result = self.llm_client.generate_constrained_completion(
-            model=round.model_config.name,
-            prompt=formatted_prompt,
-            possible_answers=[competitor_a, competitor_b],
-            temperature=round.model_config.temperature,
-            top_p=round.model_config.top_p,
-            llm_seed=round.llm_seed,
-            max_tries=pipeline_config.llm_max_tries
-        )
+        try:
+            # Call the LLM with two possible answers (the two competitors)
+            result = self.llm_client.generate_constrained_completion(
+                model=round.model_config.name,
+                prompt=formatted_prompt,
+                possible_answers=[competitor_a, competitor_b],
+                temperature=round.model_config.temperature,
+                top_p=round.model_config.top_p,
+                llm_seed=round.llm_seed,
+                max_tries=pipeline_config.llm_max_tries
+            )
+        except LLMException as e:
+            round.error = e.message
+            return round
         
-        round.winner = result['chosen_answer'] if not result['error'] else None
-        round.error = result['error']
+        round.winner = result['chosen_answer']
         return round
