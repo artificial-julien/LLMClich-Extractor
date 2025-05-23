@@ -29,7 +29,6 @@ class BatchGeneratorMixin:
         Returns:
             List of round jobs
         """
-        # Create a dedicated random number generator instance
         rng = random.Random(batch_seed)
             
         matches = []

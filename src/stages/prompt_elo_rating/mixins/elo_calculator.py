@@ -54,7 +54,6 @@ class EloCalculatorMixin:
         Returns:
             Updated dictionary of competitor statistics
         """
-        # Create a deep copy of the stats dictionary to store final results
         updated_stats = copy.deepcopy(stats)
         
         # Calculate all expected scores and rating changes using original ratings

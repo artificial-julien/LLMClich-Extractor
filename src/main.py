@@ -39,10 +39,8 @@ def process_json_file(pipeline_config: PipelineConfig) -> None:
 
 def main():
     """CLI entrypoint for processing JSON pipeline configurations."""
-    # Load environment variables from .env file if present
     load_dotenv()
     
-    # Parse command line arguments
     parser = argparse.ArgumentParser(description='Process JSON pipeline configurations')
     parser.add_argument('input_json', help='JSON input file with pipeline configuration')
     parser.add_argument('--output-dir', help='Base directory for output files (default: same as input file)')
@@ -52,7 +50,6 @@ def main():
     parser.add_argument('--csv-append', action='store_true', default=False, help='Append to existing CSV files instead of overwriting')
     args = parser.parse_args()
     
-    # Check for API key
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         raise ValueError("Please set OPENAI_API_KEY environment variable")

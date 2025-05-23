@@ -61,13 +61,11 @@ class VariablesStage(Stage):
         
         for execution in executions:
             for variable_set in self.variable_sets:
-                # Create a copy of the input execution
                 new_execution = execution.copy()
                 
                 # Add the variables from this set
                 new_execution.add_variables(variable_set)
                 
-                # Add to the result list
                 result_executions.append(new_execution)
         
         return result_executions 
