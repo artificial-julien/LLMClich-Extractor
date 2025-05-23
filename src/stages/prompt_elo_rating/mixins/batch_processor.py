@@ -74,8 +74,6 @@ class BatchProcessorMixin:
         # Group rounds by competitor pairs
         match_groups: Dict[Tuple[str, str], List[EloRound]] = defaultdict(list)
         for round_result in rounds:
-            if round_result.winner is None:
-                raise ValueError(f"Round between {round_result.competitor_a} and {round_result.competitor_b} has no winner")
             # Standardize key to ensure (A,B) and (B,A) are grouped together
             competitors = sorted([round_result.competitor_a, round_result.competitor_b])
             key = (competitors[0], competitors[1])
