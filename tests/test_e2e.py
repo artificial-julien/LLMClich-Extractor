@@ -58,6 +58,7 @@ def run_cli():
     "complex_pipeline",
     "custom_variables",
     "elo.simple",
+    "elo.ranking-numbers",
     "prompt_list_of_answers.many_variables_nodes", 
     "prompt_list_of_answers.simple", 
     "simple_variables",
