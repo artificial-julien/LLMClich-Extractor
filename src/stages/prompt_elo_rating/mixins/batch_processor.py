@@ -40,8 +40,7 @@ class BatchProcessorMixin:
                 future = executor.submit(
                     self.process_round,
                     job,
-                    job.prompt_template,
-                    job.llm_seed
+                    pipeline_config
                 )
                 futures.append(future)
             

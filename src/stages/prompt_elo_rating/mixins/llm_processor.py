@@ -3,6 +3,7 @@ from ..types import EloRound, ModelConfig
 from src.llm import LLMClient
 from src.llm.prompt_utils import format_template_variables, add_possible_answers
 from src.execution import Execution
+from src.commons import PipelineConfig
 
 class LLMProcessorMixin:
     """Mixin providing LLM interaction functionality."""
@@ -16,7 +17,7 @@ class LLMProcessorMixin:
         
         Args:
             template: Prompt template with [variable] placeholders
-            execution: Execution object containing variables
+            round: EloRound object
             
         Returns:
             Formatted prompt
@@ -29,22 +30,19 @@ class LLMProcessorMixin:
     def process_round(
         self,
         round: EloRound,
-        prompt_template: str,
-        llm_seed: int
+        pipeline_config: PipelineConfig
     ) -> EloRound:
         """
         Process a single round (LLM call) between two competitors.
         
         Args:
             round: EloRound object
-            model_config: Model configuration
-            prompt_template: Prompt template
-            llm_seed: llm_seed value for reproducibility
+            pipeline_config: Pipeline configuration
             
         Returns:
             EloRound result from the LLM call
         """
-        formatted_prompt = self.format_prompt(prompt_template, round)
+        formatted_prompt = self.format_prompt(round.prompt_template, round)
         
         competitor_a = round.competitor_a
         competitor_b = round.competitor_b
@@ -56,7 +54,8 @@ class LLMProcessorMixin:
             possible_answers=[competitor_a, competitor_b],
             temperature=round.model_config.temperature,
             top_p=round.model_config.top_p,
-            llm_seed=round.llm_seed
+            llm_seed=round.llm_seed,
+            max_tries=pipeline_config.llm_max_tries
         )
         
         round.winner = result['chosen_answer'] if not result['error'] else None
