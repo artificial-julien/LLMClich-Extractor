@@ -65,6 +65,7 @@ class EloCompetitorRating(Execution):
     wins: int = 0
     losses: int = 0
     draws: int = 0
+    rank: int = None
 
     @property
     def matches_played(self) -> int:
@@ -76,7 +77,8 @@ class EloCompetitorRating(Execution):
             '_elo_rating': int(self.rating),
             '_elo_wins': int(self.wins),
             '_elo_loss': int(self.losses),
-            '_elo_draws': int(self.draws)
+            '_elo_draws': int(self.draws),
+            '_elo_rank': self.rank if self.rank is not None else 0
         }
 
 # Constants
