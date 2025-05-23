@@ -136,16 +136,16 @@ class PromptEloRatingStage(
                                     symmetric_matches=self.symmetric_matches,
                                     pbar=pbar
                                 )
-                                for round in round_results:
-                                    if round.error:
-                                        raise Exception(f"Error in round {round.competitor_a} vs {round.competitor_b}: {round.error}")
+                                # for round in round_results:
+                                #     if round.error:
+                                #         raise Exception(f"Error in round {round.competitor_a} vs {round.competitor_b}: {round.error}")
                                 
                                 matches: List[EloMatch] = self.group_rounds_into_matches(base_execution, round_results)
                                 
                                 valid_matches = []
                                 for match in matches:
                                     if not match.winner and not match.is_draw:
-                                        raise ValueError(f"Match between {match.competitor_a} and {match.competitor_b} has no winner")
+                                        raise ValueError(f"Match between {match.competitor_a} and {match.competitor_b} has no winner and is not a draw")
                                         
                                     model_result_executions.append(match)
                                     valid_matches.append(match)

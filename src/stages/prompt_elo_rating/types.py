@@ -42,6 +42,10 @@ class EloMatch(Execution):
     @property
     def round_wins_b(self) -> int:
         return sum(1 for round in self.rounds if round.winner == self.competitor_b)
+    
+    @property
+    def errored_rounds(self) -> int:
+        return sum(1 for round in self.rounds if round.error is not None)
 
     def get_specific_variables(self) -> Dict[str, Any]:
         return {
@@ -50,7 +54,8 @@ class EloMatch(Execution):
             '_elo_match_winner': self.winner,
             '_elo_match_draw': self.is_draw,
             '_elo_match_wins_a': self.round_wins_a,
-            '_elo_match_wins_b': self.round_wins_b
+            '_elo_match_wins_b': self.round_wins_b,
+            '_elo_match_errored_rounds': self.errored_rounds
         }
 
 @dataclass(kw_only=True)

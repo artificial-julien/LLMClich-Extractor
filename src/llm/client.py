@@ -3,7 +3,7 @@ from typing import Dict, Any, List, Optional, Union, Literal
 from openai import OpenAI
 import json
 from .prompt_engineering import extract_json_from_text, generate_constrained_prompt
-
+from ..prompt_exception import LLMException
 class LLMClient:
     """
     Client for interacting with OpenAI language models.
@@ -63,28 +63,18 @@ class LLMClient:
         if answer_format == "enum":
             chosen_answer = response_content["answer"]
             if chosen_answer not in possible_answers:
-                return {
-                    "chosen_answer": None,
-                    "answer_index": None,
-                    "error": f"Invalid answer: {chosen_answer} not in {possible_answers}"
-                }
+                raise Exception(f"Invalid answer: {chosen_answer} not in {possible_answers}")
             return {
                 "chosen_answer": chosen_answer,
-                "answer_index": possible_answers.index(chosen_answer),
-                "error": None
+                "answer_index": possible_answers.index(chosen_answer)
             }
         else:  # numbered format
             answer_index = response_content["answer"] - 1
             if answer_index < 0 or answer_index >= len(possible_answers):
-                return {
-                    "chosen_answer": None,
-                    "answer_index": None,
-                    "error": f"Answer index out of range: #{answer_index} for {len(possible_answers)} possible answers {possible_answers}"
-                }
+                raise Exception(f"Answer index out of range: #{answer_index} for {len(possible_answers)} possible answers {possible_answers}")
             return {
                 "chosen_answer": possible_answers[answer_index],
-                "answer_index": answer_index,
-                "error": None
+                "answer_index": answer_index
             }
 
     def _extract_probabilities(
@@ -185,7 +175,6 @@ class LLMClient:
             "chosen_answer": result["chosen_answer"],
             "answer_index": result["answer_index"],
             "answer_number": result["answer_index"] + 1 if result["chosen_answer"] is not None else None,
-            "error": result["error"],
             "probabilities": prob_result["probabilities"],
             "answer_probability": prob_result["answer_probability"],
             "raw_response": response
@@ -236,16 +225,12 @@ class LLMClient:
                     possible_answers=possible_answers,
                     temperature=temperature,
                     top_p=top_p,
-                    llm_seed=llm_seed,
+                    llm_seed=None if llm_seed is None else llm_seed + attempt,
                     constraint_method=constraint_method,
                     answer_format=answer_format
                 )
-                
-                if result["error"] is None:
-                    return result
-                    
-                last_error = result["error"]
+                return result
             except Exception as e:
                 last_error = str(e)
-                
-        raise Exception(f"Failed to generate valid completion after {max_tries} attempts. Last error: {last_error}") 
+        
+        raise LLMException(message=f"Failed to generate valid completion after {max_tries} attempts. Last error: {last_error}.", prompt=prompt)
