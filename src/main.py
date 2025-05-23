@@ -48,6 +48,7 @@ def main():
     parser.add_argument('--parallel', type=int, default=1, help='Number of parallel requests (default: 1)')
     parser.add_argument('--batch-seed', type=int, help='Seed for batch generation reproducibility')
     parser.add_argument('--csv-append', action='store_true', default=False, help='Append to existing CSV files instead of overwriting')
+    parser.add_argument('--llm-max-retries', type=int, default=1, help='Maximum number of retries for LLM calls (default: 3)')
     args = parser.parse_args()
     
     api_key = os.getenv("OPENAI_API_KEY")
@@ -61,7 +62,8 @@ def main():
         verbose=args.verbose,
         parallel=args.parallel,
         batch_seed=args.batch_seed,
-        csv_append=args.csv_append
+        csv_append=args.csv_append,
+        llm_max_tries=args.llm_max_retries
     )
     process_json_file(pipeline_config)
 

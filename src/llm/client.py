@@ -120,6 +120,77 @@ class LLMClient:
             "answer_probability": probabilities.get(target_number) if probabilities else None
         }
 
+    def _generate_single_completion(
+        self,
+        model: str,
+        prompt: str,
+        possible_answers: List[str],
+        temperature: float,
+        top_p: float,
+        llm_seed: Optional[int],
+        constraint_method: Literal["json_schema", "prompt_engineering"],
+        answer_format: Literal["enum", "numbered"]
+    ) -> Dict[str, Any]:
+        if constraint_method == "json_schema":
+            schema = self._create_json_schema(possible_answers, answer_format)
+            response = self.client.chat.completions.create(
+                model=model,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=temperature,
+                top_p=top_p,
+                seed=llm_seed,
+                logprobs=True,
+                top_logprobs=10,
+                extra_body={
+                    "response_format": {
+                        "type": "json_schema",
+                        "json_schema": {
+                            "name": "answer_schema",
+                            "schema": schema
+                        }
+                    }
+                },
+            )
+            if response.choices[0].message.refusal is not None:
+                raise ValueError(f"LLM refused to answer: {response.choices[0].message.refusal}")
+            response_content = json.loads(response.choices[0].message.content)
+        else:  # prompt_engineering
+            enhanced_prompt = generate_constrained_prompt(prompt, possible_answers, answer_format)
+            response = self.client.chat.completions.create(
+                model=model,
+                messages=[{"role": "user", "content": enhanced_prompt}],
+                temperature=temperature,
+                top_p=top_p,
+                seed=llm_seed,
+                logprobs=True,
+                top_logprobs=10
+            )
+            
+            response_content = extract_json_from_text(response.choices[0].message.content)
+            if not response_content or "answer" not in response_content:
+                raise ValueError("Failed to extract valid answer from response")
+
+        # Process response content
+        result = self._process_response_content(response_content, possible_answers, answer_format)
+        
+        # Extract probabilities
+        prob_result = self._extract_probabilities(
+            response, 
+            answer_format, 
+            result["answer_index"], 
+            result["chosen_answer"]
+        )
+        
+        return {
+            "chosen_answer": result["chosen_answer"],
+            "answer_index": result["answer_index"],
+            "answer_number": result["answer_index"] + 1 if result["chosen_answer"] is not None else None,
+            "error": result["error"],
+            "probabilities": prob_result["probabilities"],
+            "answer_probability": prob_result["answer_probability"],
+            "raw_response": response
+        }
+
     def generate_constrained_completion(
         self, 
         model: str,
@@ -148,77 +219,33 @@ class LLMClient:
             answer_format: Format for the answer
                          - "enum": Direct answer selection (default)
                          - "numbered": Numbered answer selection
+            max_tries: Maximum number of attempts to generate a valid completion
             
         Returns:
             Dictionary with results including chosen answer, probabilities, etc.
+            
+        Raises:
+            Exception: If all attempts fail to generate a valid completion
         """
-        try:
-            if constraint_method == "json_schema":
-                schema = self._create_json_schema(possible_answers, answer_format)
-                response = self.client.chat.completions.create(
+        last_error = None
+        for attempt in range(max_tries):
+            try:
+                result = self._generate_single_completion(
                     model=model,
-                    messages=[{"role": "user", "content": prompt}],
+                    prompt=prompt,
+                    possible_answers=possible_answers,
                     temperature=temperature,
                     top_p=top_p,
-                    seed=llm_seed,
-                    logprobs=True,
-                    top_logprobs=10,
-                    extra_body={
-                        "response_format": {
-                            "type": "json_schema",
-                            "json_schema": {
-                                "name": "answer_schema",
-                                "schema": schema
-                            }
-                        }
-                    },
-                )
-                if response.choices[0].message.refusal is not None:
-                    raise ValueError(f"LLM refused to answer: {response.choices[0].message.refusal}")
-                response_content = json.loads(response.choices[0].message.content)
-            else:  # prompt_engineering
-                enhanced_prompt = generate_constrained_prompt(prompt, possible_answers, answer_format)
-                response = self.client.chat.completions.create(
-                    model=model,
-                    messages=[{"role": "user", "content": enhanced_prompt}],
-                    temperature=temperature,
-                    top_p=top_p,
-                    seed=llm_seed,
-                    logprobs=True,
-                    top_logprobs=10
+                    llm_seed=llm_seed,
+                    constraint_method=constraint_method,
+                    answer_format=answer_format
                 )
                 
-                response_content = extract_json_from_text(response.choices[0].message.content)
-                if not response_content or "answer" not in response_content:
-                    raise ValueError("Failed to extract valid answer from response")
-
-            # Process response content
-            result = self._process_response_content(response_content, possible_answers, answer_format)
-            
-            # Extract probabilities
-            prob_result = self._extract_probabilities(
-                response, 
-                answer_format, 
-                result["answer_index"], 
-                result["chosen_answer"]
-            )
-            
-            return {
-                "chosen_answer": result["chosen_answer"],
-                "answer_index": result["answer_index"],
-                "answer_number": result["answer_index"] + 1 if result["chosen_answer"] is not None else None,
-                "error": result["error"],
-                "probabilities": prob_result["probabilities"],
-                "answer_probability": prob_result["answer_probability"],
-                "raw_response": response
-            }
-            
-        except Exception as e:
-            return {
-                "chosen_answer": None,
-                "answer_index": None,
-                "answer_number": None,
-                "error": str(e),
-                "probabilities": {},
-                "raw_response": None
-            } 
+                if result["error"] is None:
+                    return result
+                    
+                last_error = result["error"]
+            except Exception as e:
+                last_error = str(e)
+                
+        raise Exception(f"Failed to generate valid completion after {max_tries} attempts. Last error: {last_error}") 
