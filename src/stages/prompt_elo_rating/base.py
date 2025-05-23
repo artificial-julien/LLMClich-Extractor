@@ -161,6 +161,9 @@ class PromptEloRatingStage(
                             key=lambda x: x.rating,
                             reverse=True
                         )
+                        # Assign ranks (1-based, where 1 is highest rating)
+                        for i, rating in enumerate(sorted_ratings):
+                            rating.rank = i + 1
                         model_result_executions.extend(sorted_ratings)
                         all_result_executions.extend(model_result_executions)
 
