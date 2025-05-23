@@ -91,10 +91,8 @@ class PromptListOfAnswersStage(Stage):
         Returns:
             Formatted prompt
         """
-        # Format the template with variables
         formatted_prompt = format_template_variables(template, variables)
         
-        # Add possible answers
         return add_possible_answers(formatted_prompt, self.possible_answers)
     
     def _process_execution(
@@ -120,10 +118,8 @@ class PromptListOfAnswersStage(Stage):
         temperature = float(model_config.get('temperature', 0.0))
         top_p = float(model_config.get('top_p', 1.0))
         
-        # Format the prompt with variables
         formatted_prompt = self._format_prompt(prompt_template, execution.get_all_variables())
         
-        # Call the LLM
         result = self.llm_client.generate_constrained_completion(
             model=model_name,
             prompt=formatted_prompt,
@@ -133,20 +129,16 @@ class PromptListOfAnswersStage(Stage):
             llm_seed=iteration
         )
         
-        # Create a new execution with the result
         new_execution = execution.copy()
         
-        # Store the main result
         new_execution.add_variable(self.result_var_name, result['chosen_answer'])
         
-        # Store additional result information
         new_execution.add_variable('model-name', model_name)
         new_execution.add_variable('temperature', temperature)
         new_execution.add_variable('top_p', top_p)
         new_execution.add_variable('llm_seed', iteration)
         new_execution.add_variable('error', result['error'])
         
-        # Store probabilities
         for idx, answer in enumerate(self.possible_answers):
             prob_key = str(idx + 1)
             prob_value = result['probabilities'].get(prob_key)

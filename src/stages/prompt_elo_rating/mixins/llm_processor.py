@@ -21,10 +21,8 @@ class LLMProcessorMixin:
         Returns:
             Formatted prompt
         """
-        # Format the template with all variables from execution
         formatted_prompt = format_template_variables(template, round.get_all_variables())
         
-        # Add possible answers using competitor variables
         possible_answers = [round.competitor_a, round.competitor_b]
         return add_possible_answers(formatted_prompt, possible_answers)
     
@@ -46,10 +44,8 @@ class LLMProcessorMixin:
         Returns:
             EloRound result from the LLM call
         """
-        # Format the prompt with variables from execution
         formatted_prompt = self.format_prompt(prompt_template, round)
         
-        # Get competitors from execution variables
         competitor_a = round.competitor_a
         competitor_b = round.competitor_b
         
