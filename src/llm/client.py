@@ -84,6 +84,8 @@ class LLMClient:
                         }
                     },
                 )
+                if response.choices[0].message.refusal is not None:
+                    raise ValueError(f"LLM refused to answer: {response.choices[0].message.refusal}")
                 response_content = json.loads(response.choices[0].message.content)
             else:  # prompt_engineering
                 enhanced_prompt = generate_constrained_prompt(prompt, possible_answers)
