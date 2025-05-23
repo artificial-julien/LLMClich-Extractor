@@ -101,13 +101,15 @@ class PromptEloRatingStage(
                 # Create a single progress bar for the entire process
                 with tqdm(total=total_rounds, desc=f"Processing Elo rating rounds for execution {i+1}/{len(executions)}") as pbar:
                     for model_config in self.models:
-                        competitors_ratings: Dict[str, EloCompetitorRating] = {
-                            competitor: EloCompetitorRating(
+                        competitors_ratings: Dict[str, EloCompetitorRating] = {}
+                        for competitor in self.competitors:
+                            rating = EloCompetitorRating(
                                 model_config=model_config,
                                 competitor=competitor,
                                 rating=self.initial_rating
-                            ) for competitor in self.competitors
-                        }
+                            )
+                            rating.import_variables_from(base_execution)
+                            competitors_ratings[competitor] = rating
                         model_result_executions: List[Execution] = []
                         
                         # Process all seeds for this model
