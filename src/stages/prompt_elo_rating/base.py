@@ -113,13 +113,13 @@ class PromptEloRatingStage(
                         model_result_executions: List[Execution] = []
                         
                         # Process all seeds for this model
-                        for llm_seed in range(model_config.iterations):
-                            # Process batches based on a counter instead of batches_per_model
-                            num_batches = self.batches_per_model
+                        for batch_counter in range(self.batches_per_model):
+                            # Generate and process batch
+                            jobs: List[EloRound] = []
                             
-                            for batch_counter in range(num_batches):
-                                # Generate and process batch
-                                jobs: List[EloRound] = self.generate_match_batch(
+                            # Collect all rounds for all seeds in this batch
+                            for llm_seed in range(model_config.iterations):
+                                batch_jobs = self.generate_match_batch(
                                     base_execution,
                                     competitors_ratings,
                                     model_config,
@@ -128,32 +128,30 @@ class PromptEloRatingStage(
                                     self.symmetric_matches,
                                     batch_seed=pipeline_config.batch_seed
                                 )
-                                
-                                # Process rounds (individual LLM calls)
-                                round_results: List[EloRound] = self.process_batch(
-                                    pipeline_config=pipeline_config,
-                                    jobs=jobs,
-                                    pbar=pbar
+                                jobs.extend(batch_jobs)
+                            
+                            # Process all rounds for all seeds in this batch
+                            round_results: List[EloRound] = self.process_batch(
+                                pipeline_config=pipeline_config,
+                                jobs=jobs,
+                                pbar=pbar
+                            )
+                            
+                            matches: List[EloMatch] = self.group_rounds_into_matches(base_execution, round_results)
+                            
+                            valid_matches = []
+                            for match in matches:
+                                if not match.winner and not match.is_draw:
+                                    raise ValueError(f"Match between {match.competitor_a} and {match.competitor_b} has no winner and is not a draw")
+                                    
+                                model_result_executions.append(match)
+                                valid_matches.append(match)
+                            
+                            if valid_matches:
+                                competitors_ratings = self.update_ratings_and_stats(
+                                    valid_matches,
+                                    competitors_ratings
                                 )
-                                # for round in round_results:
-                                #     if round.error:
-                                #         raise Exception(f"Error in round {round.competitor_a} vs {round.competitor_b}: {round.error}")
-                                
-                                matches: List[EloMatch] = self.group_rounds_into_matches(base_execution, round_results)
-                                
-                                valid_matches = []
-                                for match in matches:
-                                    if not match.winner and not match.is_draw:
-                                        raise ValueError(f"Match between {match.competitor_a} and {match.competitor_b} has no winner and is not a draw")
-                                        
-                                    model_result_executions.append(match)
-                                    valid_matches.append(match)
-                                
-                                if valid_matches:
-                                    competitors_ratings = self.update_ratings_and_stats(
-                                        valid_matches,
-                                        competitors_ratings
-                                    )
                         
                         sorted_ratings = sorted(
                             competitors_ratings.values(), 
