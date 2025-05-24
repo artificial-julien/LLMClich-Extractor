@@ -6,4 +6,4 @@ from src.pipeline import Pipeline
 from src.llm import LLMClient
 
 # Import stages package to register all stages
-import src.stages 
+import src.stages  # noqa
