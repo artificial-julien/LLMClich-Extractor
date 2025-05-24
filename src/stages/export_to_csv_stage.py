@@ -29,7 +29,7 @@ class ExportToCsvStage(Stage):
         self.skip_empty_rows = skip_empty_rows
     
     @classmethod
-    def from_config(cls, stage_definition: Dict[str, Any]) -> 'ExportToCsvStage':
+    def from_dict(cls, stage_definition: Dict[str, Any]) -> 'ExportToCsvStage':
         """
         Create an ExportToCsvStage from configuration.
         

@@ -1,8 +1,6 @@
-from typing import List, Dict, Any, Optional
-from ..types import EloRound, ModelConfig
+from ..types import EloRound
 from src.llm import LLMClient
-from src.llm.prompt_utils import format_template_variables, add_possible_answers
-from src.execution import Execution
+from src.llm.prompt_utils import format_template
 from src.commons import PipelineConfig
 from src.prompt_exception import LLMException
 
@@ -11,22 +9,6 @@ class LLMProcessorMixin:
     
     def __init__(self):
         self.llm_client = LLMClient()
-    
-    def format_prompt(self, template: str, round: EloRound) -> str:
-        """
-        Format a prompt template with variables from execution.
-        
-        Args:
-            template: Prompt template with [variable] placeholders
-            round: EloRound object
-            
-        Returns:
-            Formatted prompt
-        """
-        formatted_prompt = format_template_variables(template, round.get_all_variables())
-        
-        possible_answers = [round.competitor_a, round.competitor_b]
-        return add_possible_answers(formatted_prompt, possible_answers)
     
     def process_round(
         self,
@@ -43,7 +25,7 @@ class LLMProcessorMixin:
         Returns:
             EloRound result from the LLM call
         """
-        formatted_prompt = self.format_prompt(round.prompt_template, round)
+        formatted_prompt = format_template(round.prompt_template, round)
         
         competitor_a = round.competitor_a
         competitor_b = round.competitor_b
@@ -63,5 +45,5 @@ class LLMProcessorMixin:
             round.error = e.message
             return round
         
-        round.winner = result['chosen_answer']
+        round.winner = result.chosen_answer
         return round

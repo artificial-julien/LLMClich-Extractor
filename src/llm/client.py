@@ -2,8 +2,31 @@ import os
 from typing import Dict, Any, List, Optional, Union, Literal
 from openai import OpenAI
 import json
+from dataclasses import dataclass
 from .prompt_engineering import extract_json_from_text, generate_constrained_prompt
 from ..prompt_exception import LLMException
+
+@dataclass
+class ProcessedResponse:
+    """Result of processing a response content."""
+    chosen_answer: str
+    answer_index: int
+
+@dataclass
+class ProbabilityResult:
+    """Result of probability extraction."""
+    probabilities: Optional[Dict[str, float]]
+    answer_probability: Optional[float]
+
+@dataclass
+class ConstrainedCompletionResult:
+    """Result of a constrained completion generation."""
+    chosen_answer: str
+    answer_index: int
+    answer_number: Optional[int]
+    probability_result: ProbabilityResult
+    raw_response: Any
+
 class LLMClient:
     """
     Client for interacting with OpenAI language models.
@@ -58,40 +81,41 @@ class LLMClient:
         response_content: Dict[str, Any], 
         possible_answers: List[str],
         answer_format: Literal["enum", "numbered"]
-    ) -> Dict[str, Any]:
+    ) -> ProcessedResponse:
         """Process the response content and validate the answer."""
         if answer_format == "enum":
             chosen_answer = response_content["answer"]
             if chosen_answer not in possible_answers:
                 raise Exception(f"Invalid answer: {chosen_answer} not in {possible_answers}")
-            return {
-                "chosen_answer": chosen_answer,
-                "answer_index": possible_answers.index(chosen_answer)
-            }
+            return ProcessedResponse(
+                chosen_answer=chosen_answer,
+                answer_index=possible_answers.index(chosen_answer)
+            )
         else:  # numbered format
             answer_index = response_content["answer"] - 1
             if answer_index < 0 or answer_index >= len(possible_answers):
                 raise Exception(f"Answer index out of range: #{answer_index} for {len(possible_answers)} possible answers {possible_answers}")
-            return {
-                "chosen_answer": possible_answers[answer_index],
-                "answer_index": answer_index
-            }
+            return ProcessedResponse(
+                chosen_answer=possible_answers[answer_index],
+                answer_index=answer_index
+            )
 
     def _extract_probabilities(
         self, 
         response: Any,
+        possible_answers: List[str],
         answer_format: Literal["enum", "numbered"],
         answer_index: Optional[int],
         chosen_answer: Optional[str]
-    ) -> Dict[str, Any]:
+    ) -> ProbabilityResult:
         """Extract probabilities from the response."""
         probabilities = {}
         if not hasattr(response.choices[0], 'logprobs') or not response.choices[0].logprobs:
-            return {"probabilities": None, "answer_probability": None}
+            return ProbabilityResult(probabilities=None, answer_probability=None)
 
         if answer_format == "enum":
             # TODO: Implement enum probability extraction if needed
-            return {"probabilities": None, "answer_probability": None}
+            return ProbabilityResult(probabilities=None, answer_probability=None)
         else:  # numbered format
             target_number = str(answer_index + 1)
             for token_logprob in response.choices[0].logprobs.content:
@@ -105,10 +129,10 @@ class LLMClient:
                                 probabilities[number_str] = prob
                     break
 
-        return {
-            "probabilities": probabilities,
-            "answer_probability": probabilities.get(target_number) if probabilities else None
-        }
+        return ProbabilityResult(
+            probabilities=probabilities,
+            answer_probability=probabilities.get(target_number) if probabilities else None
+        )
 
     def _generate_single_completion(
         self,
@@ -120,7 +144,7 @@ class LLMClient:
         llm_seed: Optional[int],
         constraint_method: Literal["json_schema", "prompt_engineering"],
         answer_format: Literal["enum", "numbered"]
-    ) -> Dict[str, Any]:
+    ) -> ConstrainedCompletionResult:
         if constraint_method == "json_schema":
             schema = self._create_json_schema(possible_answers, answer_format)
             response = self.client.chat.completions.create(
@@ -166,19 +190,19 @@ class LLMClient:
         # Extract probabilities
         prob_result = self._extract_probabilities(
             response, 
+            possible_answers,
             answer_format, 
-            result["answer_index"], 
-            result["chosen_answer"]
+            result.answer_index, 
+            result.chosen_answer
         )
         
-        return {
-            "chosen_answer": result["chosen_answer"],
-            "answer_index": result["answer_index"],
-            "answer_number": result["answer_index"] + 1 if result["chosen_answer"] is not None else None,
-            "probabilities": prob_result["probabilities"],
-            "answer_probability": prob_result["answer_probability"],
-            "raw_response": response
-        }
+        return ConstrainedCompletionResult(
+            chosen_answer=result.chosen_answer,
+            answer_index=result.answer_index,
+            answer_number=result.answer_index + 1 if result.chosen_answer is not None else None,
+            probability_result=prob_result,
+            raw_response=response
+        )
 
     def generate_constrained_completion(
         self, 
@@ -189,9 +213,9 @@ class LLMClient:
         top_p: float = 1.0,
         llm_seed: Optional[int] = None,
         constraint_method: Literal["json_schema", "prompt_engineering"] = "json_schema",
-        answer_format: Literal["enum", "numbered"] = "enum",
+        answer_format: Literal["enum", "numbered"] = "numbered",
         max_tries: int = 1
-    ) -> Dict[str, Any]:
+    ) -> ConstrainedCompletionResult:
         """
         Generate a completion with a constrained set of possible answers.
         

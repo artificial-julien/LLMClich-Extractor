@@ -25,7 +25,7 @@ class VariablesStage(Stage):
         self.variable_sets = variable_sets
     
     @classmethod
-    def from_config(cls, stage_definition: Dict[str, Any]) -> 'VariablesStage':
+    def from_dict(cls, stage_definition: Dict[str, Any]) -> 'VariablesStage':
         """
         Create a VariablesStage from configuration.
         

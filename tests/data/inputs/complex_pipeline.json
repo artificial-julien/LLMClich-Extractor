@@ -4,24 +4,16 @@
       "node_type": "variables",
       "list": [
         {
-          "fruit": "apple"
+          "food": "banana"
         },
         {
-          "fruit": "banana"
+          "food": "orange"
         },
         {
-          "fruit": "orange"
-        }
-      ]
-    },
-    {
-      "node_type": "variables",
-      "list": [
-        {
-          "color": "red"
+          "food": "carrot"
         },
         {
-          "color": "yellow"
+          "food": "potato"
         }
       ]
     },
@@ -35,21 +27,25 @@
         }
       ],
       "prompts": [
-        "Is a [fruit] typically [color] in color?"
+        "Of what color is [fruit]?"
       ],
       "possible_answers": [
-        "Yes",
-        "No"
+        "red",
+        "yellow",
+        "orange",
+        "green",
+        "brown",
+        "purple",
+        "pink"
       ],
-      "result_var_name": "is_color_match"
+      "result_var_name": "color"
     },
     {
       "node_type": "export_to_csv",
-      "output_file": "output.color_match.csv",
+      "output_file": "output.color.csv",
       "columns": [
         "fruit",
-        "color",
-        "is_color_match"
+        "food_color"
       ]
     },
     {
@@ -62,24 +58,21 @@
         }
       ],
       "prompts": [
-        "How tasty is a [fruit] on a scale?"
+        "Is [food] a fruit or a vegetable?"
       ],
       "possible_answers": [
-        "Not tasty",
-        "Somewhat tasty",
-        "Very tasty",
-        "Extremely tasty"
+        "fruit",
+        "vegetable"
       ],
-      "result_var_name": "tastiness"
+      "result_var_name": "food_type"
     },
     {
       "node_type": "export_to_csv",
       "output_file": "output.fruit_attributes.csv",
       "columns": [
         "fruit",
-        "color",
-        "is_color_match",
-        "tastiness"
+        "food_color",
+        "food_type"
       ]
     }
   ]

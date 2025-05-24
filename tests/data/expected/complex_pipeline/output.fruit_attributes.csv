@@ -1,7 +1,1 @@
-fruit,color,is_color_match,tastiness
-apple,red,Yes,Very tasty
-apple,yellow,No,Very tasty
-banana,red,No,Very tasty
-banana,yellow,Yes,Very tasty
-orange,red,No,Extremely tasty
-orange,yellow,No,Extremely tasty
+fruit,food_color,food_type

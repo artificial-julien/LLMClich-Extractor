@@ -26,7 +26,7 @@ def process_json_file(pipeline_config: PipelineConfig) -> None:
         print(f"Pipeline has {len(pipeline_definition.get('foreach', []))} stages")
     
     # Create the pipeline with configuration
-    pipeline = Pipeline.from_config(pipeline_definition)
+    pipeline = Pipeline.from_dict(pipeline_definition)
     
     if pipeline_config.verbose:
         print(f"Created pipeline with {len(pipeline.stages)} stages")
@@ -48,7 +48,7 @@ def main():
     parser.add_argument('--parallel', type=int, default=1, help='Number of parallel requests (default: 1)')
     parser.add_argument('--batch-seed', type=int, help='Seed for batch generation reproducibility')
     parser.add_argument('--csv-append', action='store_true', default=False, help='Append to existing CSV files instead of overwriting')
-    parser.add_argument('--llm-max-retries', type=int, default=1, help='Maximum number of retries for LLM calls (default: 3)')
+    parser.add_argument('--llm-max-retries', type=int, default=1, help='Maximum number of retries for LLM calls (default: 1)')
     args = parser.parse_args()
     
     api_key = os.getenv("OPENAI_API_KEY")
