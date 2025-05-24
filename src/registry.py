@@ -62,4 +62,4 @@ class StageRegistry:
         if not stage_class:
             raise ValueError(f"Unknown node_type: {node_type}")
         
-        return stage_class.from_config(stage_definition=stage_definition) 
+        return stage_class.from_dict(stage_definition=stage_definition) 

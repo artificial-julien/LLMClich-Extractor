@@ -24,7 +24,7 @@ class Stage(ABC):
     
     @classmethod
     @abstractmethod
-    def from_config(cls, stage_definition: Dict[str, Any]) -> 'Stage':
+    def from_dict(cls, stage_definition: Dict[str, Any]) -> 'Stage':
         """
         Create a stage instance from configuration dictionary.
         

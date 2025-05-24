@@ -9,6 +9,20 @@ class ModelConfig:
     top_p: float
     iterations: int
 
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'ModelConfig':
+        required_fields = ['name']
+        missing_fields = [field for field in required_fields if field not in data]
+        if missing_fields:
+            raise ValueError(f"Missing required fields in model config: {', '.join(missing_fields)}")
+            
+        return cls(
+            name=data['name'],
+            temperature=float(data.get('temperature', 0.0)),
+            top_p=float(data.get('top_p', 1.0)),
+            iterations=int(data.get('iterations', 1))
+        )
+
 @dataclass(kw_only=True)
 class Execution(ABC):
     """

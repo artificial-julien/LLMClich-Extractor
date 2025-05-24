@@ -35,10 +35,8 @@
       "columns": [
         "statement",
         "accuracy",
-        "model-name",
-        "temperature",
-        "prob_1_True",
-        "prob_2_False"
+        "_model_name",
+        "_model_temperature"
       ]
     }
   ]

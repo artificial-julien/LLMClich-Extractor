@@ -4,11 +4,12 @@ from src.stage import Stage
 from src.execution import Execution
 from src.registry import StageRegistry
 from src.llm import LLMClient
-from src.llm.prompt_utils import format_template_variables, add_possible_answers
 from src.commons import PipelineConfig
 import itertools
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from tqdm import tqdm
+from src.prompt_exception import LLMException
+from src.execution import ModelConfig
 
 @StageRegistry.register("prompt_list_of_answers")
 class PromptListOfAnswersStage(Stage):
@@ -32,14 +33,14 @@ class PromptListOfAnswersStage(Stage):
             possible_answers: List of allowed answers
             result_var_name: Variable name to store the result
         """
-        self.models = models
+        self.models = [ModelConfig.from_dict(model) for model in models]
         self.prompts = prompts
         self.possible_answers = possible_answers
         self.result_var_name = result_var_name
         self.llm_client = LLMClient()
     
     @classmethod
-    def from_config(cls, stage_definition: Dict[str, Any]) -> 'PromptListOfAnswersStage':
+    def from_dict(cls, stage_definition: Dict[str, Any]) -> 'PromptListOfAnswersStage':
         """
         Create a PromptListOfAnswersStage from configuration.
         
@@ -80,27 +81,13 @@ class PromptListOfAnswersStage(Stage):
             result_var_name=result_var_name
         )
     
-    def _format_prompt(self, template: str, variables: Dict[str, Any]) -> str:
-        """
-        Format a prompt template with variables.
-        
-        Args:
-            template: Prompt template with [variable] placeholders
-            variables: Dictionary of variables
-            
-        Returns:
-            Formatted prompt
-        """
-        formatted_prompt = format_template_variables(template, variables)
-        
-        return add_possible_answers(formatted_prompt, self.possible_answers)
-    
     def _process_execution(
         self, 
         execution: Execution, 
-        model_config: Dict[str, Any], 
+        model_config: ModelConfig, 
         prompt_template: str,
-        iteration: int
+        llm_seed: int,
+        pipeline_config: PipelineConfig
     ) -> Execution:
         """
         Process a single execution with a specific model, prompt, and iteration.
@@ -114,35 +101,37 @@ class PromptListOfAnswersStage(Stage):
         Returns:
             New execution with result variables
         """
-        model_name = model_config.get('name')
-        temperature = float(model_config.get('temperature', 0.0))
-        top_p = float(model_config.get('top_p', 1.0))
-        
-        formatted_prompt = self._format_prompt(prompt_template, execution.get_all_variables())
-        
-        result = self.llm_client.generate_constrained_completion(
-            model=model_name,
-            prompt=formatted_prompt,
-            possible_answers=self.possible_answers,
-            temperature=temperature,
-            top_p=top_p,
-            llm_seed=iteration
-        )
         
         new_execution = execution.copy()
+        new_execution.model_config = model_config
+        new_execution.add_variable('llm_seed', llm_seed)
+
+        # Format template with variables
+        formatted = prompt_template
+        for key, value in execution.get_all_variables().items():
+            formatted = formatted.replace(f"[{key}]", str(value))
         
-        new_execution.add_variable(self.result_var_name, result['chosen_answer'])
+        # Add numbered list of possible answers
+        answers_str = "\n".join([f"{i+1}. {ans}" for i, ans in enumerate(self.possible_answers)])
+        formatted_prompt = f"{formatted}\n\nPossible answers:\n{answers_str}"
+        try:
+            result = self.llm_client.generate_constrained_completion(
+                model=model_config.name,
+                prompt=formatted_prompt,
+                possible_answers=self.possible_answers,
+                temperature=model_config.temperature,
+                top_p=model_config.top_p,
+                llm_seed=llm_seed,
+                max_tries=pipeline_config.llm_max_tries
+            )
         
-        new_execution.add_variable('model-name', model_name)
-        new_execution.add_variable('temperature', temperature)
-        new_execution.add_variable('top_p', top_p)
-        new_execution.add_variable('llm_seed', iteration)
-        new_execution.add_variable('error', result['error'])
-        
-        for idx, answer in enumerate(self.possible_answers):
-            prob_key = str(idx + 1)
-            prob_value = result['probabilities'].get(prob_key)
-            new_execution.add_variable(f'prob_{idx+1}_{answer[:20]}', prob_value)
+            new_execution.add_variable(self.result_var_name, result.chosen_answer)
+
+            for idx, answer in enumerate(result.probability_result.probabilities, start=0):
+                prob_value = result.probability_result.probabilities.get(answer) if result.probability_result.probabilities else None
+                new_execution.add_variable(f'prob_{idx+1}_{answer[:20]}', prob_value)
+        except LLMException as e:
+            new_execution.error = e.message
         
         return new_execution
     
@@ -163,7 +152,7 @@ class PromptListOfAnswersStage(Stage):
         for execution in executions:
             for model_config in self.models:
                 for prompt_template in self.prompts:
-                    iterations = int(model_config.get('iterations', 1))
+                    iterations = model_config.iterations
                     for iteration in range(iterations):
                         jobs.append((execution, model_config, prompt_template, iteration))
         
@@ -177,7 +166,8 @@ class PromptListOfAnswersStage(Stage):
                     execution,
                     model_config,
                     prompt_template,
-                    iteration
+                    iteration,
+                    pipeline_config
                 )
                 futures.append(future)
             
