@@ -17,7 +17,6 @@ class BatchProcessorMixin:
         self,
         pipeline_config: PipelineConfig,
         jobs: List[EloRound],
-        symmetric_matches: bool,
         pbar: Optional[tqdm] = None
     ) -> List[EloRound]:
         """
@@ -104,14 +103,3 @@ class BatchProcessorMixin:
             matches.append(match)
         
         return matches
-    
-    def _update_symmetric_matches(self, rounds: List[EloRound]) -> None:
-        """
-        Update symmetric matches to ensure consistency.
-        
-        Args:
-            rounds: List of rounds to update
-        """
-        for round in rounds:
-            if round.is_mirror:
-                round.winner = round.competitor_b if round.winner == round.competitor_a else round.competitor_a

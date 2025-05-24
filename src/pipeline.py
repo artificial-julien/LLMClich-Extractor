@@ -23,7 +23,7 @@ class Pipeline:
         self.stages = stages
     
     @classmethod
-    def from_config(cls, pipeline_definition: Dict[str, Any]) -> 'Pipeline':
+    def from_dict(cls, pipeline_definition: Dict[str, Any]) -> 'Pipeline':
         """
         Create a pipeline from a configuration dictionary.
         
@@ -66,6 +66,14 @@ class Pipeline:
             
             errored_executions = [exec for exec in executions if exec.has_error()]
             executions = processed_executions + errored_executions
+
+            # Report any errors that occurred during stage processing
+            if pipeline_config.verbose:
+                errored = [exec for exec in executions if exec.has_error()]
+                if errored:
+                    print(f"Stage {stage.__class__.__name__} had {len(errored)} errors:")
+                    for exec in errored:
+                        print(f"  Error: {exec.error}")
             
             if not executions:
                 break
