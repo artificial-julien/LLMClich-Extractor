@@ -133,7 +133,6 @@ class PromptEloRatingStage(
                                 round_results: List[EloRound] = self.process_batch(
                                     pipeline_config=pipeline_config,
                                     jobs=jobs,
-                                    symmetric_matches=self.symmetric_matches,
                                     pbar=pbar
                                 )
                                 # for round in round_results:

@@ -25,7 +25,7 @@ class LLMProcessorMixin:
         Returns:
             EloRound result from the LLM call
         """
-        formatted_prompt = format_template(round.prompt_template, round)
+        formatted_prompt = format_template(round.prompt_template, round.get_all_variables())
         
         competitor_a = round.competitor_a
         competitor_b = round.competitor_b

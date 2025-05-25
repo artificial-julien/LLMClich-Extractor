@@ -145,11 +145,12 @@ class LLMClient:
         constraint_method: Literal["json_schema", "prompt_engineering"],
         answer_format: Literal["enum", "numbered"]
     ) -> ConstrainedCompletionResult:
+        enhanced_prompt = generate_constrained_prompt(prompt, possible_answers, answer_format)
         if constraint_method == "json_schema":
             schema = self._create_json_schema(possible_answers, answer_format)
             response = self.client.chat.completions.create(
                 model=model,
-                messages=[{"role": "user", "content": prompt}],
+                messages=[{"role": "user", "content": enhanced_prompt}],
                 temperature=temperature,
                 top_p=top_p,
                 seed=llm_seed,
@@ -168,8 +169,7 @@ class LLMClient:
             if response.choices[0].message.refusal is not None:
                 raise ValueError(f"LLM refused to answer: {response.choices[0].message.refusal}")
             response_content = json.loads(response.choices[0].message.content)
-        else:  # prompt_engineering
-            enhanced_prompt = generate_constrained_prompt(prompt, possible_answers, answer_format)
+        elif constraint_method == "prompt_engineering":
             response = self.client.chat.completions.create(
                 model=model,
                 messages=[{"role": "user", "content": enhanced_prompt}],
