@@ -65,5 +65,6 @@ class ConfigHandlerMixin:
             'prompts': stage_definition['prompts'],
             'batches_per_model': stage_definition.get('batches_per_model', 4),
             'initial_rating': stage_definition.get('initial_rating', DEFAULT_INITIAL_RATING),
-            'symmetric_matches': stage_definition.get('symmetric_matches', False)
+            'symmetric_matches': stage_definition.get('symmetric_matches', False),
+            'use_round_proportions': stage_definition.get('use_round_proportions', False)
         } 

@@ -32,7 +32,8 @@ class PromptEloRatingStage(
         prompts: List[str],
         batches_per_model: int = 4,
         initial_rating: int = DEFAULT_INITIAL_RATING,
-        symmetric_matches: bool = False
+        symmetric_matches: bool = False,
+        use_round_proportions: bool = False
     ):
         """
         Initialize the prompt Elo rating stage.
@@ -44,6 +45,7 @@ class PromptEloRatingStage(
             batches_per_model: Number of batches to process for each model
             initial_rating: Initial Elo rating for all competitors
             symmetric_matches: Whether to run matches in both directions
+            use_round_proportions: Whether to use the proportion of rounds won as the score instead of binary win/loss
         """
         # Initialize mixins
         LLMProcessorMixin.__init__(self)
@@ -56,6 +58,7 @@ class PromptEloRatingStage(
         self.batches_per_model = batches_per_model
         self.initial_rating = initial_rating
         self.symmetric_matches = symmetric_matches
+        self.use_round_proportions = use_round_proportions
     
     @classmethod
     def from_dict(cls, stage_definition: Dict[str, Any]) -> 'PromptEloRatingStage':
@@ -150,7 +153,8 @@ class PromptEloRatingStage(
                             if valid_matches:
                                 competitors_ratings = self.update_ratings_and_stats(
                                     valid_matches,
-                                    competitors_ratings
+                                    competitors_ratings,
+                                    self.use_round_proportions
                                 )
                         
                         sorted_ratings = sorted(

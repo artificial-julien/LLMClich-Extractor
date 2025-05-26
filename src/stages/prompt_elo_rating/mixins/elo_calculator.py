@@ -42,7 +42,8 @@ class EloCalculatorMixin:
     def update_ratings_and_stats(
         self,
         matches: List[EloMatch],
-        stats: Dict[str, EloCompetitorRating]
+        stats: Dict[str, EloCompetitorRating],
+        use_round_proportions: bool = False
     ) -> Dict[str, EloCompetitorRating]:
         """
         Update Elo ratings and match statistics for a batch of matches using original ratings.
@@ -50,6 +51,7 @@ class EloCalculatorMixin:
         Args:
             matches: List of EloMatch objects containing match results
             stats: Dictionary of competitor statistics with original ratings
+            use_round_proportions: Whether to use the proportion of rounds won as the score instead of binary win/loss
             
         Returns:
             Updated dictionary of competitor statistics
@@ -62,8 +64,17 @@ class EloCalculatorMixin:
             if not match.winner and not match.is_draw:
                 continue
                 
-            a_score = 1.0 if match.winner == match.competitor_a else (0.5 if match.is_draw else 0.0)
-            b_score = 1.0 if match.winner == match.competitor_b else (0.5 if match.is_draw else 0.0)
+            if use_round_proportions:
+                total_rounds = len(match.rounds)
+                if total_rounds > 0:
+                    a_score = match.round_wins_a / total_rounds
+                    b_score = match.round_wins_b / total_rounds
+                else:
+                    a_score = 0.5 if match.is_draw else (1.0 if match.winner == match.competitor_a else 0.0)
+                    b_score = 0.5 if match.is_draw else (1.0 if match.winner == match.competitor_b else 0.0)
+            else:
+                a_score = 1.0 if match.winner == match.competitor_a else (0.5 if match.is_draw else 0.0)
+                b_score = 1.0 if match.winner == match.competitor_b else (0.5 if match.is_draw else 0.0)
             
             a_expected = self.calculate_expected_score(stats[match.competitor_a].rating, stats[match.competitor_b].rating)
             b_expected = 1 - a_expected
@@ -77,13 +88,13 @@ class EloCalculatorMixin:
             rating_changes[match.competitor_b] = rating_changes.get(match.competitor_b, 0) + b_change
             
             # Update match statistics
-            if a_score == 1:
+            if a_score > b_score:
                 updated_stats[match.competitor_a].wins += 1
                 updated_stats[match.competitor_b].losses += 1
-            elif b_score == 1:
+            elif b_score > a_score:
                 updated_stats[match.competitor_b].wins += 1
                 updated_stats[match.competitor_a].losses += 1
-            elif a_score == 0.5:
+            else:
                 updated_stats[match.competitor_a].draws += 1
                 updated_stats[match.competitor_b].draws += 1
         
