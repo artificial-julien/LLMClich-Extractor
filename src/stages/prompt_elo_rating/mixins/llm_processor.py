@@ -1,7 +1,7 @@
 from ..types import EloRound
 from src.llm import LLMClient
 from src.llm.prompt_utils import format_template
-from src.commons import PipelineConfig
+from src.common.types import *
 from src.prompt_exception import LLMException
 
 class LLMProcessorMixin:

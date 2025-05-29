@@ -1,1 +1,5 @@
-fruit,food_color,food_type
+food,food_color,food_type
+banana,yellow,fruit
+orange,orange,fruit
+carrot,orange,vegetable
+strawberry,red,fruit

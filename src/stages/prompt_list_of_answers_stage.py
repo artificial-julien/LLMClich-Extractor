@@ -2,16 +2,14 @@ from typing import List, Dict, Any, Optional
 import os
 from src.stage import Stage
 from src.execution import Execution
-from src.registry import StageRegistry
 from src.llm import LLMClient
-from src.commons import PipelineConfig
+from src.common.types import *
 import itertools
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from tqdm import tqdm
 from src.prompt_exception import LLMException
 from src.execution import ModelConfig
 
-@StageRegistry.register("prompt_list_of_answers")
 class PromptListOfAnswersStage(Stage):
     """
     Stage that sends prompts to LLMs and constrains responses to a list of possible answers.
@@ -19,7 +17,7 @@ class PromptListOfAnswersStage(Stage):
     
     def __init__(
         self,
-        models: List[Dict[str, Any]],
+        models: List[ModelConfig],
         prompts: List[str],
         possible_answers: List[str],
         result_var_name: str
@@ -28,58 +26,18 @@ class PromptListOfAnswersStage(Stage):
         Initialize the prompt list of answers stage.
         
         Args:
-            models: List of model configurations (name, temperature, iterations, etc.)
+            models: List of ModelConfig instances
             prompts: List of prompt templates
             possible_answers: List of allowed answers
             result_var_name: Variable name to store the result
         """
-        self.models = [ModelConfig.from_dict(model) for model in models]
+        self.models = models
         self.prompts = prompts
         self.possible_answers = possible_answers
         self.result_var_name = result_var_name
         self.llm_client = LLMClient()
     
-    @classmethod
-    def from_dict(cls, stage_definition: Dict[str, Any]) -> 'PromptListOfAnswersStage':
-        """
-        Create a PromptListOfAnswersStage from configuration.
-        
-        Args:
-            stage_definition: Dictionary containing:
-                - 'models': List of model configurations
-                - 'prompts': List of prompt templates
-                - 'possible_answers': List of allowed answers
-                - 'result_var_name': Variable name to store the result
-            
-        Returns:
-            A PromptListOfAnswersStage instance
-            
-        Raises:
-            ValueError: If the stage_definition is invalid
-        """
-        models = stage_definition.get('models')
-        prompts = stage_definition.get('prompts')
-        possible_answers = stage_definition.get('possible_answers')
-        result_var_name = stage_definition.get('result_var_name')
-        
-        if not models or not isinstance(models, list):
-            raise ValueError("PromptListOfAnswersStage stage_definition must contain a 'models' list")
-        
-        if not prompts or not isinstance(prompts, list):
-            raise ValueError("PromptListOfAnswersStage stage_definition must contain a 'prompts' list")
-        
-        if not possible_answers or not isinstance(possible_answers, list):
-            raise ValueError("PromptListOfAnswersStage stage_definition must contain a 'possible_answers' list")
-        
-        if not result_var_name:
-            raise ValueError("PromptListOfAnswersStage stage_definition must contain a 'result_var_name'")
-        
-        return cls(
-            models=models,
-            prompts=prompts,
-            possible_answers=possible_answers,
-            result_var_name=result_var_name
-        )
+
     
     def _process_execution(
         self, 

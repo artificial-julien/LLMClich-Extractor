@@ -1,24 +1,20 @@
 from typing import List, Dict, Any, Optional
 from src.stage import Stage
-from src.execution import Execution
-from src.registry import StageRegistry
-from src.commons import PipelineConfig
+from src.execution import Execution, ModelConfig
+from src.common.types import *
 from .mixins.elo_calculator import EloCalculatorMixin
 from .mixins.batch_generator import BatchGeneratorMixin
 from .mixins.llm_processor import LLMProcessorMixin
 from .mixins.batch_processor import BatchProcessorMixin
-from .mixins.config_handler import ConfigHandlerMixin
 from .types import EloCompetitorRating, DEFAULT_INITIAL_RATING, EloRound, EloMatch
 from tqdm import tqdm
 
-@StageRegistry.register("prompt_elo_rating")
 class PromptEloRatingStage(
     Stage,
     EloCalculatorMixin,
     BatchGeneratorMixin,
     LLMProcessorMixin,
-    BatchProcessorMixin,
-    ConfigHandlerMixin
+    BatchProcessorMixin
 ):
     """
     Stage that implements Elo rating calculations for LLM-judged competitions.
@@ -27,7 +23,7 @@ class PromptEloRatingStage(
     
     def __init__(
         self,
-        models: List[Dict[str, Any]],
+        models: List[ModelConfig],
         competitors: List[str],
         prompts: List[str],
         batches_per_model: int = 4,
@@ -39,7 +35,7 @@ class PromptEloRatingStage(
         Initialize the prompt Elo rating stage.
         
         Args:
-            models: List of model configurations
+            models: List of ModelConfig instances
             competitors: List of competitors to be ranked
             prompts: List of prompt templates
             batches_per_model: Number of batches to process for each model
@@ -60,19 +56,7 @@ class PromptEloRatingStage(
         self.symmetric_matches = symmetric_matches
         self.use_round_proportions = use_round_proportions
     
-    @classmethod
-    def from_dict(cls, stage_definition: Dict[str, Any]) -> 'PromptEloRatingStage':
-        """
-        Create a PromptEloRatingStage from configuration.
-        
-        Args:
-            stage_definition: Dictionary containing stage configuration
-            
-        Returns:
-            A PromptEloRatingStage instance
-        """
-        values = cls.get_config_values(stage_definition)
-        return cls(**values)
+
     
     def process(self, pipeline_config: PipelineConfig, executions: List[Execution]) -> List[Execution]:
         """ 

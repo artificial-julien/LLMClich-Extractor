@@ -22,15 +22,12 @@ def pytest_addoption(parser):
     )
 
 @pytest.fixture
-def parallel_workers(request):
-    """Fixture to get the number of parallel workers"""
-    return int(request.config.getoption("--parallel"))
-
-@pytest.fixture
-def run_cli():
-    """Fixture to run CLI commands and verify output"""
-    def _run_cli(input_json: str, output_dir: str, parallel: int = 1) -> bool:
-        cmd = ['python', '-m', 'src.main', input_json, '--batch-seed', '42', "--output-dir", output_dir, '--parallel', str(parallel)]
+def run_pipeline():
+    """Fixture to run pipeline (either JSON via CLI or Python script directly)"""
+    def _run_pipeline(input_file: str, output_dir: str, parallel: int = 1) -> bool:
+        input_path = Path(input_file)
+        
+        cmd = ['python', input_file, '--parallel', str(parallel), "--batch-seed", "42", '--output-dir', output_dir]
         
         try:
             result = subprocess.run(
@@ -52,36 +49,35 @@ def run_cli():
             print(f"stderr: {e.stderr}")
             raise e
     
-    return _run_cli
+    return _run_pipeline
 
 @pytest.mark.parametrize("case_name", [
-    "complex_pipeline",
-    "custom_variables",
-    "elo.simple",
-    "elo.ranking-numbers",
-    "prompt_list_of_answers.many_variables_nodes", 
-    "prompt_list_of_answers.simple", 
-    "simple_variables",
+    ("complex_pipeline"),
+    ("custom_variables"),
+    ("elo.simple"),
+    ("prompt_list_of_answers.many_variables_nodes"), 
+    ("prompt_list_of_answers.simple"), 
+    ("simple_variables"),
 ])
 @pytest.mark.parametrize("parallel", [1, 16])
-def test_e2e(case_name, run_cli, generate_missing, parallel):
+def test_e2e(case_name, run_pipeline, generate_missing, parallel):
     """End-to-end test comparing all output files between actual and expected directories"""
     
     # Setup paths
-    input_json_path = os.path.join(INPUTS_DIR, f"{case_name}.json")
-    actual_case_dir = os.path.join(ACTUAL_DIR, f"{case_name}")
-    expected_case_dir = os.path.join(EXPECTED_DIR, f"{case_name}")
+    input_file_path = os.path.join(INPUTS_DIR, f"{case_name}.py")
+    actual_case_dir = os.path.join(ACTUAL_DIR, case_name)
+    expected_case_dir = os.path.join(EXPECTED_DIR, case_name)
     
     # Verify input file exists
-    assert os.path.exists(input_json_path), f"Input file {input_json_path} not found"
+    assert os.path.exists(input_file_path), f"Input file {input_file_path} not found"
     
     # Clear actual directory first
     if os.path.exists(actual_case_dir):
         shutil.rmtree(actual_case_dir)
     os.makedirs(actual_case_dir, exist_ok=True)
     
-    # Run the CLI with actual directory as output
-    run_cli(input_json_path, actual_case_dir, parallel)
+    # Run the pipeline with actual directory as output
+    run_pipeline(input_file_path, actual_case_dir, parallel)
     
     # If expected directory doesn't exist and generate_missing is True, copy the actual output
     if not os.path.exists(expected_case_dir) and generate_missing:

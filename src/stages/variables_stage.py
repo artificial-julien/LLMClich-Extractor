@@ -1,9 +1,8 @@
 from typing import List, Dict, Any
 from src.stage import Stage
 from src.execution import Execution
-from src.registry import StageRegistry
-from src.commons import PipelineConfig
-@StageRegistry.register("variables")
+from src.common.types import *
+
 class VariablesStage(Stage):
     """
     Stage that processes variable sets and creates multiple executions.
@@ -24,25 +23,7 @@ class VariablesStage(Stage):
         """
         self.variable_sets = variable_sets
     
-    @classmethod
-    def from_dict(cls, stage_definition: Dict[str, Any]) -> 'VariablesStage':
-        """
-        Create a VariablesStage from configuration.
-        
-        Args:
-            stage_definition: Dictionary containing 'list' key with variable sets
-            
-        Returns:
-            A VariablesStage instance
-            
-        Raises:
-            ValueError: If the stage_definition is invalid
-        """
-        variable_list = stage_definition.get('list')
-        if not variable_list or not isinstance(variable_list, list):
-            raise ValueError("VariablesStage stage_definition must contain a 'list' of variable sets")
-        
-        return cls(variable_sets=variable_list)
+
     
     def process(self, pipeline_config: PipelineConfig, executions: List[Execution]) -> List[Execution]:
         """

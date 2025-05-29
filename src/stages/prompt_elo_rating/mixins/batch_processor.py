@@ -2,7 +2,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import List, Dict, Tuple, DefaultDict, Optional
 from collections import defaultdict
 from tqdm import tqdm
-from ....commons import PipelineConfig
+from src.common.types import *
 from ..types import EloRound, EloRound, EloMatch
 from src.execution import Execution
 

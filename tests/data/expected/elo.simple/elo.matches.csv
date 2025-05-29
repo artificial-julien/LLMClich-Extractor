@@ -1,0 +1,33 @@
+_model_name,_model_temperature,_model_top_p,_elo_match_competitor_a,_elo_match_competitor_b,_elo_match_winner,_elo_match_draw,_elo_match_wins_a,_elo_match_wins_b
+gpt-4o-mini,0.0,1.0,A dwarf star,Sagittarius A*,Sagittarius A*,False,0.0,4.0
+gpt-4o-mini,0.0,1.0,Jupiter,The sun,The sun,False,0.0,4.0
+gpt-4o-mini,0.0,1.0,The moon,The sun,The sun,False,0.0,4.0
+gpt-4o-mini,0.0,1.0,Mars,The Milky Way galaxy,The Milky Way galaxy,False,0.0,4.0
+gpt-4o-mini,0.0,1.0,A dwarf star,Jupiter,A dwarf star,False,4.0,0.0
+gpt-4o-mini,0.0,1.0,Jupiter,The moon,Jupiter,False,4.0,0.0
+gpt-4o-mini,0.0,1.0,Mars,The moon,Mars,False,4.0,0.0
+gpt-4o-mini,0.0,1.0,Jupiter,Mars,Jupiter,False,4.0,0.0
+gpt-4o-mini,0.0,1.0,Jupiter,The earth,Jupiter,False,4.0,0.0
+gpt-4o-mini,0.0,1.0,A dwarf star,The earth,A dwarf star,False,3.0,1.0
+gpt-4o-mini,0.0,1.0,A dwarf star,Jupiter,A dwarf star,False,4.0,0.0
+gpt-4o-mini,0.0,1.0,Sagittarius A*,The Milky Way galaxy,The Milky Way galaxy,False,0.0,4.0
+gpt-4o-mini,0.0,1.0,The Milky Way galaxy,The sun,The Milky Way galaxy,False,4.0,0.0
+gpt-4o-mini,0.0,1.0,Sagittarius A*,The sun,Sagittarius A*,False,4.0,0.0
+gpt-4o-mini,0.0,1.0,Sagittarius A*,The Milky Way galaxy,The Milky Way galaxy,False,0.0,4.0
+gpt-4o-mini,0.0,1.0,Sagittarius A*,The earth,Sagittarius A*,False,4.0,0.0
+gpt-4o-mini,0.0,1.0,The earth,The moon,The earth,False,4.0,0.0
+gpt-4o-mini,0.0,1.0,Mars,The earth,The earth,False,0.0,4.0
+gpt-4o-mini,0.0,1.0,Mars,The moon,Mars,False,4.0,0.0
+gpt-4o-mini,0.0,1.0,Jupiter,The sun,The sun,False,0.0,4.0
+gpt-4o-mini,0.0,1.0,A dwarf star,The Milky Way galaxy,The Milky Way galaxy,False,0.0,4.0
+gpt-4o-mini,0.0,1.0,Jupiter,Mars,Jupiter,False,4.0,0.0
+gpt-4o-mini,0.0,1.0,Sagittarius A*,The sun,Sagittarius A*,False,4.0,0.0
+gpt-4o-mini,0.0,1.0,Jupiter,The earth,Jupiter,False,4.0,0.0
+gpt-4o-mini,0.0,1.0,A dwarf star,The Milky Way galaxy,The Milky Way galaxy,False,0.0,4.0
+gpt-4o-mini,0.0,1.0,A dwarf star,The moon,A dwarf star,False,4.0,0.0
+gpt-4o-mini,0.0,1.0,The Milky Way galaxy,The moon,The Milky Way galaxy,False,4.0,0.0
+gpt-4o-mini,0.0,1.0,A dwarf star,Jupiter,A dwarf star,False,4.0,0.0
+gpt-4o-mini,0.0,1.0,Mars,The earth,The earth,False,0.0,4.0
+gpt-4o-mini,0.0,1.0,The earth,The sun,The sun,False,0.0,4.0
+gpt-4o-mini,0.0,1.0,Mars,The sun,The sun,False,0.0,4.0
+gpt-4o-mini,0.0,1.0,Sagittarius A*,The sun,Sagittarius A*,False,4.0,0.0

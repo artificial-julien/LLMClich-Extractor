@@ -3,11 +3,9 @@ import pandas as pd
 from pathlib import Path
 from src.stage import Stage
 from src.execution import Execution
-from src.registry import StageRegistry
-from src.commons import PipelineConfig
+from src.common.types import *
 import os
 
-@StageRegistry.register("export_to_csv")
 class ExportToCsvStage(Stage):
     """
     Stage that exports execution results to a CSV file.
@@ -28,31 +26,7 @@ class ExportToCsvStage(Stage):
         self.columns = columns or []
         self.skip_empty_rows = skip_empty_rows
     
-    @classmethod
-    def from_dict(cls, stage_definition: Dict[str, Any]) -> 'ExportToCsvStage':
-        """
-        Create an ExportToCsvStage from configuration.
-        
-        Args:
-            stage_definition: Dictionary containing:
-                - 'output_file': Optional path to the output CSV file. If not provided, defaults to "output.csv"
-                - 'columns': List of variable names to include as columns
-                - 'skip_empty_rows': Optional boolean to skip rows with empty fields. Defaults to True.
-            
-        Returns:
-            An ExportToCsvStage instance
-            
-        Raises:
-            ValueError: If the stage_definition is invalid
-        """
-        output_file = stage_definition.get('output_file')
-        columns = stage_definition.get('columns')
-        skip_empty_rows = stage_definition.get('skip_empty_rows', True)
-        
-        if not columns or not isinstance(columns, list):
-            raise ValueError("ExportToCsvStage stage_definition must contain a 'columns' list")
-        
-        return cls(output_file=output_file, columns=columns, skip_empty_rows=skip_empty_rows)
+
     
     def process(self, pipeline_config: PipelineConfig, executions: List[Execution]) -> List[Execution]:
         """
