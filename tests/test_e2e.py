@@ -20,6 +20,22 @@ def pytest_addoption(parser):
         default="1",
         help="Number of parallel processes to use for testing"
     )
+    parser.addoption(
+        "--generate-missing",
+        action="store_true",
+        help="Generate missing expected output files"
+    )
+
+def pytest_generate_tests(metafunc):
+    if "parallel" in metafunc.fixturenames:
+        generate_missing = metafunc.config.getoption("--generate-missing", False)
+        
+        if generate_missing:
+            # When generating missing, only use parallel=1
+            metafunc.parametrize("parallel", [1])
+        else:
+            # Normal case, use both values
+            metafunc.parametrize("parallel", [1, 16])
 
 @pytest.fixture
 def run_pipeline():
@@ -60,7 +76,6 @@ def run_pipeline():
     ("prompt_list_of_answers.simple"), 
     ("simple_variables"),
 ])
-@pytest.mark.parametrize("parallel", [1, 16])
 def test_e2e(case_name, run_pipeline, generate_missing, parallel):
     """End-to-end test comparing all output files between actual and expected directories"""
     
