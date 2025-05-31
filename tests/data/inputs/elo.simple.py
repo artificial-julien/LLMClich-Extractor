@@ -10,6 +10,7 @@ from src.common.script_runner import common_setup, add_argument, load_arguments
 import src.common.script_runner as script_runner
 from src.stages import *
 from src.common.types import *
+from src.stages.prompt_elo_rating.base import EloMatch, EloCompetitorRating
 
 def main():
     common_setup("ELO rating pipeline for character funniness")
@@ -51,6 +52,7 @@ def main():
     
     ranking_export = ExportToCsvStage(
         output_file="elo.ranking.csv",
+        type_filter=[EloCompetitorRating],
         columns=[
             "_model_name", "_model_temperature", "_model_top_p",
             "_elo_competitor", "_elo_rating", "_elo_wins", "_elo_loss", "_elo_draws"
@@ -59,6 +61,7 @@ def main():
     
     matches_export = ExportToCsvStage(
         output_file="elo.matches.csv",
+        type_filter=[EloMatch],
         columns=[
             "_model_name", "_model_temperature", "_model_top_p",
             "_elo_match_competitor_a", "_elo_match_competitor_b",

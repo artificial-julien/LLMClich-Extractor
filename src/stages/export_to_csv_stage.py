@@ -1,4 +1,4 @@
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Type
 import pandas as pd
 from pathlib import Path
 from src.stage import Stage
@@ -13,24 +13,27 @@ class ExportToCsvStage(Stage):
     
     DEFAULT_OUTPUT_FILE = "output.csv"
     
-    def __init__(self, output_file: Optional[str] = None, columns: List[str] = None, skip_non_full_rows: bool = True):
+    def __init__(self, output_file: Optional[str] = None, columns: List[str] = None, skip_non_full_rows: bool = False, type_filter: Optional[List[Type[Execution]]] = None):
         """
         Initialize the export to CSV stage.
         
         Args:
             output_file: Path to the output CSV file. If not provided, defaults to "output.csv"
             columns: List of variable names to include as columns
-            : If True, rows with any empty fields will be skipped. Defaults to True.
+            skip_non_full_rows: If True, rows with any empty fields will be skipped. Defaults to True.
+            type_filter: List of Execution subtypes to include. If None, all types are included.
         """
         self.output_file = output_file or self.DEFAULT_OUTPUT_FILE
         self.columns = columns or []
         self.skip_non_full_rows = skip_non_full_rows
+        self.type_filter = type_filter
     
 
     
     def process(self, pipeline_config: PipelineConfig, executions: List[Execution]) -> List[Execution]:
         """
         Process input executions by extracting variables and saving them to a CSV file.
+        If no columns are specified, all variables from all executions will be included.
         
         Args:
             executions: List of input executions
@@ -40,13 +43,28 @@ class ExportToCsvStage(Stage):
         """
         # Extract variables from each execution
         rows = []
+        all_columns = set(self.columns) if self.columns else set()
+        
         for execution in executions:
             if execution.has_error():
                 continue
                 
+            # Apply type filter if specified
+            if self.type_filter is not None and not any(isinstance(execution, t) for t in self.type_filter):
+                continue
+                
+            # Get all variables for this execution
+            all_vars = execution.get_all_variables()
+            
+            # If no columns specified, add all new columns we find
+            if not self.columns:
+                all_columns.update(all_vars.keys())
+            
+            # Create row with either specified columns or all variables
             row = {}
-            for column in self.columns:
-                row[column] = execution.get_variable(column)
+            columns_to_use = self.columns or all_columns
+            for column in columns_to_use:
+                row[column] = all_vars.get(column)
             rows.append(row)
         
         # Convert to DataFrame
@@ -55,7 +73,7 @@ class ExportToCsvStage(Stage):
             
         new_data = pd.DataFrame(rows)
         
-        # Filter out rows with empty fields if  is True
+        # Filter out rows with empty fields if skip_non_full_rows is True
         if self.skip_non_full_rows:
             new_data = new_data.dropna(how='any')
         
