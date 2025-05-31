@@ -13,18 +13,18 @@ class ExportToCsvStage(Stage):
     
     DEFAULT_OUTPUT_FILE = "output.csv"
     
-    def __init__(self, output_file: Optional[str] = None, columns: List[str] = None, skip_empty_rows: bool = True):
+    def __init__(self, output_file: Optional[str] = None, columns: List[str] = None, skip_non_full_rows: bool = True):
         """
         Initialize the export to CSV stage.
         
         Args:
             output_file: Path to the output CSV file. If not provided, defaults to "output.csv"
             columns: List of variable names to include as columns
-            skip_empty_rows: If True, rows with any empty fields will be skipped. Defaults to True.
+            : If True, rows with any empty fields will be skipped. Defaults to True.
         """
         self.output_file = output_file or self.DEFAULT_OUTPUT_FILE
         self.columns = columns or []
-        self.skip_empty_rows = skip_empty_rows
+        self.skip_non_full_rows = skip_non_full_rows
     
 
     
@@ -55,8 +55,8 @@ class ExportToCsvStage(Stage):
             
         new_data = pd.DataFrame(rows)
         
-        # Filter out rows with empty fields if skip_empty_rows is True
-        if self.skip_empty_rows:
+        # Filter out rows with empty fields if  is True
+        if self.skip_non_full_rows:
             new_data = new_data.dropna(how='any')
         
         # Resolve output path relative to output folder if provided
