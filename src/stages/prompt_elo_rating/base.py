@@ -8,6 +8,7 @@ from .mixins.llm_processor import LLMProcessorMixin
 from .mixins.batch_processor import BatchProcessorMixin
 from .types import EloCompetitorRating, DEFAULT_INITIAL_RATING, EloRound, EloMatch
 from tqdm import tqdm
+import random
 
 class PromptEloRatingStage(
     Stage,
@@ -75,6 +76,9 @@ class PromptEloRatingStage(
                 
             model_config = base_execution.model_config
             
+            # Initialize RNG for this execution
+            rng = random.Random(pipeline_config.batch_seed)
+            
             # Calculate total number of rounds for progress bar
             # For each llm_seed and batch:
             # - Number of matches = len(competitors) // 2
@@ -114,7 +118,7 @@ class PromptEloRatingStage(
                             self.prompts,
                             llm_seed,
                             self.symmetric_matches,
-                            batch_seed=pipeline_config.batch_seed
+                            rng=rng
                         )
                         jobs.extend(batch_jobs)
                     

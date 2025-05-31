@@ -2,6 +2,7 @@ import random
 from typing import List, Set, Tuple, Dict, Optional
 from ..types import EloCompetitorRating, EloRound, ModelConfig
 from src.execution import Execution
+
 class BatchGeneratorMixin:
     """Mixin providing Swiss system match generation functionality."""
     
@@ -13,7 +14,7 @@ class BatchGeneratorMixin:
         prompt_templates: List[str],
         llm_seed: int,
         symmetric_matches: bool,
-        batch_seed: Optional[int] = None
+        rng: random.Random
     ) -> List[EloRound]:
         """
         Generate a batch of round jobs using Swiss system approach.
@@ -24,13 +25,11 @@ class BatchGeneratorMixin:
             prompt_templates: List of prompt templates
             llm_seed: Current llm_seed value
             symmetric_matches: Whether to generate symmetric matches
-            batch_seed: Optional seed for reproducible batch generation
+            rng: Random number generator instance to use for reproducible randomization
             
         Returns:
             List of round jobs
         """
-        rng = random.Random(batch_seed)
-            
         matches = []
         scheduled_pairs: Set[Tuple[str, str]] = set()
         competitors = list(stats.keys())
@@ -66,7 +65,7 @@ class BatchGeneratorMixin:
                 if abs(stats[pair[0]].rating - stats[pair[1]].rating) == min_elo_diff
             ]
             
-            # Choose random pair from best pairs using the dedicated RNG instance
+            # Choose random pair from best pairs using the provided RNG instance
             chosen_pair = rng.choice(best_pairs)
             a, b = chosen_pair
             matches.append((a, b))
