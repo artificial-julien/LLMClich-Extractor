@@ -42,12 +42,13 @@ def main():
         {"b": "alpha"},
         {"b": "beta"}
     ]
+
+    models_stage = ModelsStage(models)
     
     variables_stage_a = VariablesStage(variable_sets_a)
     variables_stage_b = VariablesStage(variable_sets_b)
     
     prompt_stage = PromptListOfAnswersStage(
-        models=models,
         prompts=["does [a] equals [b]?"],
         possible_answers=["true", "false"],
         result_var_name="result"
@@ -58,7 +59,7 @@ def main():
         columns=["a", "b", "result"]
     )
     
-    pipeline = variables_stage_a | variables_stage_b | prompt_stage | export_stage
+    pipeline = models_stage | variables_stage_a | variables_stage_b | prompt_stage | export_stage
     
     results = pipeline.invoke()
 

@@ -32,8 +32,9 @@ def main():
     
     variables_stage = VariablesStage(variable_sets)
     
+    models_stage = ModelsStage([model])
+    
     prompt_stage = PromptListOfAnswersStage(
-        models=[model],
         prompts=["Is this statement scientifically accurate: '[statement]'"],
         possible_answers=["True", "False"],
         result_var_name="accuracy"
@@ -44,7 +45,7 @@ def main():
         columns=["statement", "accuracy", "_model_name", "_model_temperature"]
     )
     
-    pipeline = variables_stage | prompt_stage | export_stage
+    pipeline = variables_stage | models_stage | prompt_stage | export_stage
     
     results = pipeline.invoke()
 

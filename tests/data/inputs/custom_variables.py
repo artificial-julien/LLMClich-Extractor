@@ -45,8 +45,9 @@ def main():
     
     variables_stage = VariablesStage(variable_sets)
     
+    models_stage = ModelsStage([model])
+    
     prompt_stage = PromptListOfAnswersStage(
-        models=[model],
         prompts=["Is this sentence grammatically correct: 'The [adjective] [noun] [verb] quickly'?"],
         possible_answers=["Yes", "No"],
         result_var_name="is_grammatical"
@@ -57,7 +58,7 @@ def main():
         columns=["adjective", "noun", "verb", "is_grammatical"]
     )
     
-    pipeline = variables_stage | prompt_stage | export_stage
+    pipeline = models_stage | variables_stage | prompt_stage | export_stage
     
     results = pipeline.invoke()
 

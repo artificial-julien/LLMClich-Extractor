@@ -39,10 +39,11 @@ def main():
         {"food": "strawberry"}
     ]
     
+    models_stage = ModelsStage([model_color])
+
     variables_stage = VariablesStage(variable_sets)
     
     color_stage = PromptListOfAnswersStage(
-        models=[model_color],
         prompts=["Of what color is [food]?"],
         possible_answers=["red", "yellow", "orange", "green", "brown", "purple", "pink"],
         result_var_name="food_color"
@@ -54,7 +55,6 @@ def main():
     )
     
     type_stage = PromptListOfAnswersStage(
-        models=[model_type],
         prompts=["Is [food] a fruit or a vegetable?"],
         possible_answers=["fruit", "vegetable"],
         result_var_name="food_type"
@@ -65,7 +65,7 @@ def main():
         columns=["food", "food_color", "food_type"]
     )
     
-    pipeline = variables_stage | color_stage | color_export | type_stage | final_export
+    pipeline = models_stage | variables_stage | color_stage | color_export | type_stage | final_export
     
     results = pipeline.invoke()
 

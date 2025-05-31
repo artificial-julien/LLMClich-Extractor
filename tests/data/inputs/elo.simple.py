@@ -39,8 +39,9 @@ def main():
         "Between '[_elo_match_competitor_a]' and '[_elo_match_competitor_b]', which one would weigh more?"
     ]
     
+    models_stage = ModelsStage([model])
+    
     elo_stage = PromptEloRatingStage(
-        models=[model],
         competitors=competitors,
         prompts=prompts,
         batches_per_model=8,
@@ -65,7 +66,7 @@ def main():
         ]
     )
     
-    pipeline = elo_stage | ranking_export | matches_export
+    pipeline = models_stage | elo_stage | ranking_export | matches_export
     
     results = pipeline.invoke()
 

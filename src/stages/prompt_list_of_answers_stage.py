@@ -17,7 +17,6 @@ class PromptListOfAnswersStage(Stage):
     
     def __init__(
         self,
-        models: List[ModelConfig],
         prompts: List[str],
         possible_answers: List[str],
         result_var_name: str
@@ -26,42 +25,35 @@ class PromptListOfAnswersStage(Stage):
         Initialize the prompt list of answers stage.
         
         Args:
-            models: List of ModelConfig instances
             prompts: List of prompt templates
             possible_answers: List of allowed answers
             result_var_name: Variable name to store the result
         """
-        self.models = models
         self.prompts = prompts
         self.possible_answers = possible_answers
         self.result_var_name = result_var_name
         self.llm_client = LLMClient()
     
-
-    
     def _process_execution(
         self, 
         execution: Execution, 
-        model_config: ModelConfig, 
         prompt_template: str,
         llm_seed: int,
         pipeline_config: PipelineConfig
     ) -> Execution:
         """
-        Process a single execution with a specific model, prompt, and iteration.
+        Process a single execution with a specific prompt and iteration.
         
         Args:
             execution: Input execution with variables
-            model_config: Model configuration
             prompt_template: Prompt template
-            iteration: Iteration number (for llm_seed)
+            llm_seed: Seed for LLM generation
             
         Returns:
             New execution with result variables
         """
         
         new_execution = execution.copy()
-        new_execution.model_config = model_config
         new_execution.add_variable('llm_seed', llm_seed)
 
         # Format template with variables
@@ -74,11 +66,11 @@ class PromptListOfAnswersStage(Stage):
         formatted_prompt = f"{formatted}\n\nPossible answers:\n{answers_str}"
         try:
             result = self.llm_client.generate_constrained_completion(
-                model=model_config.name,
+                model=execution.model_config.name,
                 prompt=formatted_prompt,
                 possible_answers=self.possible_answers,
-                temperature=model_config.temperature,
-                top_p=model_config.top_p,
+                temperature=execution.model_config.temperature,
+                top_p=execution.model_config.top_p,
                 llm_seed=llm_seed,
                 max_tries=pipeline_config.llm_max_tries
             )
@@ -98,6 +90,7 @@ class PromptListOfAnswersStage(Stage):
         Process input executions, send prompts to LLMs, and return new executions with results.
         
         Args:
+            pipeline_config: Configuration for the pipeline execution
             executions: List of input executions
             
         Returns:
@@ -105,24 +98,26 @@ class PromptListOfAnswersStage(Stage):
         """
         result_executions = []
         
-        # Create all combinations of executions, models, prompts, and iterations
         jobs = []
         for execution in executions:
-            for model_config in self.models:
-                for prompt_template in self.prompts:
-                    iterations = model_config.iterations
-                    for iteration in range(iterations):
-                        jobs.append((execution, model_config, prompt_template, iteration))
+            if not execution.model_config:
+                execution.set_error("No model configuration found in execution")
+                result_executions.append(execution)
+                continue
+                
+            for prompt_template in self.prompts:
+                iterations = execution.model_config.iterations
+                for iteration in range(iterations):
+                    jobs.append((execution, prompt_template, iteration))
         
         # Process in parallel
         with ThreadPoolExecutor(max_workers=pipeline_config.parallel) as executor:
             # Create and submit futures
             futures = []
-            for execution, model_config, prompt_template, iteration in jobs:
+            for execution, prompt_template, iteration in jobs:
                 future = executor.submit(
                     self._process_execution,
                     execution,
-                    model_config,
                     prompt_template,
                     iteration,
                     pipeline_config
