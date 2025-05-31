@@ -1,0 +1,4 @@
+_model_name,_model_temperature,_model_top_p,_elo_match_competitor_a,_elo_match_competitor_b,_elo_match_winner,_elo_match_draw,_elo_match_wins_a,_elo_match_wins_b
+gpt-4.1-nano,0.0,1.0,An exact copy of the earth,The earth,,True,2,2
+gpt-4.1-nano,0.0,1.0,An exact copy of the earth,The earth,,True,2,2
+gpt-4.1-nano,0.0,1.0,An exact copy of the earth,The earth,,True,2,2

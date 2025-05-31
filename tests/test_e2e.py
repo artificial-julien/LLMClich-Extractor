@@ -55,6 +55,7 @@ def run_pipeline():
     ("complex_pipeline"),
     ("custom_variables"),
     ("elo.simple"),
+    ("elo.draws"),
     ("prompt_list_of_answers.many_variables_nodes"), 
     ("prompt_list_of_answers.simple"), 
     ("simple_variables"),

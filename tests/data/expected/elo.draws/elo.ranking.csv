@@ -1,0 +1,4 @@
+_model_name,_model_temperature,_model_top_p,_elo_competitor,_elo_rating,_elo_wins,_elo_loss,_elo_draws
+gpt-4.1-nano,0.0,1.0,The moon,1000,0,0,0
+gpt-4.1-nano,0.0,1.0,The earth,1000,0,0,3
+gpt-4.1-nano,0.0,1.0,An exact copy of the earth,1000,0,0,3
