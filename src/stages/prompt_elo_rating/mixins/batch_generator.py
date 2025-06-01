@@ -1,6 +1,6 @@
 import random
 from typing import List, Set, Tuple, Dict, Optional
-from ..types import EloCompetitorRating, EloRound, ModelConfig
+from ..types import EloCompetitorRating, EloRound, EloMatch, ModelConfig
 from src.execution import Execution
 
 class BatchGeneratorMixin:
@@ -15,11 +15,12 @@ class BatchGeneratorMixin:
         llm_seed: int,
         symmetric_matches: bool,
         rng: random.Random
-    ) -> List[EloRound]:
+    ) -> List[EloMatch]:
         """
-        Generate a batch of round jobs using Swiss system approach.
+        Generate a batch of match jobs using Swiss system approach.
         
         Args:
+            base_execution: Base execution to inherit variables from
             stats: Current competitor statistics
             model_config: Model configuration
             prompt_templates: List of prompt templates
@@ -28,9 +29,9 @@ class BatchGeneratorMixin:
             rng: Random number generator instance to use for reproducible randomization
             
         Returns:
-            List of round jobs
+            List of match jobs
         """
-        matches = []
+        competitor_pairs = []
         scheduled_pairs: Set[Tuple[str, str]] = set()
         competitors = list(stats.keys())
         
@@ -68,16 +69,18 @@ class BatchGeneratorMixin:
             # Choose random pair from best pairs using the provided RNG instance
             chosen_pair = rng.choice(best_pairs)
             a, b = chosen_pair
-            matches.append((a, b))
+            competitor_pairs.append((a, b))
             scheduled_pairs.add((a, b))
             
             # Stop after generating a certain number of matches
-            if len(matches) >= len(competitors) // 2:
+            if len(competitor_pairs) >= len(competitors) // 2:
                 break
 
-        # Create jobs for each match and prompt
-        jobs: List[EloRound] = []
-        for a, b in matches:
+        # Create EloMatch objects for each competitor pair
+        matches: List[EloMatch] = []
+        for a, b in competitor_pairs:
+            rounds: List[EloRound] = []
+            
             for prompt_template in prompt_templates:
                 def create_elo_round(competitor_a: str, competitor_b: str, is_mirror: bool) -> EloRound:
                     round = EloRound(
@@ -90,11 +93,22 @@ class BatchGeneratorMixin:
                         is_mirror=is_mirror
                     )
                     round.import_variables_from(base_execution)
-
                     return round
 
-                jobs.append(create_elo_round(a, b, False))
+                rounds.append(create_elo_round(a, b, False))
                 if symmetric_matches:
-                    jobs.append(create_elo_round(b, a, True))
+                    rounds.append(create_elo_round(b, a, True))
+            
+            # Create EloMatch with all rounds for this competitor pair
+            match = EloMatch(
+                competitor_a=a,
+                competitor_b=b,
+                rounds=rounds,
+                winner=None,  # Will be determined after processing
+                is_draw=False,  # Will be determined after processing
+                model_config=model_config,
+            )
+            match.import_variables_from(base_execution)
+            matches.append(match)
                     
-        return jobs 
+        return matches 

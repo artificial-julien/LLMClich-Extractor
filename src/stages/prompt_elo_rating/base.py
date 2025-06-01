@@ -105,13 +105,13 @@ class PromptEloRatingStage(
                 # Process all seeds for this model
                 for batch_counter in range(self.batches_per_model):
                     # Generate and process batch
-                    jobs: List[EloRound] = []
+                    matches: List[EloMatch] = []
                     
-                    # Collect all rounds for all seeds in this batch
+                    # Collect all matches for all seeds in this batch
                     for llm_seed in range(model_config.iterations):
                         if "grok" in model_config.name:
                             llm_seed = None
-                        batch_jobs = self.generate_match_batch(
+                        batch_matches = self.generate_match_batch(
                             base_execution,
                             competitors_ratings,
                             model_config,
@@ -120,19 +120,17 @@ class PromptEloRatingStage(
                             self.symmetric_matches,
                             rng=rng
                         )
-                        jobs.extend(batch_jobs)
+                        matches.extend(batch_matches)
                     
-                    # Process all rounds for all seeds in this batch
-                    round_results: List[EloRound] = self.process_batch(
+                    # Process all rounds within all matches in this batch
+                    processed_matches: List[EloMatch] = self.process_batch(
                         pipeline_config=pipeline_config,
-                        jobs=jobs,
+                        matches=matches,
                         pbar=pbar
                     )
                     
-                    matches: List[EloMatch] = self.group_rounds_into_matches(base_execution, round_results)
-                    
                     valid_matches = []
-                    for match in matches:
+                    for match in processed_matches:
                         if not match.winner and not match.is_draw:
                             raise ValueError(f"Match between {match.competitor_a} and {match.competitor_b} has no winner and is not a draw")
                             
