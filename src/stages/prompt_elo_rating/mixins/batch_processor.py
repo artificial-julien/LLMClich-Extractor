@@ -34,22 +34,22 @@ class BatchProcessorMixin:
         
         # Run rounds in parallel
         with ThreadPoolExecutor(max_workers=pipeline_config.parallel) as executor:
-            futures = []
+            future_to_job = {}
             for job in jobs:
                 future = executor.submit(
                     self.process_round,
                     job,
                     pipeline_config
                 )
-                futures.append(future)
+                future_to_job[future] = job
             
-            for future in as_completed(futures):
+            for future in as_completed(future_to_job.keys()):
                 try:
                     result : EloRound = future.result()
                     rounds.append(result)
                     self._current_rounds.append(result)
                 except Exception as e:
-                    job = jobs[len(rounds)]
+                    job = future_to_job[future]
                     job.error = str(e)
                     rounds.append(job)
                 finally:
