@@ -25,6 +25,7 @@ def main():
     )
 
     competitors = [
+        "The sun",
         "The moon",
         "The earth",
         "An exact copy of the earth",
@@ -50,21 +51,11 @@ def main():
         type_filter=[EloCompetitorRating],
         columns=[
             "_model_name", "_model_temperature", "_model_top_p",
-            "_elo_competitor", "_elo_rating", "_elo_wins", "_elo_loss", "_elo_draws"
+            "_elo_competitor", "_elo_rank"
         ]
     )
     
-    matches_export = ExportToCsvStage(
-        output_file="elo.matches.csv",
-        type_filter=[EloMatch],
-        columns=[
-            "_model_name", "_model_temperature", "_model_top_p",
-            "_elo_match_competitor_a", "_elo_match_competitor_b",
-            "_elo_match_winner", "_elo_match_draw", "_elo_match_wins_a", "_elo_match_wins_b"
-        ]
-    )
-    
-    pipeline = models_stage | elo_stage | ranking_export | matches_export
+    pipeline = models_stage | elo_stage | ranking_export
     
     results = pipeline.invoke()
 
