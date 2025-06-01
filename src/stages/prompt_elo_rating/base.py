@@ -4,9 +4,10 @@ from src.execution import Execution, ModelConfig
 from src.common.types import *
 from .mixins.elo_calculator import EloCalculatorMixin
 from .mixins.batch_generator import BatchGeneratorMixin
+from .mixins.pair_selector import PairSelectorMixin
 from .mixins.llm_processor import LLMProcessorMixin
 from .mixins.batch_processor import BatchProcessorMixin
-from .types import EloCompetitorRating, DEFAULT_INITIAL_RATING, EloRound, EloMatch
+from .types import EloCompetitorRating, DEFAULT_INITIAL_RATING, EloRound, EloMatch, PairSelectionFactors
 from tqdm import tqdm
 import random
 
@@ -14,6 +15,7 @@ class PromptEloRatingStage(
     Stage,
     EloCalculatorMixin,
     BatchGeneratorMixin,
+    PairSelectorMixin,
     LLMProcessorMixin,
     BatchProcessorMixin
 ):
@@ -29,7 +31,8 @@ class PromptEloRatingStage(
         batches_per_model: int = 4,
         initial_rating: int = DEFAULT_INITIAL_RATING,
         symmetric_matches: bool = False,
-        use_round_proportions: bool = False
+        use_round_proportions: bool = False,
+        pair_selection_factors: Optional[PairSelectionFactors] = None
     ):
         """
         Initialize the prompt Elo rating stage.
@@ -41,10 +44,12 @@ class PromptEloRatingStage(
             initial_rating: Initial Elo rating for all competitors
             symmetric_matches: Whether to run matches in both directions
             use_round_proportions: Whether to use the proportion of rounds won as the score instead of binary win/loss
+            pair_selection_factors: Factors for scoring-based pair selection (if None, uses defaults)
         """
         # Initialize mixins
         LLMProcessorMixin.__init__(self)
         BatchProcessorMixin.__init__(self)
+        PairSelectorMixin.__init__(self)
         
         # Store configuration
         self.competitors = competitors
@@ -53,6 +58,8 @@ class PromptEloRatingStage(
         self.initial_rating = initial_rating
         self.symmetric_matches = symmetric_matches
         self.use_round_proportions = use_round_proportions
+        
+        self.pair_selection_factors = pair_selection_factors
     
     def process(self, pipeline_config: PipelineConfig, executions: List[Execution]) -> List[Execution]:
         """ 
@@ -111,13 +118,15 @@ class PromptEloRatingStage(
                     for llm_seed in range(model_config.iterations):
                         if "grok" in model_config.name:
                             llm_seed = None
-                        batch_matches = self.generate_match_batch(
+                        
+                        batch_matches = self.generate_match_batch_with_scoring(
                             base_execution,
                             competitors_ratings,
                             model_config,
                             self.prompts,
                             llm_seed,
                             self.symmetric_matches,
+                            self.pair_selection_factors or PairSelectionFactors(),
                             rng=rng
                         )
                         matches.extend(batch_matches)

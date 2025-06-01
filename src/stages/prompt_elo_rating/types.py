@@ -2,6 +2,18 @@ from typing import TypedDict, List, Dict, Any, Optional, Tuple
 from dataclasses import dataclass, field
 from src.execution import Execution, ModelConfig
 
+@dataclass
+class PairSelectionFactors:
+    uncertainty_factor: float = 1.0
+    pair_repetition_count_factor: float = 1.0
+    rating_difference_penalty_factor: float = 1.0
+
+@dataclass
+class PairScore:
+    score: float
+    competitor_a: str
+    competitor_b: str
+
 @dataclass(kw_only=True)
 class EloRound(Execution):
     """
@@ -34,6 +46,7 @@ class EloMatch(Execution):
     rounds: List[EloRound]
     winner: Optional[str]
     is_draw: bool
+    pair_score: float
     
     @property
     def round_wins_a(self) -> int:
@@ -55,7 +68,8 @@ class EloMatch(Execution):
             '_elo_match_draw': self.is_draw,
             '_elo_match_wins_a': self.round_wins_a,
             '_elo_match_wins_b': self.round_wins_b,
-            '_elo_match_errored_rounds': self.errored_rounds
+            '_elo_match_errored_rounds': self.errored_rounds,
+            '_elo_match_pair_score': self.pair_score
         }
 
 @dataclass(kw_only=True)
