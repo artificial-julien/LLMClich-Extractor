@@ -55,7 +55,7 @@ def main():
     )
     
     export_stage = ExportToCsvStage(
-        output_file="output.csv",
+        output_file_prefix="output.csv",
         columns=["a", "b", "result"]
     )
     

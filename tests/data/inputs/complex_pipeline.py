@@ -50,7 +50,7 @@ def main():
     )
     
     color_export = ExportToCsvStage(
-        output_file="output.color.csv",
+        output_file_prefix="output.color.csv",
         columns=["food", "food_color"]
     )
     
@@ -61,7 +61,7 @@ def main():
     )
     
     final_export = ExportToCsvStage(
-        output_file="output.fruit_attributes.csv",
+        output_file_prefix="output.fruit_attributes.csv",
         columns=["food", "food_color", "food_type"]
     )
     

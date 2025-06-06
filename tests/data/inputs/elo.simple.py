@@ -51,7 +51,7 @@ def main():
     )
     
     ranking_export = ExportToCsvStage(
-        output_file="elo.ranking.csv",
+        output_file_prefix="elo.ranking.csv",
         type_filter=[EloCompetitorRating],
         columns=[
             "_model_name", "_model_temperature", "_model_top_p",
