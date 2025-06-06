@@ -16,6 +16,7 @@ class Execution(ABC):
     """
     variables: Dict[str, Any] = field(default_factory=dict)
     model_config: Optional[ModelConfig] = None
+    embedding_model_config: Optional[EmbeddingModelConfig] = None
     error: Optional[str] = None
     
     def get_specific_variables(self) -> Dict[str, Any]:
@@ -58,11 +59,11 @@ class Execution(ABC):
             variable_keys: Optional list of specific variable keys to import. If None, imports all variables.
         """
         if variable_keys is None:
-            self.variables.update(other.variables)
-        else:
-            for key in variable_keys:
-                if key in other.variables:
-                    self.variables[key] = other.variables[key]
+            variable_keys = list(other.variables.keys())
+        
+        for key in variable_keys:
+            if key in other.variables:
+                self.variables[key] = other.variables[key]
     
     def set_error(self, error: str) -> None:
         """Set the error state of this execution."""

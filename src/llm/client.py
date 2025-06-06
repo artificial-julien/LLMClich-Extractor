@@ -27,9 +27,15 @@ class ConstrainedCompletionResult:
     probability_result: ProbabilityResult
     raw_response: Any
 
+@dataclass
+class EmbeddingResult:
+    """Result of an embedding generation."""
+    embedding: List[float]
+    model: str
+
 class LLMClient:
     """
-    Client for interacting with OpenAI language models.
+    Client for interacting with OpenAI language models and embeddings.
     """
     
     def __init__(
@@ -49,6 +55,41 @@ class LLMClient:
             raise ValueError("No API key provided and OPENAI_API_KEY environment variable not set")
         
         self.client = OpenAI(api_key=self.api_key, base_url=base_url)
+
+    def generate_embedding(
+        self,
+        model: str,
+        input_text: str,
+        dimensions: Optional[int] = None
+    ) -> EmbeddingResult:
+        """
+        Generate an embedding for the input text.
+        
+        Args:
+            model: The embedding model to use
+            input_text: The text to generate embedding for
+            dimensions: Optional number of dimensions for the embedding (only supported in text-embedding-3 models)
+            
+        Returns:
+            EmbeddingResult containing the embedding vector and metadata
+        """
+        params = {
+            "model": model,
+            "input": input_text,
+            "encoding_format": "float"
+        }
+        
+        # Add dimensions parameter only for text-embedding-3 models
+        if dimensions and "text-embedding-3" in model:
+            params["dimensions"] = dimensions
+            
+        response = self.client.embeddings.create(**params)
+        
+        return EmbeddingResult(
+            embedding=response.data[0].embedding,
+            model=response.model
+        )
+        
 
     def _create_json_schema(self, possible_answers: List[str], answer_format: Literal["enum", "numbered"]) -> Dict[str, Any]:
         """Create JSON schema for constrained responses."""

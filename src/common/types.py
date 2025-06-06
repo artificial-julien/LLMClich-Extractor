@@ -19,3 +19,30 @@ class ModelConfig:
     temperature: float = 0.0
     top_p: float = 1.0
     iterations: int = 1
+
+@dataclass
+class EmbeddingModelConfig:
+    name: str
+    dimensions: int = field(init=False)
+    
+    def __post_init__(self):
+        """Set default dimensions based on model name."""
+        if "ada" in self.name:
+            self.dimensions = 1536
+        elif "3-small" in self.name:
+            self.dimensions = 1536
+        elif "3-large" in self.name:
+            self.dimensions = 3072
+        else:
+            # Default to 1536 for unknown models
+            self.dimensions = 1536
+
+    def __hash__(self) -> int:
+        """Make the class hashable based on name only."""
+        return hash(self.name)
+    
+    def __eq__(self, other: object) -> bool:
+        """Compare instances based on name only."""
+        if not isinstance(other, EmbeddingModelConfig):
+            return NotImplemented
+        return self.name == other.name
