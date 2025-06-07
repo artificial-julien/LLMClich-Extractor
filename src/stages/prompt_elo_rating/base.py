@@ -1,4 +1,4 @@
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Iterator
 from src.stage import Stage
 from src.execution import Execution, ModelConfig
 from src.common.types import *
@@ -61,24 +61,27 @@ class PromptEloRatingStage(
         
         self.pair_selection_factors = pair_selection_factors
     
-    def process(self, pipeline_config: PipelineConfig, executions: List[Execution]) -> List[Execution]:
+    def process(self, pipeline_config: PipelineConfig, executions: Iterator[Execution]) -> Iterator[Execution]:
         """ 
-        Process input executions, run Elo rating matches, and return results.
+        Process input executions lazily, run Elo rating matches, and yield results.
         
         Args:
             pipeline_config: Pipeline configuration
-            executions: List of input executions to process
+            executions: Iterator of input executions to process
             
-        Returns:
-            List of new executions with results for each competitor
+        Yields:
+            Execution instances with results for each competitor and match
         """
-        all_result_executions: List[Execution] = []
-        
         # Process each input execution separately
         for base_execution in executions:
+            if base_execution.has_error():
+                yield base_execution
+                continue
+                
             if not base_execution.model_config:
-                base_execution.set_error("No model configuration found in execution")
-                all_result_executions.append(base_execution)
+                error_execution = base_execution.copy()
+                error_execution.set_error("No model configuration found in execution")
+                yield error_execution
                 continue
                 
             model_config = base_execution.model_config
@@ -107,7 +110,6 @@ class PromptEloRatingStage(
                     )
                     rating.import_variables_from(base_execution)
                     competitors_ratings[competitor] = rating
-                model_result_executions: List[Execution] = []
                 
                 # Process all seeds for this model
                 for batch_counter in range(self.batches_per_model):
@@ -143,7 +145,7 @@ class PromptEloRatingStage(
                         if not match.winner and not match.is_draw:
                             raise ValueError(f"Match between {match.competitor_a} and {match.competitor_b} has no winner and is not a draw")
                             
-                        model_result_executions.append(match)
+                        yield match
                         valid_matches.append(match)
                     
                     if valid_matches:
@@ -161,7 +163,5 @@ class PromptEloRatingStage(
                 # Assign ranks (1-based, where 1 is highest rating)
                 for i, rating in enumerate(sorted_ratings):
                     rating.rank = i + 1
-                model_result_executions.extend(sorted_ratings)
-                all_result_executions.extend(model_result_executions)
-        
-        return all_result_executions 
+                    yield rating
+                    

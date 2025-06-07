@@ -1,5 +1,5 @@
 import src.common.script_runner as script_runner
-from typing import List, Dict, Any, Optional, Type
+from typing import List, Dict, Any, Optional, Type, Iterator
 import pandas as pd
 from pathlib import Path
 from src.stage import Stage
@@ -71,46 +71,47 @@ class ExportMatrixToCsvStage(Stage):
         metadata_suffix = "_".join(metadata_parts)
         return f"{filename_prefix}_{metadata_suffix}.csv"
     
-    def process(self, pipeline_config: PipelineConfig, executions: List[Execution]) -> List[Execution]:
+    def process(self, pipeline_config: PipelineConfig, executions: Iterator[Execution]) -> Iterator[Execution]:
         """
-        Process input executions by filtering DistanceMatrix types and exporting them to CSV.
+        Process input executions lazily by filtering DistanceMatrix types and exporting them to CSV.
         
         Args:
-            executions: List of input executions
+            pipeline_config: Configuration for the pipeline execution
+            executions: Iterator of input executions
             
-        Returns:
-            The same list of executions (this stage doesn't modify executions)
+        Yields:
+            The same executions that were processed (this stage doesn't modify executions)
         """
-        matrix_executions = []
+        matrix_count = 0
         
         for execution in executions:
-            if isinstance(execution, DistanceMatrixExecution):
-                matrix_executions.append(execution)
-        
-        # Export each matrix execution
-        for i, matrix_execution in enumerate(matrix_executions):
-            try:
-                output_filename = self._generate_output_filename(matrix_execution, self.output_file_prefix)
-                
-                # Resolve output path relative to output folder if provided
-                if script_runner.global_config.output_dir:
-                    output_path = Path(script_runner.global_config.output_dir) / output_filename
-                else:
-                    # Fallback to current directory if no output_dir specified
-                    output_path = Path(output_filename)
-                
-                # Export the matrix
-                self._export_matrix_to_csv(matrix_execution, output_path)
-                
-                if script_runner.global_config.verbose:
-                    print(f"Exported distance matrix to: {output_path}")
-                    print(f"  - Items: {len(matrix_execution.items)}")
-                    print(f"  - Embedding model: {matrix_execution.embedding_model}")
-                    print(f"  - Distance metric: {matrix_execution.distance_metric}")
-                
-            except Exception as e:
-                if pipeline_config.verbose:
-                    print(f"Failed to export matrix execution {i}: {str(e)}")
-                # Note: We don't modify the execution's error state since this is an export stage
-        
-        return executions
+
+            # Always yield the execution first
+            yield execution
+            
+            # Process if it's a distance matrix execution
+            if isinstance(execution, DistanceMatrixExecution) and not execution.has_error():
+                try:
+                    output_filename = self._generate_output_filename(execution, self.output_file_prefix)
+                    
+                    # Resolve output path relative to output folder if provided
+                    if script_runner.global_config.output_dir:
+                        output_path = Path(script_runner.global_config.output_dir) / output_filename
+                    else:
+                        # Fallback to current directory if no output_dir specified
+                        output_path = Path(output_filename)
+                    
+                    # Export the matrix
+                    self._export_matrix_to_csv(execution, output_path)
+                    matrix_count += 1
+                    
+                    if script_runner.global_config.verbose:
+                        print(f"Exported distance matrix to: {output_path}")
+                        print(f"  - Items: {len(execution.items)}")
+                        print(f"  - Embedding model: {execution.embedding_model_config.name}")
+                        print(f"  - Distance metric: {execution.distance_metric}")
+                    
+                except Exception as e:
+                    if pipeline_config.verbose:
+                        print(f"Failed to export matrix execution {matrix_count}: {str(e)}")
+                    # Note: We don't modify the execution's error state since this is an export stage

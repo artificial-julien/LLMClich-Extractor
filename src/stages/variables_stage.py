@@ -1,4 +1,4 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Iterator
 from src.stage import Stage
 from src.execution import Execution
 from src.common.types import *
@@ -23,23 +23,20 @@ class VariablesStage(Stage):
         """
         self.variable_sets = variable_sets
     
-
-    
-    def process(self, pipeline_config: PipelineConfig, executions: List[Execution]) -> List[Execution]:
+    def process(self, pipeline_config: PipelineConfig, executions: Iterator[Execution]) -> Iterator[Execution]:
         """
-        Process input executions and create new executions with the variable sets.
+        Process input executions lazily and create new executions with the variable sets.
         
         For each input execution, creates multiple new executions with variables
         from the original execution plus the variables from each variable set.
         
         Args:
-            executions: List of input executions
+            pipeline_config: Configuration for the pipeline execution
+            executions: Iterator of input executions
             
-        Returns:
-            List of new executions with enriched variables
+        Yields:
+            New executions with enriched variables
         """
-        result_executions = []
-        
         for execution in executions:
             for variable_set in self.variable_sets:
                 new_execution = execution.copy()
@@ -47,6 +44,4 @@ class VariablesStage(Stage):
                 # Add the variables from this set
                 new_execution.add_variables(variable_set)
                 
-                result_executions.append(new_execution)
-        
-        return result_executions 
+                yield new_execution

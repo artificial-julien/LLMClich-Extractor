@@ -1,4 +1,4 @@
-from typing import List, Dict, Any, Optional, Type
+from typing import List, Dict, Any, Optional, Type, Iterator
 import pandas as pd
 from pathlib import Path
 from src.stage import Stage
@@ -28,19 +28,20 @@ class ExportToCsvStage(Stage):
         self.skip_non_full_rows = skip_non_full_rows
         self.type_filter = type_filter
     
-
-    
-    def process(self, pipeline_config: PipelineConfig, executions: List[Execution]) -> List[Execution]:
+    def process(self, pipeline_config: PipelineConfig, executions: Iterator[Execution]) -> Iterator[Execution]:
         """
-        Process input executions by extracting variables and saving them to a CSV file.
-        If no columns are specified, all variables from all executions will be included.
+        Process input executions lazily by collecting them for CSV export.
+        Since CSV export requires all data, we need to consume the iterator.
         
         Args:
-            executions: List of input executions
+            pipeline_config: Configuration for the pipeline execution
+            executions: Iterator of input executions
             
-        Returns:
-            The same list of executions (this stage doesn't modify executions)
+        Yields:
+            The same executions that were processed (this stage doesn't modify executions)
         """
+        # Collect all executions for CSV processing
+        
         # Extract variables from each execution
         rows = []
         all_columns = set(self.columns) if self.columns else set()
@@ -67,63 +68,63 @@ class ExportToCsvStage(Stage):
                 row[column] = all_vars.get(column)
             rows.append(row)
         
-        # Convert to DataFrame
-        if not rows:
-            return executions
+        # Convert to DataFrame and export
+        if rows:
+            new_data = pd.DataFrame(rows)
             
-        new_data = pd.DataFrame(rows)
-        
-        # Filter out rows with empty fields if skip_non_full_rows is True
-        if self.skip_non_full_rows:
-            new_data = new_data.dropna(how='any')
-        
-        # Resolve output path relative to output folder if provided
-        if pipeline_config.output_dir:
-            output_path = Path(pipeline_config.output_dir) / self.output_file_prefix
-        else:
-            output_path = Path(pipeline_config.json_path).parent / self.output_file_prefix
+            # Filter out rows with empty fields if skip_non_full_rows is True
+            if self.skip_non_full_rows:
+                new_data = new_data.dropna(how='any')
             
-        # Ensure directory exists
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        
-        # Check if file exists and handle accordingly
-        if output_path.exists() and output_path.stat().st_size > 0 and pipeline_config.csv_append:
-            try:
-                # Try to read existing file
-                existing_df = pd.read_csv(str(output_path))
+            # Resolve output path relative to output folder if provided
+            if pipeline_config.output_dir:
+                output_path = Path(pipeline_config.output_dir) / self.output_file_prefix
+            else:
+                output_path = Path(pipeline_config.json_path).parent / self.output_file_prefix
                 
-                # Check if the file has headers
-                has_headers = True
-                if len(existing_df.columns) == 1 and existing_df.columns[0].startswith('Unnamed:'):
-                    # File likely has no headers, read again without header
-                    existing_df = pd.read_csv(str(output_path), header=None)
-                    has_headers = False
-                
-                if not has_headers:
-                    # Add headers to the existing file
-                    existing_df.columns = self.columns[:len(existing_df.columns)]
-                    # Add any missing columns
-                    for col in self.columns:
-                        if col not in existing_df.columns:
-                            existing_df[col] = None
-                
-                else:
-                    # Add any missing columns to existing dataframe
-                    for col in self.columns:
-                        if col not in existing_df.columns:
-                            existing_df[col] = None
-                
-                # Append new data to existing data
-                combined_df = pd.concat([existing_df, new_data], ignore_index=True)
-                
-                # Save combined data
-                combined_df.to_csv(str(output_path), index=False, na_rep='')
-                
-            except Exception as e:
-                # In case of any error reading the existing file, overwrite with new data
+            # Ensure directory exists
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            
+            # Check if file exists and handle accordingly
+            if output_path.exists() and output_path.stat().st_size > 0 and pipeline_config.csv_append:
+                try:
+                    # Try to read existing file
+                    existing_df = pd.read_csv(str(output_path))
+                    
+                    # Check if the file has headers
+                    has_headers = True
+                    if len(existing_df.columns) == 1 and existing_df.columns[0].startswith('Unnamed:'):
+                        # File likely has no headers, read again without header
+                        existing_df = pd.read_csv(str(output_path), header=None)
+                        has_headers = False
+                    
+                    if not has_headers:
+                        # Add headers to the existing file
+                        existing_df.columns = self.columns[:len(existing_df.columns)]
+                        # Add any missing columns
+                        for col in self.columns:
+                            if col not in existing_df.columns:
+                                existing_df[col] = None
+                    
+                    else:
+                        # Add any missing columns to existing dataframe
+                        for col in self.columns:
+                            if col not in existing_df.columns:
+                                existing_df[col] = None
+                    
+                    # Append new data to existing data
+                    combined_df = pd.concat([existing_df, new_data], ignore_index=True)
+                    
+                    # Save combined data
+                    combined_df.to_csv(str(output_path), index=False, na_rep='')
+                    
+                except Exception as e:
+                    # In case of any error reading the existing file, overwrite with new data
+                    new_data.to_csv(str(output_path), index=False, na_rep='')
+            else:
+                # If file doesn't exist, is empty, or append is disabled, just write the new data
                 new_data.to_csv(str(output_path), index=False, na_rep='')
-        else:
-            # If file doesn't exist, is empty, or append is disabled, just write the new data
-            new_data.to_csv(str(output_path), index=False, na_rep='')
         
-        return executions 
+        # Yield all executions as-is
+        for execution in executions:
+            yield execution

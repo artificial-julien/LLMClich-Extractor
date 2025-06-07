@@ -65,7 +65,7 @@ def main():
         columns=["food", "food_color", "food_type"]
     )
     
-    pipeline = models_stage | variables_stage | color_stage | color_export | type_stage | final_export
+    pipeline = models_stage | variables_stage | color_stage | color_export & type_stage | final_export
     
     results = pipeline.invoke()
 

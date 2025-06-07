@@ -1,4 +1,4 @@
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Iterator
 import os
 from src.stage import Stage
 from src.execution import Execution
@@ -85,30 +85,37 @@ class PromptListOfAnswersStage(Stage):
         
         return new_execution
     
-    def process(self, pipeline_config: PipelineConfig, executions: List[Execution]) -> List[Execution]:
+    def process(self, pipeline_config: PipelineConfig, executions: Iterator[Execution]) -> Iterator[Execution]:
         """
-        Process input executions, send prompts to LLMs, and return new executions with results.
+        Process input executions lazily, send prompts to LLMs, and yield new executions with results.
         
         Args:
             pipeline_config: Configuration for the pipeline execution
-            executions: List of input executions
+            executions: Iterator of input executions
             
-        Returns:
-            List of new executions with results
+        Yields:
+            New executions with results
         """
-        result_executions = []
         
         jobs = []
         for execution in executions:
+            if execution.has_error():
+                yield execution
+                continue
+                
             if not execution.model_config:
-                execution.set_error("No model configuration found in execution")
-                result_executions.append(execution)
+                error_execution = execution.copy()
+                error_execution.set_error("No model configuration found in execution")
+                yield error_execution
                 continue
                 
             for prompt_template in self.prompts:
                 iterations = execution.model_config.iterations
                 for iteration in range(iterations):
                     jobs.append((execution, prompt_template, iteration))
+        
+        if not jobs:
+            return
         
         # Process in parallel
         with ThreadPoolExecutor(max_workers=pipeline_config.parallel) as executor:
@@ -128,12 +135,9 @@ class PromptListOfAnswersStage(Stage):
             for future in tqdm(as_completed(futures), total=len(futures), desc="Processing prompts"):
                 try:
                     result_execution = future.result()
-                    result_executions.append(result_execution)
+                    yield result_execution
                 except Exception as e:
                     # Create an execution with error
-                    base_execution = jobs[len(result_executions)][0]
-                    error_execution = base_execution.copy()
+                    error_execution = Execution()
                     error_execution.set_error(f"Error processing prompt: {str(e)}")
-                    result_executions.append(error_execution)
-        
-        return result_executions 
+                    yield error_execution

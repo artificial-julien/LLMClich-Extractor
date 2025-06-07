@@ -1,4 +1,4 @@
-from typing import List, Dict, Any, Protocol
+from typing import List, Dict, Any, Protocol, Iterator
 from abc import ABC, abstractmethod
 from src.execution import Execution
 from src.common.types import *
@@ -11,19 +11,20 @@ class Stage(ABC):
     
     Each stage processes a list of input executions and returns a list of output executions.
     Stages can be composed using the pipe operator (|) to create composite stages.
+    Stages can be composed in parallel using the & operator to create parallel stages.
     """
     
     @abstractmethod
-    def process(self, pipeline_config: PipelineConfig, executions: List[Execution]) -> List[Execution]:
+    def process(self, pipeline_config: PipelineConfig, executions: Iterator[Execution]) -> Iterator[Execution]:
         """
-        Process the input executions and return a list of new executions.
+        Process input executions lazily and yield new executions.
         
         Args:
             pipeline_config: Configuration for the pipeline execution
-            executions: List of input execution contexts
+            executions: Iterator of input executions
             
-        Returns:
-            List of resulting execution contexts
+        Yields:
+            Execution instances as they are processed
         """
         pass
     
@@ -54,23 +55,19 @@ class Stage(ABC):
             raise RuntimeError("global_config is not initialized. Call script_runner.load_arguments() first.")
             
         # Initialize with a single execution containing the initial variables
-        executions = [Execution(variables=initial_variables or {})]
+        initial_executions = [Execution(variables=initial_variables)]
         
-        # Process through this stage
-        processed_executions = self.process(pipeline_config=script_runner.global_config, executions=[exec for exec in executions if not exec.has_error()])
+        # Process through this stage using lazy evaluation
+        result_executions = []
         
-        errored_executions = [exec for exec in executions if exec.has_error()]
-        executions = processed_executions + errored_executions
-
-        # Report any errors that occurred during stage processing
-        if script_runner.global_config.verbose:
-            errored = [exec for exec in executions if exec.has_error()]
-            if errored:
-                print(f"Stage {self.__class__.__name__} had {len(errored)} errors:")
-                for exec in errored:
-                    print(f"  Error: {exec.error}")
+        for execution in self.process(pipeline_config=script_runner.global_config, executions=iter(initial_executions)):
+            result_executions.append(execution)
+            
+            # Report errors as they occur
+            if script_runner.global_config.verbose and execution.has_error():
+                print(f"Stage {self.__class__.__name__} had error: {execution.error}")
         
-        return executions
+        return result_executions
 
 
 class CompositeStage(Stage):
@@ -89,38 +86,27 @@ class CompositeStage(Stage):
         """
         self.stages = stages
     
-    def process(self, pipeline_config: PipelineConfig, executions: List[Execution]) -> List[Execution]:
+    def process(self, pipeline_config: PipelineConfig, executions: Iterator[Execution]) -> Iterator[Execution]:
         """
-        Process executions through all stages in sequence.
+        Process executions through all stages in sequence using lazy evaluation.
         
         Args:
             pipeline_config: Configuration for the pipeline execution
-            executions: List of input execution contexts
+            executions: Iterator of input execution contexts
             
-        Returns:
-            List of resulting execution contexts after all stages are processed
+        Yields:
+            Execution instances as they are processed through all stages
         """
         current_executions = executions
         
         # Process through each stage
-        for stage in self.stages:            
-            processed_executions = stage.process(pipeline_config=pipeline_config, executions=[exec for exec in current_executions if not exec.has_error()])
-            
-            errored_executions = [exec for exec in current_executions if exec.has_error()]
-            current_executions = processed_executions + errored_executions
-
-            # Report any errors that occurred during stage processing
-            if pipeline_config.verbose:
-                errored = [exec for exec in current_executions if exec.has_error()]
-                if errored:
-                    print(f"Stage {stage.__class__.__name__} had {len(errored)} errors:")
-                    for exec in errored:
-                        print(f"  Error: {exec.error}")
-            
-            if not current_executions:
-                break
+        for stage in self.stages:
+            # Use lazy evaluation for each stage
+            current_executions = stage.process(pipeline_config=script_runner.global_config, executions=current_executions)
         
-        return current_executions
+        # Yield all final executions
+        for execution in current_executions:
+            yield execution
     
     def __or__(self, other: 'Stage') -> 'Stage':
         """

@@ -1,4 +1,4 @@
-from typing import List, Dict, Any, Type
+from typing import List, Dict, Any, Type, Iterator
 from src.stage import Stage
 from src.execution import Execution
 from src.common.types import PipelineConfig
@@ -108,9 +108,9 @@ class MatrixOfDistancesStage(Stage):
         
         return matrix
     
-    def process(self, pipeline_config: PipelineConfig, executions: List[Execution]) -> List[Execution]:
+    def process(self, pipeline_config: PipelineConfig, executions: Iterator[Execution]) -> Iterator[Execution]:
         """
-        Process Embedding executions and create a DistanceMatrix execution.
+        Process Embedding executions lazily and create DistanceMatrix executions.
         
         Aggregates all Embedding executions with the same embedding model into
         a single distance matrix calculation. If some embeddings are marked as
@@ -118,30 +118,32 @@ class MatrixOfDistancesStage(Stage):
         
         Args:
             pipeline_config: Configuration for the pipeline execution
-            executions: List of input executions
+            executions: Iterator of input executions
             
-        Returns:
-            List containing DistanceMatrix executions and any non-Embedding executions
+        Yields:
+            DistanceMatrix executions and any non-Embedding executions
         """
-        result_executions : List[Execution] = []
+        # Collect all executions
+        executions_list = list(executions)
         
         # Filter executions by type using list comprehension
-        embedding_executions : List[EmbeddingExecution] = [execution for execution in executions 
-                              if any(isinstance(execution, t) for t in self.type_filter)]
-        other_executions : List[Execution] = [execution for execution in executions 
-                          if not any(isinstance(execution, t) for t in self.type_filter)]
+        embedding_executions: List[EmbeddingExecution] = [execution for execution in executions_list 
+                                if any(isinstance(execution, t) for t in self.type_filter)]
+        other_executions: List[Execution] = [execution for execution in executions_list 
+                            if not any(isinstance(execution, t) for t in self.type_filter)]
         
-        result_executions.extend(embedding_executions)
-        result_executions.extend(other_executions)
+        # Yield all original executions first
+        for execution in executions_list:
+            yield execution
 
         if not embedding_executions:
-            return executions
+            return
         
         # Group by model
         model_groups = {
             model_key: list(group) 
             for model_key, group in groupby(embedding_executions, 
-                                          key=lambda x: x.embedding_model_config)
+                                            key=lambda x: x.embedding_model_config)
         }
         
         for embedding_model, group_executions in model_groups.items():
@@ -164,7 +166,7 @@ class MatrixOfDistancesStage(Stage):
                     # Need at least 2 items for distance matrix
                     error_execution = base_execution.copy()
                     error_execution.set_error(f"Need at least 2 items for distance matrix, got {len(embeddings)}")
-                    result_executions.append(error_execution)
+                    yield error_execution
                     continue
                 
                 # Build distance matrix
@@ -187,11 +189,9 @@ class MatrixOfDistancesStage(Stage):
                 # Import variables from base execution
                 matrix_execution.import_variables_from(base_execution)
                 
-                result_executions.append(matrix_execution)
+                yield matrix_execution
                 
             except Exception as e:
-                error_execution = group_executions[0].copy()
+                error_execution = group_executions[0].copy() if group_executions else Execution()
                 error_execution.set_error(f"Failed to compute distance matrix: {str(e)}")
-                result_executions.append(error_execution)
-        
-        return result_executions 
+                yield error_execution
