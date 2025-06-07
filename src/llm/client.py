@@ -196,7 +196,7 @@ class LLMClient:
                 top_p=top_p,
                 seed=llm_seed,
                 logprobs=True,
-                top_logprobs=10,
+                top_logprobs=min(8, len(possible_answers)), # grok has a max of 8 logprobs
                 extra_body={
                     "response_format": {
                         "type": "json_schema",
