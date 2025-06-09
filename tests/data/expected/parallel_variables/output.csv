@@ -1,0 +1,19 @@
+name,age,city,greeting,city_info
+Alice,25,New York,"Hello, Alice!",
+Alice,25,New York,"Hello, Bob!",
+Alice,25,New York,"Hello, Jean!",
+Bob,30,London,"Hello, Alice!",
+Bob,30,London,"Hello, Bob!",
+Bob,30,London,"Hello, Jean!",
+Jean,35,Paris,"Hello, Alice!",
+Jean,35,Paris,"Hello, Bob!",
+Jean,35,Paris,"Hello, Jean!",
+Alice,25,New York,,Talking to Alice
+Alice,25,New York,,Talking to Bob
+Alice,25,New York,,Talking to Jean
+Bob,30,London,,Talking to Alice
+Bob,30,London,,Talking to Bob
+Bob,30,London,,Talking to Jean
+Jean,35,Paris,,Talking to Alice
+Jean,35,Paris,,Talking to Bob
+Jean,35,Paris,,Talking to Jean

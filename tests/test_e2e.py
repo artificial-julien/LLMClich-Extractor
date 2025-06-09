@@ -78,6 +78,7 @@ def run_pipeline():
     ("prompt_list_of_answers.many_variables_nodes"), 
     ("prompt_list_of_answers.simple"), 
     ("simple_variables"),
+    ("parallel_variables"),
 ])
 def test_e2e(case_name, run_pipeline, generate_missing, parallel):
     """End-to-end test comparing all output files between actual and expected directories"""
