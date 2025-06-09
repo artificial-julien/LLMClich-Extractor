@@ -24,10 +24,6 @@ def main():
     
     load_arguments()
     
-    print(f"Running with verbose={script_runner.global_config.verbose}, parallel={script_runner.global_config.parallel}")
-    print(f"Output directory: {script_runner.global_config.output_dir}")
-    print(f"Custom variable count: {script_runner.global_config.custom_args.variable_count}")
-    
     variable_sets = []
     names = ["Alice", "Bob", "Charlie", "David", "Eve"]
     cities = ["New York", "San Francisco", "Chicago", "Boston", "Seattle"]
@@ -50,10 +46,6 @@ def main():
     pipeline = variables_stage | export_stage
     
     pipeline.invoke()
-    
-    if script_runner.global_config.verbose:
-        print(f"Generated {len(variable_sets)} variable sets")
-        print(f"Output written to: {script_runner.global_config.output_dir}/{output_file}")
 
 if __name__ == "__main__":
     main() 

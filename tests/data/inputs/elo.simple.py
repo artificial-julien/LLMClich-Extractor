@@ -31,7 +31,6 @@ def main():
         "Sagittarius A*",
         "Jupiter",
         "Mars",
-        "A dwarf star",
         "The Milky Way galaxy",
     ]
     
@@ -64,4 +63,4 @@ def main():
     results = pipeline.invoke()
 
 if __name__ == "__main__":
-    main() 
+    main()
