@@ -33,6 +33,7 @@ build/
 examples/**/output_results.csv
 tests/data/actual/**
 temp_tests/*
+output/*
 
 .~lock.*
 
