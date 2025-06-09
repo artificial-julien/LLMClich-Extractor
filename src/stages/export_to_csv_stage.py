@@ -38,20 +38,16 @@ class ExportToCsvStage(Stage):
             executions: Iterator of input executions
             
         Yields:
-            The same executions that were processed (this stage doesn't modify executions)
+            Executions that were filtered out (either by type or non-full rows)
         """
-        # Collect all executions for CSV processing
-        
         # Extract variables from each execution
         rows = []
         all_columns = set(self.columns) if self.columns else set()
         
-        for execution in executions:
-            if execution.has_error():
-                continue
-                
+        for execution in executions:                
             # Apply type filter if specified
             if self.type_filter is not None and not any(isinstance(execution, t) for t in self.type_filter):
+                yield execution
                 continue
                 
             # Get all variables for this execution
@@ -66,15 +62,17 @@ class ExportToCsvStage(Stage):
             columns_to_use = self.columns or all_columns
             for column in columns_to_use:
                 row[column] = all_vars.get(column)
+            
+            # If skip_non_full_rows is True and any value is None, yield the execution
+            if self.skip_non_full_rows and any(v is None for v in row.values()):
+                yield execution
+                continue
+                
             rows.append(row)
         
         # Convert to DataFrame and export
         if rows:
             new_data = pd.DataFrame(rows)
-            
-            # Filter out rows with empty fields if skip_non_full_rows is True
-            if self.skip_non_full_rows:
-                new_data = new_data.dropna(how='any')
             
             # Resolve output path relative to output folder if provided
             if pipeline_config.output_dir:
@@ -124,7 +122,3 @@ class ExportToCsvStage(Stage):
             else:
                 # If file doesn't exist, is empty, or append is disabled, just write the new data
                 new_data.to_csv(str(output_path), index=False, na_rep='')
-        
-        # Yield all executions as-is
-        for execution in executions:
-            yield execution
