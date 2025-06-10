@@ -32,10 +32,11 @@ def main():
 
     models_stage = EmbeddingModelsStage([model])
     embeddings_stage = EmbeddingStage(list)
-    matrix_stage = MatrixOfDistancesStage('cosine') | MatrixOfDistancesStage('euclidean')
+    pivot_table_stage = PivotStage(rows="_distance_item1", columns="_distance_item2", values="_distance_value")
+    distances_stages = DistanceCalculationStage('cosine') & DistanceCalculationStage('euclidean')
     export_stage = ExportMatrixToCsvStage(output_file_prefix="embedding.matrix")
 
-    pipeline = models_stage | embeddings_stage | matrix_stage | export_stage
+    pipeline = models_stage | embeddings_stage | pivot_table_stage | distances_stages | export_stage
     
     results = pipeline.invoke()
 

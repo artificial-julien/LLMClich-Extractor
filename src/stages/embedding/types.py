@@ -20,22 +20,19 @@ class EmbeddingExecution(Execution):
         }
 
 @dataclass(kw_only=True)
-class DistanceMatrixExecution(Execution):
+class DistanceExecution(Execution):
     """
-    Represents a distance matrix computed from embeddings.
-    Can be either square (n*n) or rectangular (n*m) when second dimension items are specified.
+    Represents a distance measurement between two items.
     """
-    items: List[str]
-    second_dimension_items: List[str]
-    distance_matrix: List[List[float]]
+    item1: str
+    item2: str
+    distance_value: float
     distance_metric: str
 
     def get_specific_variables(self) -> Dict[str, Any]:
         return {
-            '_matrix_items': self.items,
-            '_matrix_size': len(self.items),
-            '_matrix_second_dimension_items': self.second_dimension_items,
-            '_matrix_second_dimension_size': len(self.second_dimension_items) if self.second_dimension_items else len(self.items),
-            '_matrix_distance_metric': self.distance_metric,
-            '_matrix_data': self.distance_matrix
+            '_distance_item1': self.item1,
+            '_distance_item2': self.item2,
+            '_distance_value': self.distance_value,
+            '_distance_metric': self.distance_metric
         } 

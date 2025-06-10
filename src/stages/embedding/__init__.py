@@ -1,3 +1,3 @@
-from .types import EmbeddingExecution, DistanceMatrixExecution
+from .types import EmbeddingExecution, DistanceExecution
 
-__all__ = ['EmbeddingExecution', 'DistanceMatrixExecution'] 
+__all__ = ['EmbeddingExecution', 'DistanceExecution'] 

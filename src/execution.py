@@ -61,6 +61,9 @@ class Execution(ABC):
         if variable_keys is None:
             variable_keys = list(other.variables.keys())
         
+        self.model_config = other.model_config
+        self.embedding_model_config = other.embedding_model_config
+
         for key in variable_keys:
             if key in other.variables:
                 self.variables[key] = other.variables[key]

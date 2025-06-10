@@ -5,40 +5,40 @@ from pathlib import Path
 from src.stage import Stage
 from src.execution import Execution
 from src.common.types import PipelineConfig
-from src.stages.embedding.types import DistanceMatrixExecution
+from src.stages.pivot_stage import MatrixExecution
 
 class ExportMatrixToCsvStage(Stage):
     """
-    Stage that exports distance matrices to CSV files.
+    Stage that exports matrices to CSV files.
     
-    Uses type filtering to process only DistanceMatrix executions and exports
-    each matrix as a CSV file with items as row and column headers.
+    Uses type filtering to process only Matrix executions and exports
+    each matrix as a CSV file with row and column labels as headers.
     """
     
-    DEFAULT_OUTPUT_FILE_PREFIX = "distance_matrix"
+    DEFAULT_OUTPUT_FILE_PREFIX = "matrix"
     
     def __init__(self, output_file_prefix: Optional[str] = None):
         """
         Initialize the export matrix to CSV stage.
         
         Args:
-            output_file: Path to the output CSV file. If not provided, defaults to "distance_matrix.csv"
+            output_file_prefix: Prefix for the output CSV file. If not provided, defaults to "matrix"
         """
         self.output_file_prefix = output_file_prefix or self.DEFAULT_OUTPUT_FILE_PREFIX
     
-    def _export_matrix_to_csv(self, matrix_execution: DistanceMatrixExecution, output_path: Path) -> None:
+    def _export_matrix_to_csv(self, matrix_execution: MatrixExecution, output_path: Path) -> None:
         """
-        Export a single distance matrix to CSV format.
+        Export a single matrix to CSV format.
         
         Args:
-            matrix_execution: DistanceMatrix execution to export
+            matrix_execution: Matrix execution to export
             output_path: Path where to save the CSV file
         """
-        # Create DataFrame with items as both index and columns
+        # Create DataFrame with row and column labels
         df = pd.DataFrame(
-            matrix_execution.distance_matrix,
-            index=matrix_execution.items,
-            columns=matrix_execution.second_dimension_items
+            matrix_execution.matrix_data,
+            index=matrix_execution.row_labels,
+            columns=matrix_execution.column_labels
         )
         
         # Ensure directory exists
@@ -47,14 +47,14 @@ class ExportMatrixToCsvStage(Stage):
         # Save to CSV with index and header
         df.to_csv(str(output_path), float_format='%.6f')
     
-    def _generate_output_filename(self, matrix_execution: DistanceMatrixExecution, filename_prefix: str) -> str:
+    def _generate_output_filename(self, matrix_execution: MatrixExecution, filename_prefix: str) -> str:
         """
         Generate a unique output filename for a matrix execution.
         Follows the format:
-        <distance>_<matrix>_<model>_<metric>_<size>.csv
+        <prefix>_<model>_<size>.csv
         
         Args:
-            matrix_execution: DistanceMatrix execution
+            matrix_execution: Matrix execution
             filename_prefix: Filename prefix
             
         Returns:
@@ -62,18 +62,19 @@ class ExportMatrixToCsvStage(Stage):
         """
         
         # Add metadata to filename
-        metadata_parts = [
-            f"model_{matrix_execution.embedding_model_config.name.replace('/', '_').replace('-', '_')}",
-            f"metric_{matrix_execution.distance_metric}",
-            f"size_{len(matrix_execution.items)}"
-        ]
+        metadata_parts = []
+        
+        if matrix_execution.embedding_model_config:
+            metadata_parts.append(f"model_{matrix_execution.embedding_model_config.name.replace('/', '_').replace('-', '_')}")
+        
+        metadata_parts.append(f"size_{len(matrix_execution.row_labels)}x{len(matrix_execution.column_labels)}")
         
         metadata_suffix = "_".join(metadata_parts)
         return f"{filename_prefix}_{metadata_suffix}.csv"
     
     def process(self, pipeline_config: PipelineConfig, executions: Iterator[Execution]) -> Iterator[Execution]:
         """
-        Process input executions lazily by filtering DistanceMatrix types and exporting them to CSV.
+        Process input executions lazily by filtering Matrix types and exporting them to CSV.
         
         Args:
             pipeline_config: Configuration for the pipeline execution
@@ -89,8 +90,8 @@ class ExportMatrixToCsvStage(Stage):
             # Always yield the execution first
             yield execution
             
-            # Process if it's a distance matrix execution
-            if isinstance(execution, DistanceMatrixExecution) and not execution.has_error():
+            # Process if it's a matrix execution
+            if isinstance(execution, MatrixExecution) and not execution.has_error():
                 try:
                     output_filename = self._generate_output_filename(execution, self.output_file_prefix)
                     
@@ -106,10 +107,11 @@ class ExportMatrixToCsvStage(Stage):
                     matrix_count += 1
                     
                     if script_runner.global_config.verbose:
-                        print(f"Exported distance matrix to: {output_path}")
-                        print(f"  - Items: {len(execution.items)}")
-                        print(f"  - Embedding model: {execution.embedding_model_config.name}")
-                        print(f"  - Distance metric: {execution.distance_metric}")
+                        print(f"Exported matrix to: {output_path}")
+                        print(f"  - Rows: {len(execution.row_labels)}")
+                        print(f"  - Columns: {len(execution.column_labels)}")
+                        if execution.embedding_model_config:
+                            print(f"  - Embedding model: {execution.embedding_model_config.name}")
                     
                 except Exception as e:
                     if pipeline_config.verbose:
