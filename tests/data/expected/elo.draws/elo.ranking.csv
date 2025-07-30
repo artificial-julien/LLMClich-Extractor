@@ -1,5 +1,5 @@
 _model_name,_model_temperature,_model_top_p,_elo_competitor,_elo_rank
 gpt-4.1-nano,0.0,1.0,The sun,1
-gpt-4.1-nano,0.0,1.0,An exact copy of the earth,2
-gpt-4.1-nano,0.0,1.0,The earth,3
+gpt-4.1-nano,0.0,1.0,The earth,2
+gpt-4.1-nano,0.0,1.0,An exact copy of the earth,3
 gpt-4.1-nano,0.0,1.0,The moon,4

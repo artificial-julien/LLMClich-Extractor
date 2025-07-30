@@ -39,7 +39,7 @@ def main():
     
     output_file = script_runner.global_config.custom_args.custom_output_name or "output.csv"
     export_stage = ExportToCsvStage(
-        output_file_prefix=output_file,
+        output_file=output_file,
         columns=["name", "age", "city"]
     )
     

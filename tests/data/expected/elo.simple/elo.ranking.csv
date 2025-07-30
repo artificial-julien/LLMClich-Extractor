@@ -1,9 +1,8 @@
 _model_name,_model_temperature,_model_top_p,_elo_competitor,_elo_rank
 gpt-4o-mini,0.0,1.0,The Milky Way galaxy,1
-gpt-4o-mini,0.0,1.0,Sagittarius A*,2
-gpt-4o-mini,0.0,1.0,A dwarf star,3
-gpt-4o-mini,0.0,1.0,The sun,4
-gpt-4o-mini,0.0,1.0,Jupiter,5
-gpt-4o-mini,0.0,1.0,The earth,6
-gpt-4o-mini,0.0,1.0,Mars,7
-gpt-4o-mini,0.0,1.0,The moon,8
+gpt-4o-mini,0.0,1.0,The sun,2
+gpt-4o-mini,0.0,1.0,Sagittarius A*,3
+gpt-4o-mini,0.0,1.0,Jupiter,4
+gpt-4o-mini,0.0,1.0,The earth,5
+gpt-4o-mini,0.0,1.0,Mars,6
+gpt-4o-mini,0.0,1.0,The moon,7

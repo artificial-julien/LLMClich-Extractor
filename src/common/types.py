@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 @dataclass
 class PipelineConfig:
     """Configuration class for pipeline processing."""
-    output_dir: Optional[str] = None
+    output_dir: str
     verbose: bool = False
     parallel: int = 1 
     llm_max_tries: int = 1

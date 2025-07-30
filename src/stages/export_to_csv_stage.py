@@ -13,7 +13,7 @@ class ExportToCsvStage(Stage):
     
     DEFAULT_OUTPUT_FILE = "output.csv"
     
-    def __init__(self, output_file_prefix: Optional[str] = None, columns: List[str] = None, skip_non_full_rows: bool = False, type_filter: Optional[List[Type[Execution]]] = None):
+    def __init__(self, output_file: Optional[str] = None, columns: List[str] = None, skip_non_full_rows: bool = False, type_filter: Optional[List[Type[Execution]]] = None):
         """
         Initialize the export to CSV stage.
         
@@ -23,7 +23,7 @@ class ExportToCsvStage(Stage):
             skip_non_full_rows: If True, rows with any empty fields will be skipped. Defaults to True.
             type_filter: List of Execution subtypes to include. If None, all types are included.
         """
-        self.output_file_prefix = output_file_prefix or self.DEFAULT_OUTPUT_FILE
+        self.output_file = output_file or self.DEFAULT_OUTPUT_FILE
         self.columns = columns or []
         self.skip_non_full_rows = skip_non_full_rows
         self.type_filter = type_filter
@@ -74,11 +74,7 @@ class ExportToCsvStage(Stage):
         if rows:
             new_data = pd.DataFrame(rows)
             
-            # Resolve output path relative to output folder if provided
-            if pipeline_config.output_dir:
-                output_path = Path(pipeline_config.output_dir) / self.output_file_prefix
-            else:
-                output_path = Path(pipeline_config.json_path).parent / self.output_file_prefix
+            output_path = Path(pipeline_config.output_dir) / self.output_file
                 
             # Ensure directory exists
             output_path.parent.mkdir(parents=True, exist_ok=True)

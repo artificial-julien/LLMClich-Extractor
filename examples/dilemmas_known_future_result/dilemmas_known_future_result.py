@@ -63,12 +63,6 @@ def main():
             iterations=1
         ),
         ModelConfig(
-            name="gpt-4o",
-            temperature=0.0,
-            top_p=0.0,
-            iterations=1
-        ),
-        ModelConfig(
             name="gpt-4.1-nano",
             temperature=0.0,
             top_p=0.0,
@@ -76,12 +70,6 @@ def main():
         ),
         ModelConfig(
             name="gpt-4.1-mini",
-            temperature=0.0,
-            top_p=0.0,
-            iterations=1
-        ),
-        ModelConfig(
-            name="gpt-4.1",
             temperature=0.0,
             top_p=0.0,
             iterations=1

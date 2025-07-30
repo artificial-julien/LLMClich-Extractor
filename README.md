@@ -4,23 +4,6 @@ This program generates responses from OpenAI's GPT models with constrained outpu
 
 ## Setup
 
-### Automatic Setup
-
-#### On Linux/Mac:
-```bash
-# Make the setup script executable
-chmod +x setup.sh
-
-# Run the setup script
-./setup.sh
-```
-
-#### On Windows:
-```bash
-setup.bat
-```
-
-### Manual Setup
 
 1. Create and activate a virtual environment:
 ```bash
@@ -49,61 +32,32 @@ cp .env.example .env
 OPENAI_API_KEY='your-api-key-here'
 ```
 
-## Directory Structure
-
-Your input directory should contain the following files:
-
-1. `variables.csv` - Contains input variables
-   - Each column represents a variable that will be replaced in the prompt template
-   - Each row represents a separate prompt to generate
-
-2. `prompt_template.txt` - Contains the prompt template
-   - Use `[variable_name]` syntax for variables that should be replaced
-   - Example: "His name is [name]. And his profession is:"
-
-3. `possible_answers.txt` - Contains the list of possible answers
-   - One answer per line
-   - Example:
-     ```
-     Engineer
-     Doctor
-     Factory worker
-     Thief
-     Politician
-     ```
-
-## Output
-
-The program will generate an `output_results.csv` file in the same directory containing:
-- All original variables from the input CSV
-- A new column `generated_answer` with the LLM's constrained response
-
 ## Usage
 
-Make sure your virtual environment is activated, then run:
 ```bash
-python llm_constrained.py
+python <pipeline file> [--parallel <number>] [--batch-seed <number>] [--csv-append] [--llm-max-retries <number>] [--llm-seed <number>] [--output-dir <path>] [--verbose]
 ```
 
-## Example Files
+`--parallel <number>`: Number of parallel requests to run simultaneously (default: 1). Higher values can speed up execution but may be rate-limited by your LLM provider.
 
-### variables.csv
-```csv
-name,age
-John,25
-Alice,30
+`--batch-seed <number>`: Optional seed for batch generation reproducibility.
+
+`--csv-append`: Append to existing CSV files instead of overwriting.
+
+`--llm-max-retries <number>`: Maximum number of retries for failed LLM calls (default: 1).
+
+`--llm-seed <number>`: Optional seed for LLM calls reproducibility.
+
+`--output-dir <path>`: Base directory for output files (default: "output").
+
+`--verbose`: Enable verbose logging.
+
+Example
+```bash
+python "examples/elo_rating/funniest_fictional_character/funniest_fictional_character.py"
 ```
 
-### prompt_template.txt
+Alternatively if you want a faster execution and a complete determinism:
+```bash
+python "examples/elo_rating/funniest_fictional_character/funniest_fictional_character.py" --parallel 8 --batch-seed 0
 ```
-His name is [name] and he is [age] years old. His profession is:
-```
-
-### possible_answers.txt
-```
-Engineer
-Doctor
-Factory worker
-Thief
-Politician
-``` 

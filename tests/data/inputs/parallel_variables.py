@@ -36,7 +36,7 @@ def main():
     city_stage = VariablesStage([{"city_info": f"Talking to {name}"} for name in names])
     
     export_stage = ExportToCsvStage(
-        output_file_prefix="output.csv",
+        output_file="output.csv",
         columns=["name", "age", "city", "greeting", "city_info"]
     )
     

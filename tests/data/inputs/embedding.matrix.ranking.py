@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 # Setup project path first, before any src imports
 import sys
@@ -31,17 +31,13 @@ def main():
     ]
 
     models_stage = EmbeddingModelsStage([model])
-    embeddings_stage = EmbeddingStage(list)
-    distances_stages = DistanceCalculationStage('cosine')
+    embedding_stage = EmbeddingStage(list)
+    distances_stage = DistanceCalculationStage('cosine')
     pivot_table_stage = PivotStage(rows="_distance_item1", columns="_distance_item2", values="_distance_value")
-    export_stage = ExportMatrixToCsvStage(output_file_prefix="embedding.distance.matrix")
+    ranking_stage = RankingStage(direction="rows", sort_order="asc")
+    export_stage = ExportMatrixToCsvStage(output_file_prefix="embedding.matrix")
 
-    group_by_stage = GroupByStage(
-        key="_distance_metric",  # Group by the embedding model
-        pipeline=pivot_table_stage | export_stage
-    )
-    
-    pipeline = models_stage | embeddings_stage | distances_stages | group_by_stage
+    pipeline = models_stage | embedding_stage | distances_stage | pivot_table_stage | ranking_stage
 
     results = pipeline.invoke()
 
