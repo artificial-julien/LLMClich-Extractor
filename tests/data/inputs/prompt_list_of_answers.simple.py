@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 Simple prompt list of answers pipeline demonstrating scientific accuracy evaluation.
 """

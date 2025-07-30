@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 Test file demonstrating parallel stage processing.
 Shows how to process variables through multiple stages in parallel.

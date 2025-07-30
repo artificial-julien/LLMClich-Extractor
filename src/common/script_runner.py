@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Common script runner utilities for pipeline scripts.
 Provides imperative-style setup functions and global configuration access.

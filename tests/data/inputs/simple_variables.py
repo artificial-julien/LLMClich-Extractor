@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 Refactored version using the new imperative-style common setup.
 Demonstrates the new approach with maximum flexibility.

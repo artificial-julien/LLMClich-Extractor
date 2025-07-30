@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 Complex pipeline demonstrating multiple stages with food classification and color analysis.
 """

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 Pipeline demonstrating grammatical correctness evaluation with custom variables.
 """

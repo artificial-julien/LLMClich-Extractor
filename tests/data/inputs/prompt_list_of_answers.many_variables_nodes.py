@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 Pipeline demonstrating multiple variable nodes with string comparison.
 """
