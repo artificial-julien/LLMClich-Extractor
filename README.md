@@ -18,14 +18,17 @@ The framework employs multiple strategies to constrain the model's responses to 
 
 ### Structured Responses
 Using OpenAI's JSON schema mode to constrain LLMs to output one of a predefined list of answers. This forces explicit choices, revealing preferences or biases in scenarios like dilemmas or rankings.
+
 *Work 100% of the time but is not supported by many LLMs providers.*
 
 ### Prompt Engineering
 Using carefully crafted prompts to guide and constrain LLM outputs into specific formats or choices. This provides control over response structure while allowing analysis of the model's preferences and biases.
+
 *Can be used on any LLM but is not completely reliable*
 
 ### Function calling
 Using function calling to constrain LLM outputs into specific formats. This provides a structured way to get responses in a predefined format while allowing analysis of the model's preferences and biases. Function calling is supported by most LLM providers and is more reliable than prompt engineering but less constrained than JSON schema mode.
+
 *Not supported yet*
 
 ## Setup
