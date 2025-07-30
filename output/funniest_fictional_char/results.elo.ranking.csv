@@ -1,0 +1,37 @@
+_model_name,_model_temperature,_model_top_p,_elo_competitor,_elo_rating,_elo_wins,_elo_loss,_elo_draws
+gpt-4o-mini,0.0,1.0,Bugs Bunny,1190,16,0,0
+gpt-4o-mini,0.0,1.0,Bender from Futurama,1129,13,3,0
+gpt-4o-mini,0.0,1.0,SpongeBob SquarePants,1126,13,3,0
+gpt-4o-mini,0.0,1.0,Eric Cartman,1125,13,3,0
+gpt-4o-mini,0.0,1.0,Homer Simpson,1079,10,4,2
+gpt-4o-mini,0.0,1.0,Randy Marsh,1078,10,4,2
+gpt-4o-mini,0.0,1.0,Peter Griffin,1018,8,7,1
+gpt-4o-mini,0.0,1.0,Wile E. Coyote,1001,8,8,0
+gpt-4o-mini,0.0,1.0,Stewie Griffin,998,8,8,0
+gpt-4o-mini,0.0,1.0,Glenn Quagmire,993,7,8,1
+gpt-4o-mini,0.0,1.0,Stimpy,982,7,8,1
+gpt-4o-mini,0.0,1.0,Patrick Star,982,7,8,1
+gpt-4o-mini,0.0,1.0,Courage the Cowardly Dog,925,4,10,2
+gpt-4o-mini,0.0,1.0,Squidward Tentacles,900,3,11,2
+gpt-4o-mini,0.0,1.0,Donald Duck,896,4,12,0
+gpt-4o-mini,0.0,1.0,Plankton,865,2,12,2
+gpt-4o-mini,0.0,1.0,Mr. Burns,856,0,11,5
+gpt-4o-mini,0.0,1.0,Kenny McCormick,849,0,13,3
+gpt-4.1-mini,0.0,1.0,Homer Simpson,1171,14,0,2
+gpt-4.1-mini,0.0,1.0,SpongeBob SquarePants,1134,13,3,0
+gpt-4.1-mini,0.0,1.0,Bugs Bunny,1129,12,2,2
+gpt-4.1-mini,0.0,1.0,Peter Griffin,1086,10,4,2
+gpt-4.1-mini,0.0,1.0,Bender from Futurama,1085,10,3,3
+gpt-4.1-mini,0.0,1.0,Eric Cartman,1082,11,5,0
+gpt-4.1-mini,0.0,1.0,Stewie Griffin,1039,9,6,1
+gpt-4.1-mini,0.0,1.0,Patrick Star,1028,9,7,0
+gpt-4.1-mini,0.0,1.0,Stimpy,1012,8,7,1
+gpt-4.1-mini,0.0,1.0,Randy Marsh,996,8,8,0
+gpt-4.1-mini,0.0,1.0,Glenn Quagmire,971,7,9,0
+gpt-4.1-mini,0.0,1.0,Donald Duck,961,6,9,1
+gpt-4.1-mini,0.0,1.0,Wile E. Coyote,942,6,10,0
+gpt-4.1-mini,0.0,1.0,Squidward Tentacles,925,5,11,0
+gpt-4.1-mini,0.0,1.0,Plankton,893,4,12,0
+gpt-4.1-mini,0.0,1.0,Kenny McCormick,869,3,13,0
+gpt-4.1-mini,0.0,1.0,Courage the Cowardly Dog,869,3,13,0
+gpt-4.1-mini,0.0,1.0,Mr. Burns,799,0,16,0

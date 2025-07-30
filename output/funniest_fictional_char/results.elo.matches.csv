@@ -1,0 +1,272 @@
+_model_name,_model_temperature,_model_top_p,_elo_match_competitor_a,_elo_match_competitor_b,_elo_match_winner,_elo_match_draw,_elo_match_wins_a,_elo_match_wins_b
+gpt-4o-mini,0.0,1.0,Wile E. Coyote,Peter Griffin,Peter Griffin,False,4,6
+gpt-4o-mini,0.0,1.0,Plankton,Homer Simpson,Homer Simpson,False,0,10
+gpt-4o-mini,0.0,1.0,Patrick Star,Glenn Quagmire,Glenn Quagmire,False,1,9
+gpt-4o-mini,0.0,1.0,Eric Cartman,Randy Marsh,Eric Cartman,False,10,0
+gpt-4o-mini,0.0,1.0,Bugs Bunny,Stewie Griffin,Bugs Bunny,False,10,0
+gpt-4o-mini,0.0,1.0,Mr. Burns,Bender from Futurama,Bender from Futurama,False,0,10
+gpt-4o-mini,0.0,1.0,Donald Duck,Stimpy,Stimpy,False,0,10
+gpt-4o-mini,0.0,1.0,SpongeBob SquarePants,Kenny McCormick,SpongeBob SquarePants,False,10,0
+gpt-4o-mini,0.0,1.0,Peter Griffin,Bender from Futurama,Bender from Futurama,False,1,9
+gpt-4o-mini,0.0,1.0,Wile E. Coyote,Mr. Burns,Wile E. Coyote,False,10,0
+gpt-4o-mini,0.0,1.0,Bugs Bunny,Eric Cartman,Bugs Bunny,False,9,1
+gpt-4o-mini,0.0,1.0,Plankton,Kenny McCormick,Plankton,False,9,1
+gpt-4o-mini,0.0,1.0,Homer Simpson,Glenn Quagmire,Homer Simpson,False,9,1
+gpt-4o-mini,0.0,1.0,Donald Duck,Patrick Star,Patrick Star,False,0,10
+gpt-4o-mini,0.0,1.0,SpongeBob SquarePants,Stimpy,SpongeBob SquarePants,False,10,0
+gpt-4o-mini,0.0,1.0,Randy Marsh,Stewie Griffin,Randy Marsh,False,9,1
+gpt-4o-mini,0.0,1.0,Randy Marsh,Glenn Quagmire,Randy Marsh,False,7,3
+gpt-4o-mini,0.0,1.0,Wile E. Coyote,Stimpy,Stimpy,False,3,7
+gpt-4o-mini,0.0,1.0,Plankton,Eric Cartman,Eric Cartman,False,0,10
+gpt-4o-mini,0.0,1.0,Bugs Bunny,SpongeBob SquarePants,Bugs Bunny,False,8,2
+gpt-4o-mini,0.0,1.0,Patrick Star,Courage the Cowardly Dog,Patrick Star,False,9,1
+gpt-4o-mini,0.0,1.0,Squidward Tentacles,Peter Griffin,Peter Griffin,False,0,10
+gpt-4o-mini,0.0,1.0,Homer Simpson,Bender from Futurama,Bender from Futurama,False,1,9
+gpt-4o-mini,0.0,1.0,Donald Duck,Stewie Griffin,Stewie Griffin,False,0,10
+gpt-4o-mini,0.0,1.0,Peter Griffin,Stimpy,Peter Griffin,False,10,0
+gpt-4o-mini,0.0,1.0,Plankton,Courage the Cowardly Dog,Plankton,False,6,4
+gpt-4o-mini,0.0,1.0,Bugs Bunny,Bender from Futurama,Bugs Bunny,False,9,1
+gpt-4o-mini,0.0,1.0,Wile E. Coyote,Stewie Griffin,Wile E. Coyote,False,6,4
+gpt-4o-mini,0.0,1.0,SpongeBob SquarePants,Randy Marsh,SpongeBob SquarePants,False,7,3
+gpt-4o-mini,0.0,1.0,Homer Simpson,Eric Cartman,Eric Cartman,False,2,8
+gpt-4o-mini,0.0,1.0,Squidward Tentacles,Glenn Quagmire,Glenn Quagmire,False,0,10
+gpt-4o-mini,0.0,1.0,Donald Duck,Kenny McCormick,Donald Duck,False,7,3
+gpt-4o-mini,0.0,1.0,Patrick Star,Mr. Burns,Patrick Star,False,10,0
+gpt-4o-mini,0.0,1.0,Randy Marsh,Stimpy,Randy Marsh,False,9,1
+gpt-4o-mini,0.0,1.0,SpongeBob SquarePants,Peter Griffin,SpongeBob SquarePants,False,9,1
+gpt-4o-mini,0.0,1.0,Squidward Tentacles,Stewie Griffin,Stewie Griffin,False,0,10
+gpt-4o-mini,0.0,1.0,Plankton,Glenn Quagmire,Glenn Quagmire,False,0,10
+gpt-4o-mini,0.0,1.0,Wile E. Coyote,Homer Simpson,Homer Simpson,False,0,10
+gpt-4o-mini,0.0,1.0,Eric Cartman,Bender from Futurama,Bender from Futurama,False,4,6
+gpt-4o-mini,0.0,1.0,Donald Duck,Courage the Cowardly Dog,Courage the Cowardly Dog,False,3,7
+gpt-4o-mini,0.0,1.0,Bugs Bunny,Patrick Star,Bugs Bunny,False,10,0
+gpt-4o-mini,0.0,1.0,SpongeBob SquarePants,Bender from Futurama,Bender from Futurama,False,1,9
+gpt-4o-mini,0.0,1.0,Eric Cartman,Glenn Quagmire,Eric Cartman,False,10,0
+gpt-4o-mini,0.0,1.0,Randy Marsh,Peter Griffin,Randy Marsh,False,6,4
+gpt-4o-mini,0.0,1.0,Wile E. Coyote,Plankton,Wile E. Coyote,False,10,0
+gpt-4o-mini,0.0,1.0,Stewie Griffin,Stimpy,Stewie Griffin,False,9,1
+gpt-4o-mini,0.0,1.0,Squidward Tentacles,Kenny McCormick,Squidward Tentacles,False,8,2
+gpt-4o-mini,0.0,1.0,Patrick Star,Homer Simpson,Homer Simpson,False,0,10
+gpt-4o-mini,0.0,1.0,Donald Duck,Mr. Burns,Donald Duck,False,8,2
+gpt-4o-mini,0.0,1.0,Bugs Bunny,Courage the Cowardly Dog,Bugs Bunny,False,10,0
+gpt-4o-mini,0.0,1.0,Plankton,Stimpy,Stimpy,False,0,10
+gpt-4o-mini,0.0,1.0,SpongeBob SquarePants,Eric Cartman,Eric Cartman,False,4,6
+gpt-4o-mini,0.0,1.0,Wile E. Coyote,Patrick Star,Patrick Star,False,3,7
+gpt-4o-mini,0.0,1.0,Donald Duck,Squidward Tentacles,Donald Duck,False,6,4
+gpt-4o-mini,0.0,1.0,Stewie Griffin,Courage the Cowardly Dog,Stewie Griffin,False,9,1
+gpt-4o-mini,0.0,1.0,Kenny McCormick,Bender from Futurama,Bender from Futurama,False,0,10
+gpt-4o-mini,0.0,1.0,Bugs Bunny,Mr. Burns,Bugs Bunny,False,10,0
+gpt-4o-mini,0.0,1.0,Squidward Tentacles,Plankton,Squidward Tentacles,False,7,3
+gpt-4o-mini,0.0,1.0,SpongeBob SquarePants,Patrick Star,SpongeBob SquarePants,False,7,3
+gpt-4o-mini,0.0,1.0,Wile E. Coyote,Donald Duck,Wile E. Coyote,False,10,0
+gpt-4o-mini,0.0,1.0,Stewie Griffin,Glenn Quagmire,Stewie Griffin,False,7,3
+gpt-4o-mini,0.0,1.0,Courage the Cowardly Dog,Stimpy,Stimpy,False,2,8
+gpt-4o-mini,0.0,1.0,Homer Simpson,Peter Griffin,Homer Simpson,False,6,4
+gpt-4o-mini,0.0,1.0,Randy Marsh,Bender from Futurama,Bender from Futurama,False,0,10
+gpt-4o-mini,0.0,1.0,Mr. Burns,Eric Cartman,Eric Cartman,False,0,10
+gpt-4o-mini,0.0,1.0,Bugs Bunny,Kenny McCormick,Bugs Bunny,False,10,0
+gpt-4o-mini,0.0,1.0,SpongeBob SquarePants,Stewie Griffin,SpongeBob SquarePants,False,8,2
+gpt-4o-mini,0.0,1.0,Wile E. Coyote,Glenn Quagmire,Wile E. Coyote,False,7,3
+gpt-4o-mini,0.0,1.0,Donald Duck,Peter Griffin,Peter Griffin,False,0,10
+gpt-4o-mini,0.0,1.0,Kenny McCormick,Courage the Cowardly Dog,Courage the Cowardly Dog,False,3,7
+gpt-4o-mini,0.0,1.0,Squidward Tentacles,Randy Marsh,Randy Marsh,False,0,10
+gpt-4o-mini,0.0,1.0,Bugs Bunny,Homer Simpson,Bugs Bunny,False,10,0
+gpt-4o-mini,0.0,1.0,Eric Cartman,Bender from Futurama,Bender from Futurama,False,4,6
+gpt-4o-mini,0.0,1.0,Patrick Star,Peter Griffin,Peter Griffin,False,0,10
+gpt-4o-mini,0.0,1.0,Glenn Quagmire,Courage the Cowardly Dog,Glenn Quagmire,False,9,1
+gpt-4o-mini,0.0,1.0,SpongeBob SquarePants,Homer Simpson,SpongeBob SquarePants,False,8,2
+gpt-4o-mini,0.0,1.0,Wile E. Coyote,Randy Marsh,Randy Marsh,False,2,8
+gpt-4o-mini,0.0,1.0,Donald Duck,Plankton,Donald Duck,False,7,3
+gpt-4o-mini,0.0,1.0,Eric Cartman,Stewie Griffin,Eric Cartman,False,10,0
+gpt-4o-mini,0.0,1.0,Squidward Tentacles,Mr. Burns,Squidward Tentacles,False,7,3
+gpt-4o-mini,0.0,1.0,Kenny McCormick,Stimpy,Stimpy,False,0,10
+gpt-4o-mini,0.0,1.0,Bugs Bunny,Bender from Futurama,Bugs Bunny,False,9,1
+gpt-4o-mini,0.0,1.0,Homer Simpson,Stimpy,Homer Simpson,False,10,0
+gpt-4o-mini,0.0,1.0,Patrick Star,Squidward Tentacles,Patrick Star,False,10,0
+gpt-4o-mini,0.0,1.0,Donald Duck,Glenn Quagmire,Glenn Quagmire,False,0,10
+gpt-4o-mini,0.0,1.0,Peter Griffin,Stewie Griffin,Peter Griffin,False,7,3
+gpt-4o-mini,0.0,1.0,Mr. Burns,Courage the Cowardly Dog,Courage the Cowardly Dog,False,3,7
+gpt-4o-mini,0.0,1.0,Wile E. Coyote,Eric Cartman,Eric Cartman,False,1,9
+gpt-4o-mini,0.0,1.0,Bugs Bunny,Randy Marsh,Bugs Bunny,False,10,0
+gpt-4o-mini,0.0,1.0,SpongeBob SquarePants,Plankton,SpongeBob SquarePants,False,10,0
+gpt-4o-mini,0.0,1.0,Kenny McCormick,Bender from Futurama,Bender from Futurama,False,0,10
+gpt-4o-mini,0.0,1.0,Glenn Quagmire,Stimpy,Glenn Quagmire,False,9,1
+gpt-4o-mini,0.0,1.0,Patrick Star,Stewie Griffin,Stewie Griffin,False,0,10
+gpt-4o-mini,0.0,1.0,Wile E. Coyote,Courage the Cowardly Dog,Wile E. Coyote,False,6,4
+gpt-4o-mini,0.0,1.0,Eric Cartman,Peter Griffin,Eric Cartman,False,9,1
+gpt-4o-mini,0.0,1.0,Donald Duck,Homer Simpson,Homer Simpson,False,0,10
+gpt-4o-mini,0.0,1.0,SpongeBob SquarePants,Squidward Tentacles,SpongeBob SquarePants,False,10,0
+gpt-4o-mini,0.0,1.0,Plankton,Randy Marsh,Randy Marsh,False,0,10
+gpt-4o-mini,0.0,1.0,Bugs Bunny,Bender from Futurama,Bugs Bunny,False,9,1
+gpt-4o-mini,0.0,1.0,Squidward Tentacles,Stimpy,Stimpy,False,0,10
+gpt-4o-mini,0.0,1.0,Homer Simpson,Stewie Griffin,Homer Simpson,False,8,2
+gpt-4o-mini,0.0,1.0,Patrick Star,Randy Marsh,Randy Marsh,False,2,8
+gpt-4o-mini,0.0,1.0,Glenn Quagmire,Bender from Futurama,Bender from Futurama,False,0,10
+gpt-4o-mini,0.0,1.0,Peter Griffin,Courage the Cowardly Dog,Peter Griffin,False,9,1
+gpt-4o-mini,0.0,1.0,Wile E. Coyote,SpongeBob SquarePants,SpongeBob SquarePants,False,0,10
+gpt-4o-mini,0.0,1.0,Donald Duck,Eric Cartman,Eric Cartman,False,0,10
+gpt-4o-mini,0.0,1.0,Bugs Bunny,Kenny McCormick,Bugs Bunny,False,10,0
+gpt-4o-mini,0.0,1.0,Wile E. Coyote,Squidward Tentacles,Wile E. Coyote,False,10,0
+gpt-4o-mini,0.0,1.0,Patrick Star,Plankton,Patrick Star,False,10,0
+gpt-4o-mini,0.0,1.0,SpongeBob SquarePants,Glenn Quagmire,SpongeBob SquarePants,False,9,1
+gpt-4o-mini,0.0,1.0,Mr. Burns,Stewie Griffin,Stewie Griffin,False,0,10
+gpt-4o-mini,0.0,1.0,Bender from Futurama,Stimpy,Bender from Futurama,False,10,0
+gpt-4o-mini,0.0,1.0,Donald Duck,Randy Marsh,Randy Marsh,False,0,10
+gpt-4o-mini,0.0,1.0,Homer Simpson,Courage the Cowardly Dog,Homer Simpson,False,9,1
+gpt-4o-mini,0.0,1.0,Bugs Bunny,Peter Griffin,Bugs Bunny,False,10,0
+gpt-4o-mini,0.0,1.0,Eric Cartman,Kenny McCormick,Eric Cartman,False,10,0
+gpt-4o-mini,0.0,1.0,Mr. Burns,Stimpy,Stimpy,False,0,10
+gpt-4o-mini,0.0,1.0,Wile E. Coyote,Bender from Futurama,Bender from Futurama,False,0,10
+gpt-4o-mini,0.0,1.0,Patrick Star,Kenny McCormick,Patrick Star,False,10,0
+gpt-4o-mini,0.0,1.0,Plankton,Stewie Griffin,Stewie Griffin,False,0,10
+gpt-4o-mini,0.0,1.0,Randy Marsh,Courage the Cowardly Dog,Randy Marsh,False,9,1
+gpt-4o-mini,0.0,1.0,Squidward Tentacles,Homer Simpson,Homer Simpson,False,0,10
+gpt-4o-mini,0.0,1.0,Bugs Bunny,Glenn Quagmire,Bugs Bunny,False,10,0
+gpt-4o-mini,0.0,1.0,Donald Duck,SpongeBob SquarePants,SpongeBob SquarePants,False,0,10
+gpt-4o-mini,0.0,1.0,Eric Cartman,Peter Griffin,Eric Cartman,False,9,1
+gpt-4o-mini,0.0,1.0,Stewie Griffin,Bender from Futurama,Bender from Futurama,False,0,10
+gpt-4o-mini,0.0,1.0,Mr. Burns,Glenn Quagmire,Glenn Quagmire,False,0,10
+gpt-4o-mini,0.0,1.0,Eric Cartman,Stimpy,Eric Cartman,False,10,0
+gpt-4o-mini,0.0,1.0,Wile E. Coyote,Kenny McCormick,Wile E. Coyote,False,10,0
+gpt-4o-mini,0.0,1.0,Plankton,Peter Griffin,Peter Griffin,False,0,10
+gpt-4o-mini,0.0,1.0,Donald Duck,Courage the Cowardly Dog,Courage the Cowardly Dog,False,3,7
+gpt-4o-mini,0.0,1.0,Bugs Bunny,Squidward Tentacles,Bugs Bunny,False,10,0
+gpt-4o-mini,0.0,1.0,SpongeBob SquarePants,Patrick Star,SpongeBob SquarePants,False,7,3
+gpt-4.1-mini,0.0,1.0,Donald Duck,Bender from Futurama,Bender from Futurama,False,0,10
+gpt-4.1-mini,0.0,1.0,Eric Cartman,Courage the Cowardly Dog,Eric Cartman,False,10,0
+gpt-4.1-mini,0.0,1.0,Bugs Bunny,Plankton,Bugs Bunny,False,10,0
+gpt-4.1-mini,0.0,1.0,SpongeBob SquarePants,Mr. Burns,SpongeBob SquarePants,False,10,0
+gpt-4.1-mini,0.0,1.0,Kenny McCormick,Peter Griffin,Peter Griffin,False,0,10
+gpt-4.1-mini,0.0,1.0,Patrick Star,Glenn Quagmire,Patrick Star,False,8,2
+gpt-4.1-mini,0.0,1.0,Wile E. Coyote,Stimpy,Stimpy,False,4,6
+gpt-4.1-mini,0.0,1.0,Squidward Tentacles,Stewie Griffin,Stewie Griffin,False,0,10
+gpt-4.1-mini,0.0,1.0,Homer Simpson,Randy Marsh,Homer Simpson,False,10,0
+gpt-4.1-mini,0.0,1.0,Mr. Burns,Randy Marsh,Randy Marsh,False,0,10
+gpt-4.1-mini,0.0,1.0,Bugs Bunny,Stimpy,Bugs Bunny,False,8,2
+gpt-4.1-mini,0.0,1.0,Patrick Star,Bender from Futurama,Bender from Futurama,False,4,6
+gpt-4.1-mini,0.0,1.0,Kenny McCormick,Glenn Quagmire,Glenn Quagmire,False,0,10
+gpt-4.1-mini,0.0,1.0,Squidward Tentacles,Eric Cartman,Eric Cartman,False,0,10
+gpt-4.1-mini,0.0,1.0,SpongeBob SquarePants,Courage the Cowardly Dog,SpongeBob SquarePants,False,10,0
+gpt-4.1-mini,0.0,1.0,Homer Simpson,Peter Griffin,Homer Simpson,False,8,2
+gpt-4.1-mini,0.0,1.0,Donald Duck,Plankton,Donald Duck,False,10,0
+gpt-4.1-mini,0.0,1.0,Wile E. Coyote,Stewie Griffin,Stewie Griffin,False,0,10
+gpt-4.1-mini,0.0,1.0,Patrick Star,Eric Cartman,Eric Cartman,False,1,9
+gpt-4.1-mini,0.0,1.0,Kenny McCormick,Randy Marsh,Randy Marsh,False,0,10
+gpt-4.1-mini,0.0,1.0,Bugs Bunny,Donald Duck,Bugs Bunny,False,10,0
+gpt-4.1-mini,0.0,1.0,Mr. Burns,Peter Griffin,Peter Griffin,False,0,10
+gpt-4.1-mini,0.0,1.0,Squidward Tentacles,Bender from Futurama,Bender from Futurama,False,0,10
+gpt-4.1-mini,0.0,1.0,SpongeBob SquarePants,Stewie Griffin,SpongeBob SquarePants,False,8,2
+gpt-4.1-mini,0.0,1.0,Wile E. Coyote,Courage the Cowardly Dog,Wile E. Coyote,False,8,2
+gpt-4.1-mini,0.0,1.0,Glenn Quagmire,Stimpy,Stimpy,False,4,6
+gpt-4.1-mini,0.0,1.0,Plankton,Homer Simpson,Homer Simpson,False,0,10
+gpt-4.1-mini,0.0,1.0,Bugs Bunny,Wile E. Coyote,Bugs Bunny,False,10,0
+gpt-4.1-mini,0.0,1.0,Kenny McCormick,Stewie Griffin,Stewie Griffin,False,0,10
+gpt-4.1-mini,0.0,1.0,Plankton,Bender from Futurama,Bender from Futurama,False,0,10
+gpt-4.1-mini,0.0,1.0,Homer Simpson,Mr. Burns,Homer Simpson,False,10,0
+gpt-4.1-mini,0.0,1.0,Randy Marsh,Peter Griffin,Peter Griffin,False,0,10
+gpt-4.1-mini,0.0,1.0,Donald Duck,Patrick Star,Patrick Star,False,0,10
+gpt-4.1-mini,0.0,1.0,SpongeBob SquarePants,Eric Cartman,SpongeBob SquarePants,False,8,2
+gpt-4.1-mini,0.0,1.0,Squidward Tentacles,Glenn Quagmire,Glenn Quagmire,False,1,9
+gpt-4.1-mini,0.0,1.0,Courage the Cowardly Dog,Stimpy,Stimpy,False,0,10
+gpt-4.1-mini,0.0,1.0,Homer Simpson,Kenny McCormick,Homer Simpson,False,10,0
+gpt-4.1-mini,0.0,1.0,Bender from Futurama,Courage the Cowardly Dog,Bender from Futurama,False,10,0
+gpt-4.1-mini,0.0,1.0,Squidward Tentacles,Mr. Burns,Squidward Tentacles,False,10,0
+gpt-4.1-mini,0.0,1.0,Eric Cartman,Stimpy,Eric Cartman,False,9,1
+gpt-4.1-mini,0.0,1.0,Randy Marsh,Glenn Quagmire,Randy Marsh,False,9,1
+gpt-4.1-mini,0.0,1.0,Bugs Bunny,SpongeBob SquarePants,SpongeBob SquarePants,False,4,6
+gpt-4.1-mini,0.0,1.0,Peter Griffin,Stewie Griffin,Peter Griffin,False,8,2
+gpt-4.1-mini,0.0,1.0,Wile E. Coyote,Donald Duck,Donald Duck,False,2,8
+gpt-4.1-mini,0.0,1.0,Patrick Star,Plankton,Patrick Star,False,10,0
+gpt-4.1-mini,0.0,1.0,Kenny McCormick,Courage the Cowardly Dog,Courage the Cowardly Dog,False,1,9
+gpt-4.1-mini,0.0,1.0,Homer Simpson,Bender from Futurama,Homer Simpson,False,7,3
+gpt-4.1-mini,0.0,1.0,Patrick Star,Randy Marsh,Patrick Star,False,7,3
+gpt-4.1-mini,0.0,1.0,Stewie Griffin,Stimpy,Stewie Griffin,False,6,4
+gpt-4.1-mini,0.0,1.0,Bugs Bunny,Eric Cartman,Bugs Bunny,False,9,1
+gpt-4.1-mini,0.0,1.0,Wile E. Coyote,Squidward Tentacles,Wile E. Coyote,False,7,3
+gpt-4.1-mini,0.0,1.0,Donald Duck,Glenn Quagmire,Donald Duck,False,6,4
+gpt-4.1-mini,0.0,1.0,SpongeBob SquarePants,Peter Griffin,SpongeBob SquarePants,False,9,1
+gpt-4.1-mini,0.0,1.0,Plankton,Mr. Burns,Plankton,False,9,1
+gpt-4.1-mini,0.0,1.0,Plankton,Courage the Cowardly Dog,Plankton,False,8,2
+gpt-4.1-mini,0.0,1.0,Patrick Star,Peter Griffin,Peter Griffin,False,2,8
+gpt-4.1-mini,0.0,1.0,Eric Cartman,Stewie Griffin,Eric Cartman,False,8,2
+gpt-4.1-mini,0.0,1.0,Randy Marsh,Stimpy,Stimpy,False,4,6
+gpt-4.1-mini,0.0,1.0,Wile E. Coyote,Glenn Quagmire,Glenn Quagmire,False,3,7
+gpt-4.1-mini,0.0,1.0,SpongeBob SquarePants,Homer Simpson,Homer Simpson,False,3,7
+gpt-4.1-mini,0.0,1.0,Squidward Tentacles,Kenny McCormick,Squidward Tentacles,False,9,1
+gpt-4.1-mini,0.0,1.0,Donald Duck,Bender from Futurama,Bender from Futurama,False,0,10
+gpt-4.1-mini,0.0,1.0,Bugs Bunny,Mr. Burns,Bugs Bunny,False,10,0
+gpt-4.1-mini,0.0,1.0,Patrick Star,Stimpy,Patrick Star,False,7,3
+gpt-4.1-mini,0.0,1.0,Squidward Tentacles,Plankton,Squidward Tentacles,False,9,1
+gpt-4.1-mini,0.0,1.0,Donald Duck,Randy Marsh,Randy Marsh,False,3,7
+gpt-4.1-mini,0.0,1.0,SpongeBob SquarePants,Bender from Futurama,SpongeBob SquarePants,False,8,2
+gpt-4.1-mini,0.0,1.0,Bugs Bunny,Peter Griffin,Bugs Bunny,False,8,2
+gpt-4.1-mini,0.0,1.0,Stewie Griffin,Glenn Quagmire,Stewie Griffin,False,10,0
+gpt-4.1-mini,0.0,1.0,Mr. Burns,Courage the Cowardly Dog,Courage the Cowardly Dog,False,2,8
+gpt-4.1-mini,0.0,1.0,Homer Simpson,Eric Cartman,Homer Simpson,False,8,2
+gpt-4.1-mini,0.0,1.0,Wile E. Coyote,Kenny McCormick,Wile E. Coyote,False,10,0
+gpt-4.1-mini,0.0,1.0,Patrick Star,Eric Cartman,Eric Cartman,False,1,9
+gpt-4.1-mini,0.0,1.0,Donald Duck,Squidward Tentacles,Donald Duck,False,10,0
+gpt-4.1-mini,0.0,1.0,Plankton,Glenn Quagmire,Glenn Quagmire,False,0,10
+gpt-4.1-mini,0.0,1.0,Randy Marsh,Stewie Griffin,Stewie Griffin,False,1,9
+gpt-4.1-mini,0.0,1.0,Wile E. Coyote,Mr. Burns,Wile E. Coyote,False,10,0
+gpt-4.1-mini,0.0,1.0,SpongeBob SquarePants,Stimpy,SpongeBob SquarePants,False,10,0
+gpt-4.1-mini,0.0,1.0,Kenny McCormick,Courage the Cowardly Dog,Courage the Cowardly Dog,False,1,9
+gpt-4.1-mini,0.0,1.0,Wile E. Coyote,Randy Marsh,Randy Marsh,False,0,10
+gpt-4.1-mini,0.0,1.0,Glenn Quagmire,Courage the Cowardly Dog,Glenn Quagmire,False,10,0
+gpt-4.1-mini,0.0,1.0,Plankton,Kenny McCormick,Plankton,False,7,3
+gpt-4.1-mini,0.0,1.0,Patrick Star,Squidward Tentacles,Patrick Star,False,10,0
+gpt-4.1-mini,0.0,1.0,SpongeBob SquarePants,Homer Simpson,Homer Simpson,False,3,7
+gpt-4.1-mini,0.0,1.0,Eric Cartman,Peter Griffin,Eric Cartman,False,7,3
+gpt-4.1-mini,0.0,1.0,Bugs Bunny,Mr. Burns,Bugs Bunny,False,10,0
+gpt-4.1-mini,0.0,1.0,Patrick Star,Stewie Griffin,Stewie Griffin,False,4,6
+gpt-4.1-mini,0.0,1.0,Peter Griffin,Glenn Quagmire,Peter Griffin,False,10,0
+gpt-4.1-mini,0.0,1.0,Wile E. Coyote,Plankton,Wile E. Coyote,False,9,1
+gpt-4.1-mini,0.0,1.0,Squidward Tentacles,Stimpy,Stimpy,False,0,10
+gpt-4.1-mini,0.0,1.0,Randy Marsh,Bender from Futurama,Bender from Futurama,False,0,10
+gpt-4.1-mini,0.0,1.0,Donald Duck,Eric Cartman,Eric Cartman,False,1,9
+gpt-4.1-mini,0.0,1.0,Bugs Bunny,SpongeBob SquarePants,SpongeBob SquarePants,False,4,6
+gpt-4.1-mini,0.0,1.0,Homer Simpson,Courage the Cowardly Dog,Homer Simpson,False,10,0
+gpt-4.1-mini,0.0,1.0,Mr. Burns,Kenny McCormick,Kenny McCormick,False,3,7
+gpt-4.1-mini,0.0,1.0,Bugs Bunny,Stewie Griffin,Bugs Bunny,False,9,1
+gpt-4.1-mini,0.0,1.0,Wile E. Coyote,Patrick Star,Patrick Star,False,1,9
+gpt-4.1-mini,0.0,1.0,Peter Griffin,Stimpy,Peter Griffin,False,8,2
+gpt-4.1-mini,0.0,1.0,Randy Marsh,Courage the Cowardly Dog,Randy Marsh,False,10,0
+gpt-4.1-mini,0.0,1.0,Glenn Quagmire,Bender from Futurama,Bender from Futurama,False,0,10
+gpt-4.1-mini,0.0,1.0,Donald Duck,Kenny McCormick,Donald Duck,False,10,0
+gpt-4.1-mini,0.0,1.0,Squidward Tentacles,Plankton,Squidward Tentacles,False,9,1
+gpt-4.1-mini,0.0,1.0,SpongeBob SquarePants,Eric Cartman,SpongeBob SquarePants,False,8,2
+gpt-4.1-mini,0.0,1.0,Homer Simpson,Mr. Burns,Homer Simpson,False,10,0
+gpt-4.1-mini,0.0,1.0,Patrick Star,Bender from Futurama,Bender from Futurama,False,4,6
+gpt-4.1-mini,0.0,1.0,Squidward Tentacles,Randy Marsh,Randy Marsh,False,1,9
+gpt-4.1-mini,0.0,1.0,Donald Duck,Stewie Griffin,Stewie Griffin,False,0,10
+gpt-4.1-mini,0.0,1.0,Plankton,Stimpy,Stimpy,False,0,10
+gpt-4.1-mini,0.0,1.0,Wile E. Coyote,Peter Griffin,Peter Griffin,False,0,10
+gpt-4.1-mini,0.0,1.0,Eric Cartman,Glenn Quagmire,Eric Cartman,False,10,0
+gpt-4.1-mini,0.0,1.0,Bugs Bunny,Courage the Cowardly Dog,Bugs Bunny,False,10,0
+gpt-4.1-mini,0.0,1.0,SpongeBob SquarePants,Homer Simpson,Homer Simpson,False,3,7
+gpt-4.1-mini,0.0,1.0,Mr. Burns,Kenny McCormick,Kenny McCormick,False,3,7
+gpt-4.1-mini,0.0,1.0,Eric Cartman,Randy Marsh,Eric Cartman,False,10,0
+gpt-4.1-mini,0.0,1.0,Kenny McCormick,Glenn Quagmire,Glenn Quagmire,False,0,10
+gpt-4.1-mini,0.0,1.0,Donald Duck,Peter Griffin,Peter Griffin,False,0,10
+gpt-4.1-mini,0.0,1.0,Bugs Bunny,Patrick Star,Bugs Bunny,False,10,0
+gpt-4.1-mini,0.0,1.0,Bender from Futurama,Stimpy,Bender from Futurama,False,10,0
+gpt-4.1-mini,0.0,1.0,Homer Simpson,Stewie Griffin,Homer Simpson,False,7,3
+gpt-4.1-mini,0.0,1.0,Plankton,Courage the Cowardly Dog,Plankton,False,8,2
+gpt-4.1-mini,0.0,1.0,Wile E. Coyote,Squidward Tentacles,Wile E. Coyote,False,7,3
+gpt-4.1-mini,0.0,1.0,SpongeBob SquarePants,Mr. Burns,SpongeBob SquarePants,False,10,0
+gpt-4.1-mini,0.0,1.0,Plankton,Randy Marsh,Randy Marsh,False,0,10
+gpt-4.1-mini,0.0,1.0,Patrick Star,Courage the Cowardly Dog,Patrick Star,False,10,0
+gpt-4.1-mini,0.0,1.0,Wile E. Coyote,Glenn Quagmire,Glenn Quagmire,False,3,7
+gpt-4.1-mini,0.0,1.0,Kenny McCormick,Stimpy,Stimpy,False,0,10
+gpt-4.1-mini,0.0,1.0,SpongeBob SquarePants,Bender from Futurama,SpongeBob SquarePants,False,8,2
+gpt-4.1-mini,0.0,1.0,Donald Duck,Mr. Burns,Donald Duck,False,10,0
+gpt-4.1-mini,0.0,1.0,Bugs Bunny,Eric Cartman,Bugs Bunny,False,9,1
+gpt-4.1-mini,0.0,1.0,Peter Griffin,Stewie Griffin,Peter Griffin,False,8,2
+gpt-4.1-mini,0.0,1.0,Squidward Tentacles,Homer Simpson,Homer Simpson,False,0,10
+gpt-4.1-mini,0.0,1.0,Patrick Star,Randy Marsh,Patrick Star,False,7,3
+gpt-4.1-mini,0.0,1.0,Wile E. Coyote,Eric Cartman,Eric Cartman,False,0,10
+gpt-4.1-mini,0.0,1.0,Glenn Quagmire,Stimpy,Stimpy,False,4,6
+gpt-4.1-mini,0.0,1.0,Plankton,Stewie Griffin,Stewie Griffin,False,0,10
+gpt-4.1-mini,0.0,1.0,Squidward Tentacles,Courage the Cowardly Dog,Squidward Tentacles,False,9,1
+gpt-4.1-mini,0.0,1.0,Donald Duck,SpongeBob SquarePants,SpongeBob SquarePants,False,0,10
+gpt-4.1-mini,0.0,1.0,Mr. Burns,Kenny McCormick,Kenny McCormick,False,3,7
