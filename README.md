@@ -30,29 +30,21 @@ Using function calling to constrain LLM outputs into specific formats. This prov
 
 ## Setup
 
-1. Create and activate a virtual environment:
 ```bash
-# Create virtual environment
+# Create and activate a virtual environment:
 python -m venv venv
 
-# Activate on Linux/Mac
+# Activate on Linux/Mac/WSL
 source venv/bin/activate
 
-# Activate on Windows
-venv\Scripts\activate.bat
-```
-
-2. Install the required dependencies:
-```bash
+# Install the required dependencies:
 pip install -r requirements.txt
-```
 
-3. Create a `.env` file from the example:
-```bash
+# Create a `.env` file from the example:
 cp .env.example .env
 ```
 
-4. Edit the `.env` file and add your OpenAI API key:
+Edit the `.env` file and add your OpenAI API key:
 ```
 OPENAI_API_KEY='your-api-key-here'
 ```
@@ -87,17 +79,3 @@ Alternatively if you want a faster execution and a complete determinism:
 python "examples/elo_rating/funniest_fictional_character/funniest_fictional_character.py" --parallel 8 --batch-seed 0
 ```
 
-## Techniques for Extracting Clichés and Biases
-
-This framework implements three primary techniques to probe LLMs for clichés and biases:
-
-### 1. Constrained/Structured Responses
-Using OpenAI's JSON schema mode or prompt engineering, the LLM is constrained to output one of a predefined list of answers. This forces the model to make explicit choices, revealing preferences or biases in scenarios like dilemmas or rankings. For example, it can be used to study how LLMs associate traits with demographics by limiting responses to a fixed set of options.
-
-### 2. Elo Rating for Ranking
-This technique uses pairwise comparisons judged by the LLM to rank items (e.g., personalities, concepts) via an Elo rating system, similar to chess rankings. The LLM acts as a judge in simulated "matches," updating scores based on wins/losses/draws. It's useful for creating ordered lists of concepts by perceived attributes, such as ranking fictional characters by funniness.
-
-### 3. Embedding Matrix of Distances
-Generates semantic embeddings for sets of items and computes distance matrices (e.g., cosine, Euclidean) to measure similarities. This reveals how closely the LLM associates different concepts in its embedding space, potentially highlighting clichéd or biased groupings (e.g., distance between professions and nationalities).
-
-These techniques can be combined in pipelines to create sophisticated analyses of LLM behavior.
