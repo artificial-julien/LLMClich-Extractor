@@ -3,7 +3,7 @@
 LLMsClichés is a toolkit for poking and prodding large language models to see what clichés and stereotypes they fall back on. It lets you set up experiments where the model has to pick from a list, rank things in head-to-head matchups, or show how close different ideas are in its "mind" using embeddings. T this project helps you dig into what LLMs really think is typical or obvious.
 Great for anyone curious about the patterns and quirks hiding in AI-generated text.
 
-See `output` for some result examples.
+See [output](output) for some result examples.
 
 ## Evaluation Techniques
 
